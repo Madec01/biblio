@@ -26,8 +26,8 @@ exportées ou importées en JSON.
   « Créer … et le lier » l'ajoute à la base sans quitter la fiche.
   Flèche bas dans le champ vide affiche les documents récemment modifiés.
 - Avant de choisir le document, sélectionnez la **nature de la relation** :
-  lié à, nécessite, produit, s’applique à, remplace ou justifie. Les relations
-  orientées sont reformulées automatiquement depuis l’autre document.
+  s’applique à, est issu de, ou guide / aide de. La formulation est adaptée
+  automatiquement depuis l’autre document.
 - Chaque fiche peut préciser son **type**, son **statut**, sa **version / indice**
   et ses **mots-clés**. La référence reste l’identifiant opérationnel à copier
   dans l’application documentaire professionnelle.
@@ -89,8 +89,8 @@ exportées ou importées en JSON.
 
 ### Arbre des liens
 
-- Troisième vue, façon arbre généalogique : un document racine en haut, ses
-  documents liés en dessous, puis les leurs, sur 1 à 4 niveaux.
+- Troisième vue, façon arbre généalogique horizontal : un document racine à
+  gauche, ses documents filles à droite, puis les leurs, sur 1 à 4 niveaux.
 - Ouvrez-la depuis une fiche (« Arbre des liens »), depuis le tiroir de la
   carte, ou depuis l'onglet Arbre (touche `4`) en choisissant une racine.
 - Chaque document n'apparaît qu'une fois, au niveau le plus proche de la
@@ -100,11 +100,13 @@ exportées ou importées en JSON.
 - Cliquer sur un document le place à la racine (« ← » revient en arrière) ;
   le bouton « fiche » ouvre sa fiche. Les boutons − / + agrandissent ou
   réduisent l'arbre.
-- Les branches peuvent être repliées individuellement. L'arbre se filtre par
-  sens, type et importance de relation, et peut être imprimé ou exporté en PDF.
-- L'affichage sépare visuellement trois niveaux : dépendances principales,
-  guides/précisions et simples références associées. L'arbre peut également
-  prendre un grand groupe ou un sous-groupe comme point de départ.
+- Les branches peuvent être repliées individuellement et l'arbre peut être
+  imprimé ou exporté en PDF.
+- Les liens « s’applique à » et « est issu de » construisent les branches
+  principales en trait plein. Les guides/aides sont décalés sous le document
+  concerné et reliés par un trait pointillé coloré.
+- Un switch visible affiche ou masque les cadres colorés des grands groupes et
+  sous-groupes. L'arbre peut également prendre un groupe comme point de départ.
 
 ### Menu (⋯)
 
@@ -135,14 +137,15 @@ exportées ou importées en JSON.
     { "id": "g_ec_base", "name": "Base documentaire EC", "color": "#9d88ba", "parent": "g_equipe" }
   ],
   "docs":   [{ "id": "d…", "name": "Manuel qualité", "ref": "MQ-001", "group": "g_qualite", "type": "Référentiel", "status": "Applicable", "docVersion": "3", "tags": "qualité, organisation", "verifiedAt": 1789560000000, "note": "" }],
-  "links":  [{ "a": "d…", "b": "d…", "type": "requires", "importance": "required", "note": "À contrôler avant intervention" }],
+  "links":  [{ "a": "d…", "b": "d…", "type": "applies", "importance": "info", "note": "À consulter avant intervention" }],
   "journeys": [{ "id": "j…", "name": "Préparer une intervention", "steps": [{ "docId": "d…", "required": true, "note": "" }] }]
 }
 ```
 
 Tous les liens apparaissent sur les deux fiches. Certains sont orientés : par
-exemple « A nécessite B » devient « B est nécessaire à A » depuis la fiche B.
-Les anciennes bases restent compatibles ; leurs liens deviennent « Est lié à ».
+exemple « A est issu de B » devient « B donne naissance à A » depuis la fiche B.
+Les anciennes bases restent compatibles et leurs anciens types sont convertis
+vers l’une des trois relations simplifiées.
 Un groupe avec `parent` est un sous-groupe de ce grand groupe (un seul niveau).
 
 ## Hébergement
