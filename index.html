@@ -419,6 +419,12 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .tree li:only-child::before{display:none}
 .tree li:only-child::after{border-top:0;border-radius:0}
 .tree>li::before,.tree>li::after{display:none}
+.support-rail{display:grid;gap:5px;margin:9px 0 0 34px;padding:7px 8px 7px 15px;border-left:2px dashed var(--line-2);align-self:flex-start;max-width:230px}
+.reference-rail{border-left-style:dotted;opacity:.82;margin-left:54px}
+.support-title{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);text-align:left}
+.support-node{display:grid;grid-template-columns:4px 1fr;gap:7px;align-items:center;width:205px;padding:6px 8px;border:1px dashed var(--line-2);border-radius:8px;background:color-mix(in srgb,var(--card) 80%,transparent);text-align:left;cursor:pointer}
+.support-node:hover{border-color:var(--g);background:var(--card)}
+.support-node .bar{height:100%;min-height:28px;border-radius:3px;background:var(--g);opacity:.6}.support-node .txt{min-width:0}.support-node strong,.support-node small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.support-node strong{font-size:11.5px}.support-node small{font-size:10px;color:var(--ink-3)}
 .tnode{
   position:relative;width:196px;padding:12px 12px 8px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);
   box-shadow:var(--shadow);display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;
@@ -907,6 +913,7 @@ const ui = {
   treeImportance: 'all',
   treeDirection: 'all',
   treeCollapsed: new Set(),
+  treeGroup: null,
   journeyId: null,
   mapQuery: '',
   statusFilter: 'all',
@@ -1841,7 +1848,7 @@ function renderDrawer() {
    chaque document n'apparaît qu'une fois, au niveau le plus proche de la racine).
    ========================================================================== */
 function buildTree(rootId, depth) {
-  const root = { id: rootId, children: [], elsewhere: 0, beyond: 0 };
+  const root = { id: rootId, children: [], supports: [], references: [], elsewhere: 0, beyond: 0 };
   const byId = new Map([[rootId, root]]);
   let level = [root];
   for (let d = 0; d < depth && level.length; d++) {
@@ -1857,12 +1864,23 @@ function buildTree(rootId, depth) {
         if(ui.treeDirection==='in'&&directed&&l.b!==node.id)return false;
         return true;
       });
-      for (const doc of sortedDocs(candidates.map(l=>getDoc(l.a===node.id?l.b:l.a)).filter(Boolean))) {
+      const primary=candidates.filter(l=>l.importance==='required'||['requires','produces','replaces'].includes(l.type));
+      const supports=candidates.filter(l=>!primary.includes(l)&&['applies','supports'].includes(l.type));
+      const references=candidates.filter(l=>!primary.includes(l)&&!supports.includes(l));
+      for (const doc of sortedDocs(primary.map(l=>getDoc(l.a===node.id?l.b:l.a)).filter(Boolean))) {
         if (byId.has(doc.id)) { if (doc.id !== node.parent) node.elsewhere++; continue; }
         const edge=linkBetween(node.id,doc.id);
-        const child = { id: doc.id, parent: node.id, relation:relationText(edge,node.id), importance:edge?.importance||'info', note:edge?.note||'', children: [], elsewhere: 0, beyond: 0 };
+        const child = { id: doc.id, parent: node.id, relation:relationText(edge,node.id), importance:edge?.importance||'info', note:edge?.note||'', children: [], supports: [], references: [], elsewhere: 0, beyond: 0 };
         byId.set(doc.id, child); node.children.push(child); next.push(child);
       }
+      const addSide=(edge,bucket)=>{
+        const doc=getDoc(edge.a===node.id?edge.b:edge.a); if(!doc)return;
+        if(byId.has(doc.id)){if(doc.id!==node.parent)node.elsewhere++;return}
+        const support={id:doc.id,parent:node.id,relation:relationText(edge,node.id),importance:edge.importance||'info',note:edge.note||''};
+        byId.set(doc.id,support);node[bucket].push(support);
+      };
+      for(const edge of supports)addSide(edge,'supports');
+      for(const edge of references)addSide(edge,'references');
     }
     level = next;
   }
@@ -1872,11 +1890,37 @@ function buildTree(rootId, depth) {
 }
 function openTree(id, { push = true } = {}) {
   if (push && ui.treeRoot && ui.treeRoot !== id) ui.treeHistory.push(ui.treeRoot);
-  ui.treeRoot = id; ui.selectedId = id;
+  ui.treeRoot = id; ui.selectedId = id; ui.treeGroup = null;
   setView('arbre');
+}
+function treeGroupOptions(selected){return orderedGroups().map(g=>`<option value="${g.id}" ${g.id===selected?'selected':''}>${g.parent?'↳ ':''}${esc(groupLabel(g))}</option>`).join('')}
+function renderGroupTree(host) {
+  const group=getGroup(ui.treeGroup), exact=!!group.parent;
+  const docs=state.docs.filter(d=>exact?d.group===group.id:inGroup(d,group.id));
+  const ids=new Set(docs.map(d=>d.id));
+  const primary=l=>l.importance==='required'||['requires','produces','replaces'].includes(l.type);
+  const hasParent=id=>state.links.some(l=>primary(l)&&ids.has(l.a)&&ids.has(l.b)&&l.b===id);
+  let roots=sortedDocs(docs.filter(d=>!hasParent(d.id))); if(!roots.length)roots=sortedDocs(docs);
+  const seen=new Set();
+  const branch=(d,depth=0)=>{
+    if(!d||seen.has(d.id))return'';seen.add(d.id);
+    const edges=state.links.filter(l=>(l.a===d.id||l.b===d.id)&&ids.has(l.a===d.id?l.b:l.a));
+    const main=edges.filter(primary).map(l=>getDoc(l.a===d.id?l.b:l.a)).filter(x=>x&&!seen.has(x.id));
+    const guides=edges.filter(l=>!primary(l)&&['applies','supports'].includes(l.type)).map(l=>({doc:getDoc(l.a===d.id?l.b:l.a),link:l})).filter(x=>x.doc&&!seen.has(x.doc.id));
+    const refs=edges.filter(l=>!primary(l)&&!['applies','supports'].includes(l.type)).map(l=>({doc:getDoc(l.a===d.id?l.b:l.a),link:l})).filter(x=>x.doc&&!seen.has(x.doc.id));
+    const side=(items,title,cls='')=>items.length?`<div class="support-rail ${cls}"><span class="support-title">${title}</span>${items.map(x=>{seen.add(x.doc.id);return `<button class="support-node" data-group-doc="${x.doc.id}" style="--g:${groupOf(x.doc).color}"><span class="bar"></span><span class="txt"><strong>${esc(x.doc.ref||x.doc.name)}</strong><small>${esc(relationText(x.link,d.id))}</small></span></button>`}).join('')}</div>`:'';
+    return `<li><div class="tnode ${depth===0?'root':''}" data-group-doc="${d.id}" style="--g:${groupOf(d).color}"><span class="tbar"></span><span class="tgrp">${esc(groupLabel(groupOf(d)))}</span><span class="tref">${esc(d.ref||'—')}</span><span class="tname">${esc(d.name||'Sans titre')}</span></div>${side(guides,'Guides et précisions')}${side(refs,'Références associées','reference-rail')}${main.length&&depth<ui.treeDepth?`<ul>${main.map(x=>branch(x,depth+1)).join('')}</ul>`:''}</li>`;
+  };
+  host.innerHTML=`<div class="tree-bar"><div class="tree-root" style="--g:${group.color}"><span class="swatch"></span><strong>${esc(groupLabel(group))}</strong></div><span class="tree-stats">${docs.length} document${docs.length>1?'s':''}</span><select id="tree-group-select" class="btn sm">${treeGroupOptions(group.id)}</select><button class="btn sm" id="tree-doc-mode">Revenir à un document</button><span class="spacer"></span><span class="label">Niveaux</span><div class="seg small" id="tree-depth">${[1,2,3,4].map(n=>`<button data-d="${n}" class="${ui.treeDepth===n?'on':''}">${n}</button>`).join('')}</div><button class="btn sm" id="tree-print">Imprimer / PDF</button></div><div class="tree-wrap"><div class="tree-scale" style="zoom:${ui.treeZoom}">${docs.length?`<ul class="tree group-tree">${roots.map(d=>branch(d)).join('')}${sortedDocs(docs.filter(d=>!seen.has(d.id))).map(d=>branch(d)).join('')}</ul>`:'<div class="alert-empty">Aucun document dans ce groupe.</div>'}</div></div>`;
+  $('#tree-group-select').addEventListener('change',e=>{ui.treeGroup=e.target.value;renderTree()});
+  $('#tree-doc-mode').addEventListener('click',()=>{ui.treeGroup=null;renderTree()});
+  $$('#tree-depth button',host).forEach(b=>b.addEventListener('click',()=>{ui.treeDepth=+b.dataset.d;renderTree()}));
+  $$('[data-group-doc]',host).forEach(el=>el.addEventListener('click',()=>openTree(el.dataset.groupDoc)));
+  $('#tree-print').addEventListener('click',()=>window.print());
 }
 function renderTree() {
   const host = $('#tree-view');
+  if(ui.treeGroup)return renderGroupTree(host);
   const doc = getDoc(ui.treeRoot);
   if (!doc) {
     host.innerHTML = `<div class="empty"><div class="inner">
@@ -1884,8 +1928,10 @@ function renderTree() {
       <h2>Arbre des liens</h2>
       <p>Choisissez un document racine : l’arbre montre ses documents liés, puis les leurs, niveau par niveau, comme un arbre généalogique.</p>
       <div id="tree-picker" style="text-align:left;margin:0 auto;max-width:440px"></div>
+      <div style="display:flex;gap:8px;margin:16px auto 0;max-width:440px"><select id="tree-empty-group" class="btn" style="flex:1">${treeGroupOptions(topGroups()[0]?.id)}</select><button class="btn" id="tree-empty-group-go">Voir le groupe</button></div>
     </div></div>`;
     mountLinker($('#tree-picker'), { exclude: () => new Set(), onPick: d => openTree(d.id), allowCreate: false, placeholder: 'Document racine : nom ou référence… (↓ pour les récents)', icon: '⌕' });
+    $('#tree-empty-group-go').addEventListener('click',()=>{ui.treeGroup=$('#tree-empty-group').value;renderTree()});
     setTimeout(() => $('#tree-picker .linker-input')?.focus(), 30);
     return;
   }
@@ -1911,12 +1957,14 @@ function renderTree() {
       </span>
     </div>`;
   };
-  const sub = n => n.children.length ? `<ul>${n.children.map(c => `<li>${nodeHtml(c, false)}${sub(c)}</li>`).join('')}</ul>` : '';
+  const sideHtml=(items,title,cls='')=>items?.length?`<div class="support-rail ${cls}"><span class="support-title">${title}</span>${items.map(s=>{const d=getDoc(s.id),gg=groupOf(d);return `<button class="support-node" data-support="${d.id}" style="--g:${gg.color}" title="${esc(s.relation)}"><span class="bar"></span><span class="txt"><strong>${esc(d.ref||d.name||'—')}</strong><small>${esc(s.relation)} · ${esc(d.name||'Sans titre')}</small></span></button>`}).join('')}</div>`:'';
+  const sub = n => `${sideHtml(n.supports,'Guides et précisions')}${sideHtml(n.references,'Références associées','reference-rail')}${n.children.length ? `<ul>${n.children.map(c => `<li>${nodeHtml(c, false)}${sub(c)}</li>`).join('')}</ul>` : ''}`;
   host.innerHTML = `
     <div class="tree-bar">
       ${back ? `<button class="btn sm ghost" id="tree-back">← ${esc(back.ref || back.name)}</button>` : ''}
       <div class="tree-root" style="--g:${g.color}"><span class="swatch"></span><span class="mono">${esc(doc.ref || '—')}</span><strong>${esc(doc.name || 'Sans titre')}</strong></div>
-      <span class="tree-stats">${count} document${count > 1 ? 's' : ''}${root.children.length ? '' : ' · aucun lien'}</span>
+      <span class="tree-stats">${count} document${count > 1 ? 's' : ''}${root.children.length || root.supports.length || root.references.length ? '' : ' · aucun lien'}</span>
+      <select id="tree-group-mode" class="btn sm"><option value="">Vue document</option>${treeGroupOptions('')}</select>
       <div class="spacer"></div>
       <span class="label">Niveaux</span>
       <div class="seg small" id="tree-depth">${[1, 2, 3, 4].map(n => `<button data-d="${n}" class="${ui.treeDepth === n ? 'on' : ''}">${n}</button>`).join('')}</div>
@@ -1941,6 +1989,7 @@ function renderTree() {
     el.addEventListener('click', e => { if (e.target.closest('.topen')) return; go(); });
     el.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
   });
+  $$('.support-node',host).forEach(el=>el.addEventListener('click',()=>openTree(el.dataset.support)));
   $$('.topen:not(.tcollapse)', host).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); select(b.dataset.open); setView('fiches'); }));
   $$('.tcollapse',host).forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const id=b.dataset.collapse;ui.treeCollapsed.has(id)?ui.treeCollapsed.delete(id):ui.treeCollapsed.add(id);renderTree()}));
   $$('#tree-depth button', host).forEach(b => b.addEventListener('click', () => { ui.treeDepth = +b.dataset.d; renderTree(); }));
@@ -1948,6 +1997,7 @@ function renderTree() {
   $('#tree-back')?.addEventListener('click', () => { const prev = ui.treeHistory.pop(); if (prev) openTree(prev, { push: false }); });
   $('#tree-fiche').addEventListener('click', () => { select(doc.id); setView('fiches'); });
   $('#tree-map').addEventListener('click', () => { setView('carte'); ui.isolate = 1; graph.setSelected(doc.id); renderDrawer(); graph.centerOn(doc.id); });
+  $('#tree-group-mode').addEventListener('change',e=>{if(e.target.value){ui.treeGroup=e.target.value;renderTree()}});
   $('#tree-print').addEventListener('click',()=>window.print());
   $('#tree-direction').value=ui.treeDirection; $('#tree-relation').value=ui.treeRelation; $('#tree-importance').value=ui.treeImportance;
   $('#tree-direction').addEventListener('change',e=>{ui.treeDirection=e.target.value;renderTree()}); $('#tree-relation').addEventListener('change',e=>{ui.treeRelation=e.target.value;renderTree()}); $('#tree-importance').addEventListener('change',e=>{ui.treeImportance=e.target.value;renderTree()});
