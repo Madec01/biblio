@@ -89,8 +89,8 @@ exportées ou importées en JSON.
 
 ### Arbre des liens
 
-- Troisième vue, façon arbre généalogique horizontal : un document racine à
-  gauche, ses documents filles à droite, puis les leurs, sur 1 à 4 niveaux.
+- Troisième vue, façon arbre généalogique vertical : un document racine en
+  haut, ses documents filles en dessous, puis les leurs, sur 1 à 4 niveaux.
 - Ouvrez-la depuis une fiche (« Arbre des liens »), depuis le tiroir de la
   carte, ou depuis l'onglet Arbre (touche `4`) en choisissant une racine.
 - Chaque document n'apparaît qu'une fois, au niveau le plus proche de la
