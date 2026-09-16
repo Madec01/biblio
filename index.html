@@ -182,6 +182,18 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .chip .swatch{width:8px;height:8px;border-radius:50%;background:var(--g,var(--ink-3))}
 .chip.on .swatch{outline:2px solid color-mix(in srgb,var(--paper) 60%,transparent)}
+.chips.sub{width:100%;padding:6px 0 0 6px;border-left:2px solid var(--g);margin-left:6px;align-items:center}
+.sub-arrow{color:var(--ink-3);font-size:13px;margin-right:2px}
+.f-groups{display:flex;flex-direction:column;gap:8px;margin:2px 0 18px}
+.pills.sub{padding-left:8px;border-left:2px solid var(--g);margin-left:6px;align-items:center}
+.pills.sub .pill{padding:4px 10px 4px 7px;font-size:12.5px}
+.group-head.sub{padding-top:8px;padding-left:22px;letter-spacing:.08em}
+.group-head.sub .swatch{border-radius:50%;width:8px;height:8px}
+.lg-item.sub{padding-left:24px;font-size:13px}
+.lg-item.sub .swatch{width:9px;height:9px;border-radius:50%}
+.grp-row.sub{padding-left:26px}
+.grp-row.sub.add{grid-template-columns:1fr;padding:2px 0 8px 26px}
+.grp-row.sub.add .btn{justify-self:start}
 .index-list{flex:1;overflow:auto;padding:4px 10px 16px;scrollbar-width:thin}
 .group-head{
   display:flex;align-items:center;gap:8px;padding:14px 8px 6px;font-size:11.5px;letter-spacing:.12em;
@@ -346,6 +358,7 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
   backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:var(--shadow);
   display:flex;flex-direction:column;gap:3px;max-width:230px;transition:transform .3s cubic-bezier(.2,.7,.2,1)
 }
+.map-legend.hide{transform:translateX(-376px)}
 .map-legend .lg-title{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding:2px 8px 6px;display:flex;justify-content:space-between;gap:10px}
 .map-legend .lg-title button{color:var(--accent);letter-spacing:0;text-transform:none;font-size:12px}
 .lg-item{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;width:100%;text-align:left;font-size:13.5px;transition:background .15s,opacity .15s}
@@ -600,11 +613,17 @@ function load() {
 }
 function sanitize(s) {
   const out = freshState();
-  if (Array.isArray(s.groups) && s.groups.length) out.groups = s.groups.filter(g => g && g.id && g.name).map(g => ({ id: String(g.id), name: String(g.name), color: /^#[0-9a-f]{6}$/i.test(g.color) ? g.color : PALETTE[0] }));
+  if (Array.isArray(s.groups) && s.groups.length) {
+    out.groups = s.groups.filter(g => g && g.id && g.name).map(g => ({ id: String(g.id), name: String(g.name), color: /^#[0-9a-f]{6}$/i.test(g.color) ? g.color : PALETTE[0], parent: g.parent ? String(g.parent) : undefined }));
+    const tops = new Set(out.groups.filter(g => !g.parent).map(g => g.id));
+    // un sous-groupe doit pointer vers un grand groupe existant (un seul niveau)
+    out.groups.forEach(g => { if (g.parent && !tops.has(g.parent)) delete g.parent; });
+    if (!out.groups.some(g => !g.parent)) out.groups.forEach(g => delete g.parent);
+  }
   const gids = new Set(out.groups.map(g => g.id));
   out.docs = (Array.isArray(s.docs) ? s.docs : []).filter(d => d && d.id).map(d => ({
     id: String(d.id), name: String(d.name ?? ''), ref: String(d.ref ?? ''), note: String(d.note ?? ''),
-    group: gids.has(d.group) ? d.group : out.groups[0].id,
+    group: gids.has(d.group) ? d.group : out.groups.find(g => !g.parent).id,
     x: Number.isFinite(d.x) ? d.x : undefined, y: Number.isFinite(d.y) ? d.y : undefined,
     createdAt: d.createdAt || Date.now(), updatedAt: d.updatedAt || Date.now(),
   }));
@@ -617,8 +636,20 @@ let state = load() || freshState();
 const save = debounce(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { toast('Sauvegarde impossible (stockage plein ?)'); } }, 150);
 
 const getDoc = id => state.docs.find(d => d.id === id);
-const getGroup = id => state.groups.find(g => g.id === id) || state.groups[0];
+const getGroup = id => state.groups.find(g => g.id === id) || defaultGroup();
 const groupOf = doc => getGroup(doc.group);
+const topGroups = () => state.groups.filter(g => !g.parent);
+const childrenOf = id => state.groups.filter(g => g.parent === id);
+const defaultGroup = () => topGroups()[0] || state.groups[0];
+const rootOf = g => g.parent ? (state.groups.find(x => x.id === g.parent) || g) : g;
+const rootIdOfDoc = doc => rootOf(groupOf(doc)).id;
+const groupLabel = g => g.parent ? `${rootOf(g).name} › ${g.name}` : g.name;
+/* Grands groupes puis leurs sous-groupes, dans l'ordre d'affichage. */
+const orderedGroups = () => topGroups().flatMap(t => [t, ...childrenOf(t.id)]);
+/* Un document est « dans » un groupe s'il y est directement ou via un de ses sous-groupes. */
+const inGroup = (doc, gid) => doc.group === gid || rootIdOfDoc(doc) === gid;
+const countInGroup = gid => state.docs.filter(d => inGroup(d, gid)).length;
+const tint = (hex, amt = .28) => { const [r, g, b] = hexToRgb(hex); const f = v => Math.round(v + (255 - v) * amt).toString(16).padStart(2, '0'); return '#' + f(r) + f(g) + f(b); };
 const linkedIds = id => state.links.filter(l => l.a === id || l.b === id).map(l => l.a === id ? l.b : l.a);
 const degree = id => state.links.reduce((n, l) => n + (l.a === id || l.b === id), 0);
 const isLinked = (a, b) => state.links.some(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
@@ -634,7 +665,7 @@ function removeLink(a, b) {
 }
 function touch(id) { const d = getDoc(id); if (d) d.updatedAt = Date.now(); }
 function createDoc({ name, ref = '', group, note = '' }) {
-  const d = { id: uid(), name: name.trim(), ref: ref.trim(), note, group: group || state.groups[0].id, createdAt: Date.now(), updatedAt: Date.now() };
+  const d = { id: uid(), name: name.trim(), ref: ref.trim(), note, group: group || defaultGroup().id, createdAt: Date.now(), updatedAt: Date.now() };
   state.docs.push(d); save(); graph.sync(); return d;
 }
 function deleteDoc(id) {
@@ -645,8 +676,8 @@ function deleteDoc(id) {
 function sortedDocs(list) { return [...list].sort((a, b) => collator.compare(a.name || a.ref, b.name || b.ref)); }
 function groupedDocs(list) {
   const map = new Map(state.groups.map(g => [g.id, []]));
-  for (const d of list) (map.get(d.group) || map.get(state.groups[0].id)).push(d);
-  return state.groups.map(g => ({ group: g, docs: sortedDocs(map.get(g.id)) })).filter(x => x.docs.length);
+  for (const d of list) (map.get(d.group) || map.get(defaultGroup().id)).push(d);
+  return orderedGroups().map(g => ({ group: g, docs: sortedDocs(map.get(g.id)) })).filter(x => x.docs.length);
 }
 function matches(doc, q) {
   if (!q) return true;
@@ -665,6 +696,7 @@ function highlight(text, q) {
    ========================================================================== */
 function sampleData() {
   const s = freshState();
+  s.groups.push({ id: 'g_ec_base', name: 'Base documentaire EC', color: tint('#6a4d9c'), parent: 'g_equipe' });
   const mk = (ref, name, group, note = '') => { const d = { id: uid(), ref, name, group, note, createdAt: Date.now(), updatedAt: Date.now() }; s.docs.push(d); return d.id; };
   const MQ  = mk('MQ-001',      'Manuel qualité',                          'g_qualite', 'Document chapeau du système qualité. Décrit l’organisation, les responsabilités et les processus.');
   const PQ  = mk('PQ-012',      'Procédure de traitement des écarts',       'g_qualite', 'À appliquer dès qu’un écart est constaté en intervention.');
@@ -681,11 +713,13 @@ function sampleData() {
   const CA  = mk('CA-P-15',     'Cahier d’analyse — pompe primaire',        'g_modeop');
   const MO2 = mk('MO-CS-01',    'Mode opératoire — consignation',           'g_modeop');
   const NO  = mk('NO-01',       'Note d’organisation du service',           'g_autre');
+  const BD1 = mk('EC-BD-01',    'Trame de fiche de poste',                  'g_ec_base', 'Base interne à l’équipe commune.');
+  const BD2 = mk('EC-BD-02',    'Liste des astreintes',                     'g_ec_base');
   const L = (a, b) => s.links.push(a < b ? { a, b } : { a: b, b: a });
   L(MQ, PQ); L(PQ, FQ); L(MQ, NO); L(PQ, DPI);
   L(DPI, ADR); L(DPI, GPV); L(DPI, PP); L(DPI, MO1); L(DPI, CA);
   L(ADR, PP); L(ADR, CS); L(GPV, MO1);
-  L(PL, DPI); L(PL, CR); L(CR, NO);
+  L(PL, DPI); L(PL, CR); L(CR, NO); L(BD1, PL); L(BD2, PL); L(BD1, BD2);
   L(CS, RGE); L(PP, CS); L(MO2, CS); L(MO2, MO1); L(CA, RGE); L(MO1, PQ);
   return s;
 }
@@ -745,7 +779,7 @@ function select(id, { pushHistory = false, scroll = true } = {}) {
   if (ui.view === 'carte') { renderDrawer(); graph.setSelected(id); }
 }
 function startCreate(prefill = {}) {
-  ui.creating = { name: '', ref: '', note: '', group: (ui.filter !== 'all' && ui.filter !== 'orphan') ? ui.filter : state.groups[0].id, links: [], ...prefill };
+  ui.creating = { name: '', ref: '', note: '', group: (ui.filter !== 'all' && ui.filter !== 'orphan') ? ui.filter : defaultGroup().id, links: [], ...prefill };
   ui.selectedId = null; ui.history = [];
   setView('fiches');
   document.body.classList.add('show-fiche');
@@ -758,18 +792,25 @@ function startCreate(prefill = {}) {
    ========================================================================== */
 function renderFilters() {
   const f = $('#filters');
+  const cur = (ui.filter !== 'all' && ui.filter !== 'orphan') ? getGroup(ui.filter) : null;
+  const curTop = cur ? rootOf(cur) : null;
   const chips = [
     { id: 'all', label: 'Tous' },
-    ...state.groups.map(g => ({ id: g.id, label: g.name, color: g.color })),
+    ...topGroups().map(g => ({ id: g.id, label: g.name, color: g.color, on: curTop && curTop.id === g.id })),
     { id: 'orphan', label: 'Sans lien' },
   ];
-  f.innerHTML = chips.map(c => `<button class="chip ${ui.filter === c.id ? 'on' : ''}" data-f="${c.id}" ${c.color ? `style="--g:${c.color}"` : ''}>${c.color ? '<span class="swatch"></span>' : ''}${esc(c.label)}</button>`).join('');
+  const subs = curTop ? childrenOf(curTop.id) : [];
+  f.innerHTML = chips.map(c => `<button class="chip ${(ui.filter === c.id || c.on) ? 'on' : ''}" data-f="${c.id}" ${c.color ? `style="--g:${c.color}"` : ''}>${c.color ? '<span class="swatch"></span>' : ''}${esc(c.label)}</button>`).join('')
+    + (subs.length ? `<div class="chips sub" style="--g:${curTop.color}"><span class="sub-arrow">↳</span>
+        <button class="chip ${ui.filter === curTop.id ? 'on' : ''}" data-f="${curTop.id}">Tout le groupe</button>
+        ${subs.map(g => `<button class="chip ${ui.filter === g.id ? 'on' : ''}" data-f="${g.id}" style="--g:${g.color}"><span class="swatch"></span>${esc(g.name)}</button>`).join('')}
+      </div>` : '');
   $$('.chip', f).forEach(b => b.addEventListener('click', () => { ui.filter = b.dataset.f; renderFilters(); renderIndex(); }));
 }
 function filteredDocs() {
   return state.docs.filter(d => {
     if (ui.filter === 'orphan' && degree(d.id) > 0) return false;
-    if (ui.filter !== 'all' && ui.filter !== 'orphan' && d.group !== ui.filter) return false;
+    if (ui.filter !== 'all' && ui.filter !== 'orphan' && !inGroup(d, ui.filter)) return false;
     return matches(d, ui.query);
   });
 }
@@ -785,7 +826,7 @@ function renderIndex() {
     return;
   }
   list.innerHTML = groupedDocs(docs).map(({ group, docs }) => `
-    <div class="group-head" style="--g:${group.color}"><span class="swatch"></span>${esc(group.name)}<span class="n">${docs.length}</span></div>
+    <div class="group-head ${group.parent ? 'sub' : ''}" style="--g:${group.color}"><span class="swatch"></span>${esc(group.name)}<span class="n">${docs.length}</span></div>
     ${docs.map(d => `
       <button class="doc-item ${d.id === ui.selectedId ? 'on' : ''}" data-id="${d.id}" style="--g:${group.color}">
         <span class="tab"></span>
@@ -817,14 +858,12 @@ function renderFiche() {
       <span class="status" id="save-status"><span class="dotok"></span>Enregistré</span>
     </div>
     <article class="card" style="--g:${g.color}" data-id="${doc.id}">
-      <div class="card-tab" id="card-tab"><span class="swatch"></span><span id="card-tab-name">${esc(g.name)}</span></div>
+      <div class="card-tab" id="card-tab"><span class="swatch"></span><span id="card-tab-name">${esc(groupLabel(g))}</span></div>
       <input class="f-name" id="f-name" value="${esc(doc.name)}" placeholder="Nom du document" aria-label="Nom du document" spellcheck="false">
       <div class="f-row">
         <input class="f-ref" id="f-ref" value="${esc(doc.ref)}" placeholder="RÉFÉRENCE" aria-label="Référence" spellcheck="false">
-        <div class="pills" id="f-group" role="radiogroup" aria-label="Groupe">
-          ${state.groups.map(x => `<button class="pill ${x.id === doc.group ? 'on' : ''}" data-g="${x.id}" style="--g:${x.color}" role="radio" aria-checked="${x.id === doc.group}"><span class="swatch"></span>${esc(x.name)}</button>`).join('')}
-        </div>
       </div>
+      <div class="f-groups" id="f-group"></div>
       <textarea class="f-note" id="f-note" rows="1" placeholder="Note, contexte, où le trouver… (facultatif)">${esc(doc.note)}</textarea>
 
       <div class="divider"><h3>Documents liés</h3><span class="n" id="links-count">${degree(doc.id)}</span></div>
@@ -851,13 +890,11 @@ function renderFiche() {
   grow();
   nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); refEl.focus(); } });
   refEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#linker .linker-input')?.focus(); } });
-  $$('#f-group .pill').forEach(p => p.addEventListener('click', () => {
-    doc.group = p.dataset.g; doc.updatedAt = Date.now();
-    const ng = groupOf(doc);
-    $$('#f-group .pill').forEach(x => { x.classList.toggle('on', x === p); x.setAttribute('aria-checked', x === p); });
-    $('.card').style.setProperty('--g', ng.color); $('#card-tab-name').textContent = ng.name;
+  renderGroupPicker($('#f-group'), doc.group, ng => {
+    doc.group = ng.id; doc.updatedAt = Date.now();
+    $('.card').style.setProperty('--g', ng.color); $('#card-tab-name').textContent = groupLabel(ng);
     save(); renderIndex(); flash(); graph.sync();
-  }));
+  });
 
   // — liens —
   mountLinker($('#linker'), {
@@ -895,14 +932,12 @@ function renderCreateForm(host) {
       <span class="status" style="opacity:.7">Nouveau document</span>
     </div>
     <article class="card" style="--g:${g.color}">
-      <div class="card-tab"><span class="swatch"></span><span id="card-tab-name">${esc(g.name)}</span></div>
+      <div class="card-tab"><span class="swatch"></span><span id="card-tab-name">${esc(groupLabel(g))}</span></div>
       <input class="f-name" id="f-name" value="${esc(c.name)}" placeholder="Nom du document" aria-label="Nom du document" spellcheck="false">
       <div class="f-row">
         <input class="f-ref" id="f-ref" value="${esc(c.ref)}" placeholder="RÉFÉRENCE" aria-label="Référence" spellcheck="false">
-        <div class="pills" id="f-group" role="radiogroup" aria-label="Groupe">
-          ${state.groups.map(x => `<button class="pill ${x.id === c.group ? 'on' : ''}" data-g="${x.id}" style="--g:${x.color}" role="radio" aria-checked="${x.id === c.group}"><span class="swatch"></span>${esc(x.name)}</button>`).join('')}
-        </div>
       </div>
+      <div class="f-groups" id="f-group"></div>
       <textarea class="f-note" id="f-note" rows="1" placeholder="Note, contexte, où le trouver… (facultatif)">${esc(c.note)}</textarea>
 
       <div class="divider"><h3>Documents liés</h3><span class="n" id="links-count">${c.links.length}</span></div>
@@ -920,11 +955,10 @@ function renderCreateForm(host) {
   noteEl.addEventListener('input', () => { c.note = noteEl.value; noteEl.style.height = 'auto'; noteEl.style.height = noteEl.scrollHeight + 'px'; });
   nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); refEl.focus(); } });
   refEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#linker .linker-input')?.focus(); } });
-  $$('#f-group .pill').forEach(p => p.addEventListener('click', () => {
-    c.group = p.dataset.g; const ng = getGroup(c.group);
-    $$('#f-group .pill').forEach(x => { x.classList.toggle('on', x === p); x.setAttribute('aria-checked', x === p); });
-    $('.card').style.setProperty('--g', ng.color); $('#card-tab-name').textContent = ng.name;
-  }));
+  renderGroupPicker($('#f-group'), c.group, ng => {
+    c.group = ng.id;
+    $('.card').style.setProperty('--g', ng.color); $('#card-tab-name').textContent = groupLabel(ng);
+  });
   mountLinker($('#linker'), {
     exclude: () => new Set(c.links),
     onPick: other => { c.links.push(other.id); renderLinks(); },
@@ -967,12 +1001,36 @@ function renderEmpty(host) {
   $('#e-sample')?.addEventListener('click', loadSample);
 }
 
+/* Options <select> hiérarchiques. */
+function groupOptions(selected) {
+  return topGroups().map(t => {
+    const subs = childrenOf(t.id);
+    if (!subs.length) return `<option value="${t.id}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)}</option>`;
+    return `<optgroup label="${esc(t.name)}"><option value="${t.id}" ${t.id === selected ? 'selected' : ''}>${esc(t.name)} (général)</option>${subs.map(g => `<option value="${g.id}" ${g.id === selected ? 'selected' : ''}>↳ ${esc(g.name)}</option>`).join('')}</optgroup>`;
+  }).join('');
+}
+
+/* Sélecteur de groupe : grands groupes, puis sous-groupes du groupe choisi. */
+function renderGroupPicker(host, currentId, onChange) {
+  const cur = getGroup(currentId), top = rootOf(cur), subs = childrenOf(top.id);
+  host.innerHTML = `
+    <div class="pills" role="radiogroup" aria-label="Groupe">
+      ${topGroups().map(x => `<button class="pill ${x.id === top.id ? 'on' : ''}" data-g="${x.id}" style="--g:${x.color}" role="radio" aria-checked="${x.id === top.id}"><span class="swatch"></span>${esc(x.name)}</button>`).join('')}
+    </div>
+    ${subs.length ? `<div class="pills sub" role="radiogroup" aria-label="Sous-groupe" style="--g:${top.color}">
+      <span class="sub-arrow">↳</span>
+      <button class="pill ${cur.id === top.id ? 'on' : ''}" data-g="${top.id}" role="radio" aria-checked="${cur.id === top.id}">Général</button>
+      ${subs.map(x => `<button class="pill ${x.id === cur.id ? 'on' : ''}" data-g="${x.id}" style="--g:${x.color}" role="radio" aria-checked="${x.id === cur.id}"><span class="swatch"></span>${esc(x.name)}</button>`).join('')}
+    </div>` : ''}`;
+  $$('.pill', host).forEach(p => p.addEventListener('click', () => { const id = p.dataset.g; if (id === currentId) return; renderGroupPicker(host, id, onChange); onChange(getGroup(id)); }));
+}
+
 /* Liste de liens (fiche + tiroir) */
 function renderLinkList(host, docs, { onOpen, onRemove, noNav = false }) {
   if (!docs.length) { host.innerHTML = `<div class="links-empty">Aucun document lié pour l’instant. Utilisez le champ ci-dessus pour en ajouter.</div>`; return; }
   host.innerHTML = `<div class="links">${groupedDocs(docs).map(({ group, docs }) => `
     <div class="links-group" style="--g:${group.color}">
-      <div class="gh"><span class="swatch"></span>${esc(group.name)}</div>
+      <div class="gh"><span class="swatch"></span>${esc(groupLabel(group))}</div>
       ${docs.map(d => `
         <div class="link-row" data-id="${d.id}" role="${noNav ? 'listitem' : 'link'}" tabindex="0" title="${noNav ? '' : 'Ouvrir la fiche'}">
           <span class="bar"></span>
@@ -1003,7 +1061,7 @@ function mountLinker(host, { exclude, onPick, onCreate }) {
     const hasExact = q && items.some(d => norm(d.name) === norm(q) || norm(d.ref) === norm(q));
     menu.innerHTML = `
       ${!q ? `<div class="linker-empty">Récemment modifiés</div>` : ''}
-      ${items.map((d, i) => `<button class="linker-item ${i === hi ? 'hi' : ''}" data-i="${i}" style="--g:${groupOf(d).color}"><span class="swatch"></span><span class="ref">${highlight(d.ref || '—', q)}</span><span class="name">${highlight(d.name || 'Sans titre', q)}</span><span class="grp">${esc(groupOf(d).name)}</span></button>`).join('')}
+      ${items.map((d, i) => `<button class="linker-item ${i === hi ? 'hi' : ''}" data-i="${i}" style="--g:${groupOf(d).color}"><span class="swatch"></span><span class="ref">${highlight(d.ref || '—', q)}</span><span class="name">${highlight(d.name || 'Sans titre', q)}</span><span class="grp">${esc(groupLabel(groupOf(d)))}</span></button>`).join('')}
       ${q && !items.length ? `<div class="linker-empty">Aucun document existant ne correspond à « ${esc(q)} ».</div>` : ''}
       ${q && !hasExact ? `<button class="linker-item create ${hi === items.length ? 'hi' : ''}" data-i="${items.length}"><span class="ic">＋</span><span>Créer « ${esc(q)} » et le lier</span></button>` : ''}`;
     menu.hidden = false;
@@ -1025,7 +1083,7 @@ function mountLinker(host, { exclude, onPick, onCreate }) {
         <div class="grid">
           <input class="c-name" placeholder="Nom du document" value="${looksRef ? '' : esc(name)}" aria-label="Nom">
           <input class="c-ref ref" placeholder="RÉFÉRENCE" value="${looksRef ? esc(name) : ''}" aria-label="Référence">
-          <select class="c-group" aria-label="Groupe">${state.groups.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join('')}</select>
+          <select class="c-group" aria-label="Groupe">${groupOptions()}</select>
         </div>
         <div class="actions"><button class="btn sm ghost c-cancel">Annuler</button><button class="btn sm primary c-ok">Créer et lier</button></div>
       </div>`;
@@ -1091,7 +1149,6 @@ class Graph {
   sync() {
     const keep = new Map(this.nodes.map(n => [n.id, n]));
     const now = performance.now();
-    const gIdx = new Map(state.groups.map((g, i) => [g.id, i]));
     this.nodes = state.docs.map(d => {
       let n = keep.get(d.id);
       if (!n) {
@@ -1099,7 +1156,7 @@ class Graph {
         n = { id: d.id, x: Number.isFinite(d.x) ? d.x : Math.cos(a) * rr, y: Number.isFinite(d.y) ? d.y : Math.sin(a) * rr, vx: 0, vy: 0, born: now };
         if (!Number.isFinite(d.x)) this.alpha = Math.max(this.alpha, .6);
       }
-      n.doc = d; n.gi = gIdx.get(d.group) ?? 0; n.color = groupOf(d).color;
+      const g = groupOf(d); n.doc = d; n.g = g.id; n.root = rootOf(g).id; n.color = g.color;
       return n;
     });
     this.byId = new Map(this.nodes.map(n => [n.id, n]));
@@ -1116,18 +1173,29 @@ class Graph {
     $('#map-empty').hidden = this.nodes.length > 0;
   }
   computeAnchors() {
-    // Chaque groupe reçoit un « territoire » sur un anneau, espacé selon sa taille.
-    const counts = state.groups.map(g => this.nodes.filter(n => n.doc.group === g.id).length);
+    // Chaque grand groupe reçoit un « territoire » sur un anneau, espacé selon sa taille ;
+    // ses sous-groupes se placent autour de son centre.
+    const tops = topGroups();
+    const counts = tops.map(t => this.nodes.filter(n => n.root === t.id).length);
     const radii = counts.map(c => c ? 34 * Math.sqrt(c) + 50 : 0);
-    const present = state.groups.map((g, i) => i).filter(i => counts[i] > 0);
+    const present = tops.map((g, i) => i).filter(i => counts[i] > 0);
     const circ = present.reduce((s, i) => s + 2 * radii[i] + 110, 0);
     const R = present.length <= 1 ? 0 : Math.max(220, circ / (2 * Math.PI));
-    this.anchors = state.groups.map(() => ({ x: 0, y: 0 }));
+    this.anchors = new Map();
     let ang = -Math.PI / 2;
     for (const i of present) {
       const half = (2 * radii[i] + 110) / circ * Math.PI;
       ang += half;
-      this.anchors[i] = { x: Math.cos(ang) * R, y: Math.sin(ang) * R };
+      const t = tops[i], cx = Math.cos(ang) * R, cy = Math.sin(ang) * R;
+      this.anchors.set(t.id, { x: cx, y: cy });
+      const subs = childrenOf(t.id).filter(g => this.nodes.some(n => n.g === g.id));
+      const direct = this.nodes.filter(n => n.g === t.id).length;
+      const slots = subs.length + (direct ? 1 : 0);
+      if (slots > 1) {
+        const rr = radii[i] * .55;
+        subs.forEach((g, j) => { const a = ang + Math.PI + (j + (direct ? 1 : 0)) / slots * Math.PI * 2; this.anchors.set(g.id, { x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr }); });
+        if (direct) this.anchors.set(t.id, { x: cx + Math.cos(ang + Math.PI) * rr, y: cy + Math.sin(ang + Math.PI) * rr });
+      } else subs.forEach(g => this.anchors.set(g.id, { x: cx, y: cy }));
       ang += half;
     }
   }
@@ -1157,14 +1225,14 @@ class Graph {
     for (const e of this.edges) {
       if (!vis.has(e.a.id) || !vis.has(e.b.id)) continue;
       const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
-      const cross = ui.layout === 'groups' && e.a.gi !== e.b.gi;
+      const cross = ui.layout === 'groups' && e.a.root !== e.b.root;
       const L = 80 + e.a.r + e.b.r + (cross ? 120 : 0);
       const f = (d - L) * (cross ? .012 : .045); const fx = dx / d * f, fy = dy / d * f;
       e.a.fx += fx; e.a.fy += fy; e.b.fx -= fx; e.b.fy -= fy;
     }
     for (const n of N) {
       if (!vis.has(n.id)) continue;
-      if (ui.layout === 'groups') { const an = this.anchors[n.gi] || { x: 0, y: 0 }; n.fx += (an.x - n.x) * .07; n.fy += (an.y - n.y) * .07; }
+      if (ui.layout === 'groups') { const an = this.anchors.get(n.g) || this.anchors.get(n.root) || { x: 0, y: 0 }; n.fx += (an.x - n.x) * .07; n.fy += (an.y - n.y) * .07; }
       else { n.fx += -n.x * .004; n.fy += -n.y * .004; }
       if (n === this.dragging) { n.vx = n.vy = 0; continue; }
       n.vx = (n.vx + n.fx * a) * .55; n.vy = (n.vy + n.fy * a) * .55;
@@ -1187,7 +1255,7 @@ class Graph {
       allowed = new Set([this.selected]); let frontier = [this.selected];
       for (let d = 0; d < ui.isolate; d++) { const next = []; for (const id of frontier) for (const m of (this.neigh.get(id) || [])) if (!allowed.has(m)) { allowed.add(m); next.push(m); } frontier = next; }
     }
-    for (const n of this.nodes) { if (ui.hiddenGroups.has(n.doc.group)) continue; if (allowed && !allowed.has(n.id)) continue; s.add(n.id); }
+    for (const n of this.nodes) { if (ui.hiddenGroups.has(n.g) || ui.hiddenGroups.has(n.root)) continue; if (allowed && !allowed.has(n.id)) continue; s.add(n.id); }
     return s;
   }
   /* — rendu — */
@@ -1214,27 +1282,36 @@ class Graph {
 
     // territoires de groupes
     if (ui.layout === 'groups') {
-      state.groups.forEach((g, gi) => {
-        const ns = this.nodes.filter(n => n.gi === gi && vis.has(n.id)); if (!ns.length) return;
-        const pad = 34 + Math.max(...ns.map(n => n.r));
+      const drawTerritory = (g, ns, sub) => {
+        const pad = (sub ? 22 : 34) + Math.max(...ns.map(n => n.r));
         const hull = convexHull(ns.map(n => [n.x, n.y]));
         ctx.beginPath();
         if (hull.length === 1) ctx.arc(hull[0][0], hull[0][1], 1, 0, Math.PI * 2);
         else { ctx.moveTo(hull[0][0], hull[0][1]); for (let i = 1; i < hull.length; i++) ctx.lineTo(hull[i][0], hull[i][1]); ctx.closePath(); }
         // enveloppe « gonflée » : trait épais à jointures rondes + remplissage
         ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-        ctx.lineWidth = pad * 2; ctx.strokeStyle = rgba(g.color, .075); ctx.stroke();
-        ctx.fillStyle = rgba(g.color, .075); ctx.fill();
-        ctx.lineWidth = pad * 2 + 2 / k; ctx.setLineDash([]);
+        const fillA = sub ? .12 : .075, edgeA = sub ? .35 : .22;
+        ctx.lineWidth = pad * 2; ctx.strokeStyle = rgba(g.color, fillA); ctx.stroke();
+        ctx.fillStyle = rgba(g.color, fillA); ctx.fill();
+        ctx.lineWidth = pad * 2 + 2 / k; ctx.setLineDash(sub ? [3 / k, 4 / k] : []);
         ctx.globalCompositeOperation = 'destination-over';
-        ctx.strokeStyle = rgba(g.color, .22); ctx.stroke();
-        ctx.globalCompositeOperation = 'source-over';
-        if (k > .35) {
+        ctx.strokeStyle = rgba(g.color, edgeA); ctx.stroke();
+        ctx.globalCompositeOperation = 'source-over'; ctx.setLineDash([]);
+        if (k > (sub ? .6 : .35)) {
           let cx = 0, top = Infinity; for (const n of ns) { cx += n.x; top = Math.min(top, n.y); } cx /= ns.length;
-          ctx.font = `italic 600 ${Math.max(13, 15 / k)}px Fraunces, Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+          ctx.font = `italic ${sub ? 500 : 600} ${sub ? Math.max(11, 12 / k) : Math.max(13, 15 / k)}px Fraunces, Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
           ctx.fillStyle = rgba(g.color, .85); ctx.fillText(g.name, cx, top - pad - 4 / k);
         }
-      });
+      };
+      for (const t of topGroups()) {
+        const ns = this.nodes.filter(n => n.root === t.id && vis.has(n.id)); if (!ns.length) continue;
+        drawTerritory(t, ns, false);
+      }
+      for (const g of state.groups) {
+        if (!g.parent) continue;
+        const ns = this.nodes.filter(n => n.g === g.id && vis.has(n.id)); if (!ns.length) continue;
+        drawTerritory(g, ns, true);
+      }
     }
     // arêtes
     ctx.lineCap = 'round';
@@ -1311,7 +1388,7 @@ class Graph {
   bind() {
     const c = this.c, tip = $('#map-tip');
     let downAt = null, moved = false, lastTap = 0;
-    const showTip = (n, sx, sy) => { tip.innerHTML = `<span class="ref">${esc(n.doc.ref || '')}</span><span class="name">${esc(n.doc.name || 'Sans titre')}</span><span class="grp">${esc(groupOf(n.doc).name)} · ${(this.neigh.get(n.id) || new Set()).size} lien(s)</span>`; tip.style.left = sx + 'px'; tip.style.top = (sy - n.r * this.k) + 'px'; tip.classList.add('on'); };
+    const showTip = (n, sx, sy) => { tip.innerHTML = `<span class="ref">${esc(n.doc.ref || '')}</span><span class="name">${esc(n.doc.name || 'Sans titre')}</span><span class="grp">${esc(groupLabel(groupOf(n.doc)))} · ${(this.neigh.get(n.id) || new Set()).size} lien(s)</span>`; tip.style.left = sx + 'px'; tip.style.top = (sy - n.r * this.k) + 'px'; tip.classList.add('on'); };
     const hideTip = () => tip.classList.remove('on');
     c.addEventListener('pointerdown', e => {
       c.setPointerCapture(e.pointerId);
@@ -1389,9 +1466,8 @@ const graph = new Graph($('#map'));
 /* Légende & outils de carte */
 function renderLegend() {
   const l = $('#legend');
-  const counts = new Map(state.groups.map(g => [g.id, state.docs.filter(d => d.group === g.id).length]));
   l.innerHTML = `<div class="lg-title"><span>Groupes</span>${ui.hiddenGroups.size ? '<button id="lg-all">tout afficher</button>' : ''}</div>` +
-    state.groups.map(g => `<button class="lg-item ${ui.hiddenGroups.has(g.id) ? 'off' : ''}" data-g="${g.id}" style="--g:${g.color}" title="Afficher / masquer"><span class="swatch"></span>${esc(g.name)}<span class="n">${counts.get(g.id)}</span></button>`).join('');
+    orderedGroups().map(g => `<button class="lg-item ${g.parent ? 'sub' : ''} ${(ui.hiddenGroups.has(g.id) || (g.parent && ui.hiddenGroups.has(g.parent))) ? 'off' : ''}" data-g="${g.id}" style="--g:${g.color}" title="Afficher / masquer"><span class="swatch"></span>${esc(g.name)}<span class="n">${countInGroup(g.id)}</span></button>`).join('');
   $$('.lg-item', l).forEach(b => b.addEventListener('click', () => { const id = b.dataset.g; ui.hiddenGroups.has(id) ? ui.hiddenGroups.delete(id) : ui.hiddenGroups.add(id); renderLegend(); graph.wake(.3); }));
   $('#lg-all')?.addEventListener('click', () => { ui.hiddenGroups.clear(); renderLegend(); graph.wake(.3); });
 }
@@ -1418,7 +1494,7 @@ function renderDrawer() {
     <div class="drawer-top"></div>
     <button class="close" id="dr-close" aria-label="Fermer">×</button>
     <div class="drawer-body">
-      <div class="grp"><span class="swatch"></span>${esc(g.name)}</div>
+      <div class="grp"><span class="swatch"></span>${esc(groupLabel(g))}</div>
       <div class="ref">${esc(doc.ref || '—')}</div>
       <h2>${esc(doc.name || 'Sans titre')}</h2>
       ${doc.note ? `<p class="note">${esc(doc.note)}</p>` : ''}
@@ -1467,35 +1543,54 @@ function groupsDialog() {
   const render = () => {
     openDialog(`
       <h2>Groupes</h2>
-      <p>Les grandes familles de documents. Couleur, nom, et suppression (les documents sont alors déplacés dans le premier groupe).</p>
+      <p>Les grandes familles de documents, et leurs sous-groupes (par exemple une base propre à une équipe). Supprimer un sous-groupe renvoie ses documents dans le grand groupe ; supprimer un grand groupe déplace tout dans le premier grand groupe.</p>
       <div class="body" id="g-list">
-        ${state.groups.map(g => `
-          <div class="grp-row" data-id="${g.id}">
+        ${topGroups().map(t => `
+          <div class="grp-row" data-id="${t.id}">
+            <input type="color" value="${t.color}" aria-label="Couleur">
+            <input type="text" value="${esc(t.name)}" aria-label="Nom du groupe">
+            <span class="n">${countInGroup(t.id)} doc.</span>
+            <button class="btn sm ghost g-del" ${topGroups().length <= 1 ? 'disabled' : ''} title="Supprimer">×</button>
+          </div>
+          ${childrenOf(t.id).map(g => `
+          <div class="grp-row sub" data-id="${g.id}">
             <input type="color" value="${g.color}" aria-label="Couleur">
-            <input type="text" value="${esc(g.name)}" aria-label="Nom du groupe">
-            <span class="n">${state.docs.filter(d => d.group === g.id).length} doc.</span>
-            <button class="btn sm ghost g-del" ${state.groups.length <= 1 ? 'disabled' : ''} title="Supprimer">×</button>
+            <input type="text" value="${esc(g.name)}" aria-label="Nom du sous-groupe">
+            <span class="n">${countInGroup(g.id)} doc.</span>
+            <button class="btn sm ghost g-del" title="Supprimer">×</button>
           </div>`).join('')}
-        <div class="grp-add"><input id="g-new" placeholder="Nouveau groupe…"><button class="btn" id="g-add">Ajouter</button></div>
+          <div class="grp-row sub add"><span></span><button class="btn sm ghost g-sub" data-parent="${t.id}">+ Sous-groupe dans « ${esc(t.name)} »</button></div>
+        `).join('')}
+        <div class="grp-add"><input id="g-new" placeholder="Nouveau grand groupe…"><button class="btn" id="g-add">Ajouter</button></div>
       </div>
       <div class="actions"><button class="btn primary" id="g-close">Terminé</button></div>`);
-    $$('.grp-row', dlg).forEach(row => {
+    $$('.grp-row[data-id]', dlg).forEach(row => {
       const g = getGroup(row.dataset.id);
       row.querySelector('input[type=color]').addEventListener('input', e => { g.color = e.target.value; save(); refreshAll(); });
       row.querySelector('input[type=text]').addEventListener('input', e => { g.name = e.target.value; save(); refreshAll(); });
       row.querySelector('.g-del').addEventListener('click', async () => {
-        const n = state.docs.filter(d => d.group === g.id).length;
-        const target = state.groups.find(x => x.id !== g.id);
-        if (n && !(await confirmDialog({ title: `Supprimer « ${g.name} » ?`, text: `${n} document(s) seront déplacés dans « ${target.name} ».`, okLabel: 'Supprimer', danger: true }))) { render(); return; }
-        state.docs.forEach(d => { if (d.group === g.id) d.group = target.id; });
-        state.groups = state.groups.filter(x => x.id !== g.id);
-        if (ui.filter === g.id) ui.filter = 'all';
+        const removed = new Set([g.id, ...childrenOf(g.id).map(x => x.id)]);
+        const n = state.docs.filter(d => removed.has(d.group)).length;
+        const target = g.parent ? getGroup(g.parent) : topGroups().find(x => x.id !== g.id);
+        const extra = !g.parent && childrenOf(g.id).length ? ` Ses ${childrenOf(g.id).length} sous-groupe(s) seront supprimés.` : '';
+        if ((n || extra) && !(await confirmDialog({ title: `Supprimer « ${g.name} » ?`, text: `${n} document(s) seront déplacés dans « ${target.name} ».${extra}`, okLabel: 'Supprimer', danger: true }))) { render(); return; }
+        state.docs.forEach(d => { if (removed.has(d.group)) d.group = target.id; });
+        state.groups = state.groups.filter(x => !removed.has(x.id));
+        if (removed.has(ui.filter)) ui.filter = 'all';
+        removed.forEach(id => ui.hiddenGroups.delete(id));
         save(); refreshAll(); render();
       });
     });
+    $$('.g-sub', dlg).forEach(b => b.addEventListener('click', () => {
+      const parent = getGroup(b.dataset.parent);
+      const id = uid('g');
+      state.groups.push({ id, name: 'Nouveau sous-groupe', color: tint(parent.color, .25 + .15 * childrenOf(parent.id).length), parent: parent.id });
+      save(); refreshAll(); render();
+      const inp = $(`.grp-row[data-id="${id}"] input[type=text]`, dlg); if (inp) { inp.focus(); inp.select(); }
+    }));
     const add = () => {
       const name = $('#g-new').value.trim(); if (!name) return;
-      state.groups.push({ id: uid('g'), name, color: PALETTE[state.groups.length % PALETTE.length] });
+      state.groups.push({ id: uid('g'), name, color: PALETTE[topGroups().length % PALETTE.length] });
       save(); refreshAll(); render(); $('#g-new').focus();
     };
     $('#g-add').addEventListener('click', add);
@@ -1525,11 +1620,15 @@ $('#file-import').addEventListener('change', async e => {
   $('#i-no').addEventListener('click', closeDialog);
   $('#i-replace').addEventListener('click', () => { state = incoming; ui.selectedId = null; ui.creating = null; ui.filter = 'all'; ui.hiddenGroups.clear(); save(); closeDialog(); refreshAll(); toast('Base remplacée'); });
   $('#i-merge').addEventListener('click', () => {
-    const byName = new Map(state.groups.map(g => [norm(g.name), g]));
     const gmap = new Map();
-    for (const g of incoming.groups) { const ex = state.groups.find(x => x.id === g.id) || byName.get(norm(g.name)); if (ex) gmap.set(g.id, ex.id); else { state.groups.push({ ...g }); gmap.set(g.id, g.id); } }
+    const inc = [...incoming.groups.filter(g => !g.parent), ...incoming.groups.filter(g => g.parent)]; // parents d'abord
+    for (const g of inc) {
+      const parent = g.parent ? gmap.get(g.parent) : undefined;
+      const ex = state.groups.find(x => x.id === g.id) || state.groups.find(x => norm(x.name) === norm(g.name) && (x.parent || undefined) === parent);
+      if (ex) gmap.set(g.id, ex.id); else { state.groups.push({ ...g, parent }); gmap.set(g.id, g.id); }
+    }
     let nd = 0, nl = 0;
-    for (const d of incoming.docs) if (!getDoc(d.id)) { state.docs.push({ ...d, group: gmap.get(d.group) || state.groups[0].id }); nd++; }
+    for (const d of incoming.docs) if (!getDoc(d.id)) { state.docs.push({ ...d, group: gmap.get(d.group) || defaultGroup().id }); nd++; }
     for (const l of incoming.links) if (getDoc(l.a) && getDoc(l.b) && !isLinked(l.a, l.b)) { state.links.push(l); nl++; }
     save(); closeDialog(); refreshAll(); toast(`${nd} document(s) et ${nl} lien(s) ajoutés`);
   });

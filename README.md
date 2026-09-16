@@ -37,9 +37,25 @@ exportées ou importées en JSON.
 - Depuis une fiche, « Voir sur la carte » centre la carte sur le document et
   isole son voisinage.
 
+### Groupes et sous-groupes
+
+- Les **grands groupes** (Qualité, Préparation, Équipe commune, CNPE,
+  Mode Op / CA, Autre par défaut) sont les grandes familles de documents.
+- Chaque grand groupe peut contenir des **sous-groupes**, par exemple une base
+  de documents propre à l'équipe commune. Un document appartient soit au grand
+  groupe (« Général »), soit à l'un de ses sous-groupes.
+- Sur la fiche, choisissez d'abord le grand groupe ; s'il a des sous-groupes,
+  une seconde rangée apparaît pour préciser.
+- Dans l'index, le filtre d'un grand groupe montre tous ses documents et
+  propose ses sous-groupes pour affiner.
+- Sur la carte, chaque sous-groupe forme un territoire dessiné à l'intérieur
+  de celui de son grand groupe ; la légende permet de masquer l'un ou l'autre.
+
 ### Menu (⋯)
 
-- **Gérer les groupes** : renommer, recolorer, ajouter ou supprimer un groupe.
+- **Gérer les groupes** : renommer, recolorer, ajouter ou supprimer un grand
+  groupe, et ajouter un sous-groupe dans chacun (« + Sous-groupe dans … »).
+  Supprimer un sous-groupe renvoie ses documents dans le grand groupe.
 - **Exporter la base** : fichier `biblio-AAAA-MM-JJ.json` (sauvegarde ou partage).
 - **Importer une base** : fusion (ajoute ce qui manque) ou remplacement.
 - **Thème** : auto, clair ou sombre.
@@ -59,13 +75,17 @@ exportées ou importées en JSON.
 ```json
 {
   "version": 1,
-  "groups": [{ "id": "g_qualite", "name": "Qualité", "color": "#2f7370" }],
+  "groups": [
+    { "id": "g_equipe", "name": "Équipe commune", "color": "#6a4d9c" },
+    { "id": "g_ec_base", "name": "Base documentaire EC", "color": "#9d88ba", "parent": "g_equipe" }
+  ],
   "docs":   [{ "id": "d…", "name": "Manuel qualité", "ref": "MQ-001", "group": "g_qualite", "note": "" }],
   "links":  [{ "a": "d…", "b": "d…" }]
 }
 ```
 
 Les liens sont non orientés : un lien de A vers B apparaît sur les deux fiches.
+Un groupe avec `parent` est un sous-groupe de ce grand groupe (un seul niveau).
 
 ## Hébergement
 
