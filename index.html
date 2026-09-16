@@ -261,6 +261,19 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
   border:1px dashed var(--line-2);background:var(--paper-2);min-width:180px;outline:none;transition:border-color .2s
 }
 .f-ref:focus{border-style:solid;border-color:var(--accent)}
+.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 18px}
+.meta-field{display:grid;gap:5px}
+.meta-field.wide{grid-column:span 2}
+.meta-field input,.meta-field select{width:100%;height:40px;padding:0 11px;border-radius:9px;border:1px solid var(--line);background:var(--paper-2);outline:none}
+.meta-field input:focus,.meta-field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);background:var(--card)}
+.relation-add{display:grid;grid-template-columns:190px 1fr;gap:8px;align-items:start}
+.relation-add select{height:46px;padding:0 10px;border:1px solid var(--line-2);border-radius:12px;background:var(--paper-2);outline:none}
+.relation-badge,.status-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:2px 7px;border-radius:999px;font-size:10.5px;line-height:1.35;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.status-badge{background:var(--paper-3);color:var(--ink-2);margin-left:6px}
+.status-badge.obsolete{background:var(--danger-soft);color:var(--danger)}
+.status-badge.applicable{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.quick-filters{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.quick-filters select{min-width:0;height:34px;padding:0 8px;border:1px solid var(--line);border-radius:9px;background:var(--card);font-size:12.5px;color:var(--ink-2)}
 .label{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
 .pills{display:flex;flex-wrap:wrap;gap:6px}
 .pill{
@@ -326,6 +339,8 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .link-row .bar{width:4px;height:26px;border-radius:2px;background:var(--g)}
 .link-row .ref{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-3);min-width:90px}
 .link-row .name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-row .link-main{min-width:0;display:grid;gap:2px}
+.rel-edit{width:max-content;max-width:100%;border:0;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:2px 22px 2px 7px;font-size:10.5px;outline:none}
 .link-row:hover{background:var(--paper-2);border-color:var(--line)}
 .link-row:hover .name{color:var(--accent)}
 .link-row .x{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);opacity:0;transition:all .15s}
@@ -532,6 +547,7 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
   .seg.nav button{padding:6px 10px;font-size:13px}
   .link-row{grid-template-columns:4px 1fr auto}
   .link-row .ref{display:none}
+  .meta-grid{grid-template-columns:1fr 1fr}.meta-field.wide{grid-column:1/-1}.relation-add{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -577,6 +593,10 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
           <span class="kbd">Ctrl K</span>
         </label>
         <div class="chips" id="filters"></div>
+        <div class="quick-filters">
+          <select id="filter-status" aria-label="Filtrer par statut"><option value="all">Tous les statuts</option></select>
+          <select id="filter-type" aria-label="Filtrer par type"><option value="all">Tous les types</option></select>
+        </div>
       </div>
       <div class="index-list" id="index-list"></div>
       <div class="index-foot"><span id="stats"></span><span id="stats-links"></span></div>
@@ -651,6 +671,16 @@ function toast(msg) {
    ========================================================================== */
 const STORAGE_KEY = 'biblio.v1';
 const THEME_KEY = 'biblio.theme';
+const DOC_TYPES = ['Procédure','Mode opératoire','Formulaire / trame','Dossier','Note','Plan / schéma','Contrat','Référentiel','Autre'];
+const DOC_STATUSES = ['À vérifier','Applicable','Brouillon','Obsolète','Archivé'];
+const RELATION_TYPES = [
+  { id:'related', label:'Est lié à', reverse:'Est lié à', directed:false },
+  { id:'requires', label:'Nécessite', reverse:'Est nécessaire à', directed:true },
+  { id:'produces', label:'Produit', reverse:'Est produit par', directed:true },
+  { id:'applies', label:'S’applique à', reverse:'Est encadré par', directed:true },
+  { id:'replaces', label:'Remplace', reverse:'Est remplacé par', directed:true },
+  { id:'supports', label:'Justifie / prouve', reverse:'Est justifié par', directed:true },
+];
 const DEFAULT_GROUPS = [
   { id: 'g_qualite', name: 'Qualité',        color: '#2f7370' },
   { id: 'g_prepa',   name: 'Préparation',    color: '#c07a1c' },
@@ -662,7 +692,7 @@ const DEFAULT_GROUPS = [
 const PALETTE = ['#1d4b7c', '#a8326f', '#0f7c8c', '#8a6b0e', '#5b5f9e', '#b0522a', '#2c7a4b', '#7d4b3a', '#c2185b', '#00695c'];
 
 function freshState() {
-  return { version: 1, groups: DEFAULT_GROUPS.map(g => ({ ...g })), docs: [], links: [] };
+  return { version: 2, groups: DEFAULT_GROUPS.map(g => ({ ...g })), docs: [], links: [] };
 }
 function load() {
   try {
@@ -684,13 +714,16 @@ function sanitize(s) {
   const gids = new Set(out.groups.map(g => g.id));
   out.docs = (Array.isArray(s.docs) ? s.docs : []).filter(d => d && d.id).map(d => ({
     id: String(d.id), name: String(d.name ?? ''), ref: String(d.ref ?? ''), note: String(d.note ?? ''),
+    type: DOC_TYPES.includes(d.type) ? d.type : 'Autre',
+    status: DOC_STATUSES.includes(d.status) ? d.status : 'À vérifier',
+    docVersion: String(d.docVersion ?? ''), tags: String(d.tags ?? ''),
     group: gids.has(d.group) ? d.group : out.groups.find(g => !g.parent).id,
     x: Number.isFinite(d.x) ? d.x : undefined, y: Number.isFinite(d.y) ? d.y : undefined,
     createdAt: d.createdAt || Date.now(), updatedAt: d.updatedAt || Date.now(),
   }));
   const dids = new Set(out.docs.map(d => d.id));
   const seen = new Set();
-  out.links = (Array.isArray(s.links) ? s.links : []).filter(l => l && dids.has(l.a) && dids.has(l.b) && l.a !== l.b).map(l => l.a < l.b ? { a: l.a, b: l.b } : { a: l.b, b: l.a }).filter(l => { const k = l.a + '|' + l.b; if (seen.has(k)) return false; seen.add(k); return true; });
+  out.links = (Array.isArray(s.links) ? s.links : []).filter(l => l && dids.has(l.a) && dids.has(l.b) && l.a !== l.b).map(l => ({ a:String(l.a), b:String(l.b), type:RELATION_TYPES.some(t => t.id === l.type) ? l.type : 'related', note:String(l.note ?? '') })).filter(l => { const k = [l.a,l.b].sort().join('|'); if (seen.has(k)) return false; seen.add(k); return true; });
   return out;
 }
 let state = load() || freshState();
@@ -722,10 +755,16 @@ function shadeOf(parentHex, i) {
 const linkedIds = id => state.links.filter(l => l.a === id || l.b === id).map(l => l.a === id ? l.b : l.a);
 const degree = id => state.links.reduce((n, l) => n + (l.a === id || l.b === id), 0);
 const isLinked = (a, b) => state.links.some(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
-function addLink(a, b) {
+function addLink(a, b, type = 'related', note = '') {
   if (a === b || isLinked(a, b) || !getDoc(a) || !getDoc(b)) return false;
-  state.links.push(a < b ? { a, b } : { a: b, b: a });
+  state.links.push({ a, b, type: RELATION_TYPES.some(t => t.id === type) ? type : 'related', note });
   touch(a); touch(b); save(); graph.sync(); return true;
+}
+const linkBetween = (a,b) => state.links.find(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
+function relationText(link, fromId) {
+  if (!link) return 'Est lié à';
+  const type = RELATION_TYPES.find(t => t.id === link.type) || RELATION_TYPES[0];
+  return !type.directed || link.a === fromId ? type.label : type.reverse;
 }
 function removeLink(a, b) {
   const n = state.links.length;
@@ -733,14 +772,14 @@ function removeLink(a, b) {
   if (state.links.length !== n) { touch(a); touch(b); save(); graph.sync(); }
 }
 function touch(id) { const d = getDoc(id); if (d) d.updatedAt = Date.now(); }
-function createDoc({ name, ref = '', group, note = '' }) {
-  const d = { id: uid(), name: name.trim(), ref: ref.trim(), note, group: group || defaultGroup().id, createdAt: Date.now(), updatedAt: Date.now() };
+function createDoc({ name, ref = '', group, note = '', type = 'Autre', status = 'À vérifier', docVersion = '', tags = '' }) {
+  const d = { id: uid(), name: name.trim(), ref: ref.trim(), note, type, status, docVersion, tags, group: group || defaultGroup().id, createdAt: Date.now(), updatedAt: Date.now() };
   state.docs.push(d); save(); graph.sync(); return d;
 }
 /* Copie d'un document : mêmes champs, mêmes liens (la copie n'est pas liée à l'original). */
 function duplicateDoc(id) {
   const src = getDoc(id); if (!src) return null;
-  const copy = createDoc({ name: (src.name || src.ref) + ' (copie)', ref: src.ref, group: src.group, note: src.note });
+  const copy = createDoc({ name: (src.name || src.ref) + ' (copie)', ref: src.ref, group: src.group, note: src.note, type:src.type, status:'Brouillon', docVersion:src.docVersion, tags:src.tags });
   const s = graph.byId.get(id), n = graph.byId.get(copy.id);
   if (s && n) { n.x = copy.x = s.x + 40; n.y = copy.y = s.y + 40; graph.wake(.3); }
   for (const other of linkedIds(id)) addLink(copy.id, other);
@@ -760,7 +799,7 @@ function groupedDocs(list) {
 function matches(doc, q) {
   if (!q) return true;
   const n = norm(q);
-  return norm(doc.name).includes(n) || norm(doc.ref).includes(n);
+  return [doc.name,doc.ref,doc.note,doc.type,doc.status,doc.docVersion,doc.tags,groupLabel(groupOf(doc))].some(v => norm(v).includes(n));
 }
 function highlight(text, q) {
   if (!q) return esc(text);
@@ -775,7 +814,7 @@ function highlight(text, q) {
 function sampleData() {
   const s = freshState();
   s.groups.push({ id: 'g_ec_base', name: 'Base documentaire EC', color: shadeOf('#6a4d9c', 0), parent: 'g_equipe' });
-  const mk = (ref, name, group, note = '') => { const d = { id: uid(), ref, name, group, note, createdAt: Date.now(), updatedAt: Date.now() }; s.docs.push(d); return d.id; };
+  const mk = (ref, name, group, note = '') => { const d = { id: uid(), ref, name, group, note, type:'Autre', status:'À vérifier', docVersion:'', tags:'', createdAt: Date.now(), updatedAt: Date.now() }; s.docs.push(d); return d.id; };
   const MQ  = mk('MQ-001',      'Manuel qualité',                          'g_qualite', 'Document chapeau du système qualité. Décrit l’organisation, les responsabilités et les processus.');
   const PQ  = mk('PQ-012',      'Procédure de traitement des écarts',       'g_qualite', 'À appliquer dès qu’un écart est constaté en intervention.');
   const FQ  = mk('FQ-003',      'Fiche d’écart (formulaire type)',          'g_qualite');
@@ -820,6 +859,8 @@ const ui = {
   treeZoom: 1,
   treeHistory: [],
   mapQuery: '',
+  statusFilter: 'all',
+  typeFilter: 'all',
 };
 
 /* ==========================================================================
@@ -862,7 +903,7 @@ function select(id, { pushHistory = false, scroll = true } = {}) {
   if (ui.view === 'carte') { renderDrawer(); graph.setSelected(id); }
 }
 function startCreate(prefill = {}) {
-  ui.creating = { name: '', ref: '', note: '', group: (ui.filter !== 'all' && ui.filter !== 'orphan') ? ui.filter : defaultGroup().id, links: [], ...prefill };
+  ui.creating = { name: '', ref: '', note: '', type:'Autre', status:'À vérifier', docVersion:'', tags:'', group: (ui.filter !== 'all' && ui.filter !== 'orphan') ? ui.filter : defaultGroup().id, links: [], ...prefill };
   ui.selectedId = null; ui.history = [];
   setView('fiches');
   document.body.classList.add('show-fiche');
@@ -889,11 +930,16 @@ function renderFilters() {
         ${subs.map(g => `<button class="chip ${ui.filter === g.id ? 'on' : ''}" data-f="${g.id}" style="--g:${g.color}"><span class="swatch"></span>${esc(g.name)}</button>`).join('')}
       </div>` : '');
   $$('.chip', f).forEach(b => b.addEventListener('click', () => { ui.filter = b.dataset.f; renderFilters(); renderIndex(); }));
+  const status = $('#filter-status'), type = $('#filter-type');
+  status.innerHTML = '<option value="all">Tous les statuts</option>' + DOC_STATUSES.map(x => `<option ${ui.statusFilter === x ? 'selected' : ''}>${esc(x)}</option>`).join('');
+  type.innerHTML = '<option value="all">Tous les types</option>' + DOC_TYPES.map(x => `<option ${ui.typeFilter === x ? 'selected' : ''}>${esc(x)}</option>`).join('');
 }
 function filteredDocs() {
   return state.docs.filter(d => {
     if (ui.filter === 'orphan' && degree(d.id) > 0) return false;
     if (ui.filter !== 'all' && ui.filter !== 'orphan' && !inGroup(d, rootOf(getGroup(ui.filter)).id)) return false;
+    if (ui.statusFilter !== 'all' && d.status !== ui.statusFilter) return false;
+    if (ui.typeFilter !== 'all' && d.type !== ui.typeFilter) return false;
     return matches(d, ui.query);
   });
 }
@@ -921,6 +967,7 @@ function renderIndex() {
         <span class="txt">
           <span class="ref">${highlight(d.ref || '—', ui.query)}</span>
           <span class="name">${highlight(d.name || 'Sans titre', ui.query)}</span>
+          <span><span class="status-badge ${norm(d.status)}">${esc(d.status)}</span>${d.docVersion ? `<span class="status-badge">v. ${esc(d.docVersion)}</span>` : ''}</span>
         </span>
         <span class="deg" title="Nombre de liens">${degree(d.id)}</span>
       </button>`).join('')}
@@ -928,6 +975,8 @@ function renderIndex() {
   $$('.doc-item', list).forEach(b => b.addEventListener('click', () => select(b.dataset.id, { scroll: false })));
 }
 $('#q').addEventListener('input', e => { ui.query = e.target.value; renderIndex(); });
+$('#filter-status').addEventListener('change', e => { ui.statusFilter = e.target.value; renderIndex(); });
+$('#filter-type').addEventListener('change', e => { ui.typeFilter = e.target.value; renderIndex(); });
 
 /* ==========================================================================
    Fiche
@@ -951,11 +1000,17 @@ function renderFiche() {
       <div class="f-row">
         <input class="f-ref" id="f-ref" value="${esc(doc.ref)}" placeholder="RÉFÉRENCE" aria-label="Référence" spellcheck="false">
       </div>
+      <div class="meta-grid">
+        <label class="meta-field"><span class="label">Type</span><select id="f-type">${DOC_TYPES.map(x => `<option ${doc.type === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
+        <label class="meta-field"><span class="label">Statut</span><select id="f-status">${DOC_STATUSES.map(x => `<option ${doc.status === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
+        <label class="meta-field"><span class="label">Version / indice</span><input id="f-version" value="${esc(doc.docVersion)}" placeholder="Ex. 3 ou B"></label>
+        <label class="meta-field wide"><span class="label">Mots-clés</span><input id="f-tags" value="${esc(doc.tags)}" placeholder="Ex. robinetterie, tranche 2, avant intervention"></label>
+      </div>
       <div class="f-groups" id="f-group"></div>
       <textarea class="f-note" id="f-note" rows="1" placeholder="Note, contexte, où le trouver… (facultatif)">${esc(doc.note)}</textarea>
 
       <div class="divider"><h3>Documents liés</h3><span class="n" id="links-count">${degree(doc.id)}</span></div>
-      <div id="linker"></div>
+      <div class="relation-add"><select id="relation-type" aria-label="Type de relation">${RELATION_TYPES.map(x => `<option value="${x.id}">${esc(x.label)}…</option>`).join('')}</select><div id="linker"></div></div>
       <div id="links"></div>
 
       <div class="card-foot">
@@ -973,10 +1028,13 @@ function renderFiche() {
   const flash = () => { status.classList.remove('flash'); void status.offsetWidth; status.classList.add('flash'); };
   const commit = debounce(() => { save(); renderIndex(); flash(); graph.sync(); }, 350);
   const nameEl = $('#f-name'), refEl = $('#f-ref'), noteEl = $('#f-note');
+  const metaEls = { type:$('#f-type'), status:$('#f-status'), docVersion:$('#f-version'), tags:$('#f-tags') };
   nameEl.addEventListener('input', () => { doc.name = nameEl.value; doc.updatedAt = Date.now(); commit(); });
   refEl.addEventListener('input', () => { doc.ref = refEl.value; doc.updatedAt = Date.now(); commit(); });
+  refEl.addEventListener('blur', () => { const duplicate = state.docs.find(x => x.id !== doc.id && doc.ref.trim() && norm(x.ref) === norm(doc.ref)); if (duplicate) toast(`Attention : référence déjà utilisée par « ${duplicate.name || duplicate.ref} »`); });
   const grow = () => { noteEl.style.height = 'auto'; noteEl.style.height = noteEl.scrollHeight + 'px'; };
   noteEl.addEventListener('input', () => { doc.note = noteEl.value; doc.updatedAt = Date.now(); grow(); commit(); });
+  Object.entries(metaEls).forEach(([key,el]) => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => { doc[key] = el.value; doc.updatedAt = Date.now(); commit(); }));
   grow();
   nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); refEl.focus(); } });
   refEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#linker .linker-input')?.focus(); } });
@@ -989,12 +1047,13 @@ function renderFiche() {
   // — liens —
   mountLinker($('#linker'), {
     exclude: () => new Set([doc.id, ...linkedIds(doc.id)]),
-    onPick: other => { addLink(doc.id, other.id); renderLinks(); renderIndex(); flash(); toast(`Lié à ${other.ref || other.name}`); },
-    onCreate: draft => { const nd = createDoc(draft); addLink(doc.id, nd.id); renderLinks(); renderIndex(); flash(); toast(`« ${nd.name} » créé et lié`); },
+    onPick: other => { addLink(doc.id, other.id, $('#relation-type').value); renderLinks(); renderIndex(); flash(); toast(`Relation ajoutée avec ${other.ref || other.name}`); },
+    onCreate: draft => { const nd = createDoc(draft); addLink(doc.id, nd.id, $('#relation-type').value); renderLinks(); renderIndex(); flash(); toast(`« ${nd.name} » créé et lié`); },
   });
   const renderLinks = () => {
     $('#links-count').textContent = degree(doc.id);
     renderLinkList($('#links'), linkedIds(doc.id).map(getDoc), {
+      rootId: doc.id,
       onOpen: id => select(id, { pushHistory: true }),
       onRemove: id => { removeLink(doc.id, id); renderLinks(); renderIndex(); flash(); },
     });
@@ -1034,11 +1093,17 @@ function renderCreateForm(host) {
       <div class="f-row">
         <input class="f-ref" id="f-ref" value="${esc(c.ref)}" placeholder="RÉFÉRENCE" aria-label="Référence" spellcheck="false">
       </div>
+      <div class="meta-grid">
+        <label class="meta-field"><span class="label">Type</span><select id="f-type">${DOC_TYPES.map(x => `<option ${c.type === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
+        <label class="meta-field"><span class="label">Statut</span><select id="f-status">${DOC_STATUSES.map(x => `<option ${c.status === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></label>
+        <label class="meta-field"><span class="label">Version / indice</span><input id="f-version" value="${esc(c.docVersion)}" placeholder="Ex. 3 ou B"></label>
+        <label class="meta-field wide"><span class="label">Mots-clés</span><input id="f-tags" value="${esc(c.tags)}" placeholder="Ex. robinetterie, tranche 2"></label>
+      </div>
       <div class="f-groups" id="f-group"></div>
       <textarea class="f-note" id="f-note" rows="1" placeholder="Note, contexte, où le trouver… (facultatif)">${esc(c.note)}</textarea>
 
       <div class="divider"><h3>Documents liés</h3><span class="n" id="links-count">${c.links.length}</span></div>
-      <div id="linker"></div>
+      <div class="relation-add"><select id="relation-type" aria-label="Type de relation">${RELATION_TYPES.map(x => `<option value="${x.id}">${esc(x.label)}…</option>`).join('')}</select><div id="linker"></div></div>
       <div id="links"></div>
 
       <div class="new-actions">
@@ -1050,6 +1115,7 @@ function renderCreateForm(host) {
   nameEl.addEventListener('input', () => c.name = nameEl.value);
   refEl.addEventListener('input', () => c.ref = refEl.value);
   noteEl.addEventListener('input', () => { c.note = noteEl.value; noteEl.style.height = 'auto'; noteEl.style.height = noteEl.scrollHeight + 'px'; });
+  [['f-type','type'],['f-status','status'],['f-version','docVersion'],['f-tags','tags']].forEach(([id,key]) => $('#'+id).addEventListener($('#'+id).tagName === 'SELECT' ? 'change' : 'input', e => c[key] = e.target.value));
   nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); refEl.focus(); } });
   refEl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#linker .linker-input')?.focus(); } });
   renderGroupPicker($('#f-group'), c.group, ng => {
@@ -1057,15 +1123,15 @@ function renderCreateForm(host) {
     $('.card').style.setProperty('--g', ng.color); $('#card-tab-name').textContent = groupLabel(ng);
   });
   mountLinker($('#linker'), {
-    exclude: () => new Set(c.links),
-    onPick: other => { c.links.push(other.id); renderLinks(); },
-    onCreate: draft => { const nd = createDoc(draft); c.links.push(nd.id); renderLinks(); renderIndex(); toast(`« ${nd.name} » créé`); },
+    exclude: () => new Set(c.links.map(x => x.id)),
+    onPick: other => { c.links.push({id:other.id,type:$('#relation-type').value}); renderLinks(); },
+    onCreate: draft => { const nd = createDoc(draft); c.links.push({id:nd.id,type:$('#relation-type').value}); renderLinks(); renderIndex(); toast(`« ${nd.name} » créé`); },
   });
   const renderLinks = () => {
     $('#links-count').textContent = c.links.length;
-    renderLinkList($('#links'), c.links.map(getDoc).filter(Boolean), {
+    renderLinkList($('#links'), c.links.map(x => getDoc(x.id)).filter(Boolean), {
       onOpen: id => { /* en création : on ne navigue pas, on retire seulement */ },
-      onRemove: id => { c.links = c.links.filter(x => x !== id); renderLinks(); },
+      onRemove: id => { c.links = c.links.filter(x => x.id !== id); renderLinks(); },
       noNav: true,
     });
   };
@@ -1075,8 +1141,10 @@ function renderCreateForm(host) {
   $('#cancel-create-2').addEventListener('click', cancel);
   $('#do-create').addEventListener('click', () => {
     if (!c.name.trim() && !c.ref.trim()) { nameEl.focus(); toast('Indiquez au moins un nom ou une référence'); return; }
-    const d = createDoc({ name: c.name || c.ref, ref: c.ref, group: c.group, note: c.note });
-    c.links.forEach(o => addLink(d.id, o));
+    const duplicate = state.docs.find(x => c.ref.trim() && norm(x.ref) === norm(c.ref));
+    if (duplicate) { refEl.focus(); toast(`Cette référence existe déjà : ${duplicate.name || duplicate.ref}`); return; }
+    const d = createDoc({ name: c.name || c.ref, ref: c.ref, group: c.group, note: c.note, type:c.type, status:c.status, docVersion:c.docVersion, tags:c.tags });
+    c.links.forEach(o => addLink(d.id, o.id, o.type));
     ui.creating = null; select(d.id); toast('Document créé');
   });
 }
@@ -1123,7 +1191,7 @@ function renderGroupPicker(host, currentId, onChange) {
 }
 
 /* Liste de liens (fiche + tiroir) */
-function renderLinkList(host, docs, { onOpen, onRemove, noNav = false }) {
+function renderLinkList(host, docs, { onOpen, onRemove, noNav = false, rootId = null }) {
   if (!docs.length) { host.innerHTML = `<div class="links-empty">Aucun document lié pour l’instant. Utilisez le champ ci-dessus pour en ajouter.</div>`; return; }
   host.innerHTML = `<div class="links">${groupedDocs(docs).map(({ group, docs }) => `
     <div class="links-group" style="--g:${group.color}">
@@ -1132,14 +1200,15 @@ function renderLinkList(host, docs, { onOpen, onRemove, noNav = false }) {
         <div class="link-row" data-id="${d.id}" role="${noNav ? 'listitem' : 'link'}" tabindex="0" title="${noNav ? '' : 'Ouvrir la fiche'}">
           <span class="bar"></span>
           <span class="ref">${esc(d.ref || '—')}</span>
-          <span class="name">${esc(d.name || 'Sans titre')}</span>
+          <span class="link-main"><span class="name">${esc(d.name || 'Sans titre')}</span>${rootId ? (onRemove ? `<select class="rel-edit" aria-label="Type de relation">${RELATION_TYPES.map(t => `<option value="${t.id}" ${linkBetween(rootId,d.id)?.type === t.id ? 'selected' : ''}>${esc(rootId === linkBetween(rootId,d.id)?.a || !t.directed ? t.label : t.reverse)}</option>`).join('')}</select>` : `<span class="relation-badge">${esc(relationText(linkBetween(rootId,d.id),rootId))}</span>`) : ''}</span>
           ${onRemove ? `<button class="x" title="Retirer le lien" aria-label="Retirer le lien">×</button>` : '<span></span>'}
         </div>`).join('')}
     </div>`).join('')}</div>`;
   $$('.link-row', host).forEach(row => {
-    row.addEventListener('click', e => { if (e.target.closest('.x')) return; if (!noNav) onOpen(row.dataset.id); });
+    row.addEventListener('click', e => { if (e.target.closest('.x,.rel-edit')) return; if (!noNav) onOpen(row.dataset.id); });
     row.addEventListener('keydown', e => { if (e.key === 'Enter' && !noNav) onOpen(row.dataset.id); });
     row.querySelector('.x')?.addEventListener('click', () => onRemove(row.dataset.id));
+    row.querySelector('.rel-edit')?.addEventListener('change', e => { const link = linkBetween(rootId,row.dataset.id); if (link) { link.type = e.target.value; touch(rootId); save(); graph.dirty = true; toast('Type de relation mis à jour'); } });
   });
 }
 
@@ -1639,7 +1708,7 @@ function renderDrawer() {
       <div id="dr-links"></div>
     </div>`;
   d.classList.add('on'); $('#legend').classList.add('hide');
-  renderLinkList($('#dr-links'), linkedIds(doc.id).map(getDoc), { onOpen: id => { ui.selectedId = id; graph.setSelected(id); renderDrawer(); graph.centerOn(id); } });
+  renderLinkList($('#dr-links'), linkedIds(doc.id).map(getDoc), { rootId:doc.id, onOpen: id => { ui.selectedId = id; graph.setSelected(id); renderDrawer(); graph.centerOn(id); } });
   $('#dr-close').addEventListener('click', () => { ui.selectedId = null; graph.setSelected(null); renderDrawer(); });
   $('#dr-open').addEventListener('click', () => { select(doc.id); setView('fiches'); });
   $('#dr-center').addEventListener('click', () => graph.centerOn(doc.id));
@@ -1663,7 +1732,7 @@ function buildTree(rootId, depth) {
     for (const node of level) {
       for (const doc of sortedDocs(linkedIds(node.id).map(getDoc).filter(Boolean))) {
         if (byId.has(doc.id)) { if (doc.id !== node.parent) node.elsewhere++; continue; }
-        const child = { id: doc.id, parent: node.id, children: [], elsewhere: 0, beyond: 0 };
+        const child = { id: doc.id, parent: node.id, relation:relationText(linkBetween(node.id,doc.id),node.id), children: [], elsewhere: 0, beyond: 0 };
         byId.set(doc.id, child); node.children.push(child); next.push(child);
       }
     }
@@ -1702,6 +1771,7 @@ function renderTree() {
       <span class="tgrp">${esc(groupLabel(gg))}</span>
       <span class="tref">${esc(d.ref || '—')}</span>
       <span class="tname">${esc(d.name || 'Sans titre')}</span>
+      ${n.relation ? `<span class="relation-badge">${esc(n.relation)}</span>` : ''}
       <span class="tfoot">
         <span class="tdeg">${deg} lien${deg > 1 ? 's' : ''}</span>
         ${n.beyond ? `<span class="tmore" title="Liens non déployés à ce niveau : cliquez pour continuer l’arbre depuis ce document">+${n.beyond} ▾</span>` : ''}
