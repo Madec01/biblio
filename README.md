@@ -11,6 +11,12 @@ exportées ou importées en JSON.
 
 ## Utilisation
 
+### Accueil
+
+- Vue opérationnelle avec recherche directe, compteurs, références à vérifier,
+  documents récemment modifiés, parcours et documents sans relation.
+- Un clic sur un résultat ouvre immédiatement sa fiche.
+
 ### Fiches
 
 - **Nouveau document** (bouton en haut, ou touche `N`) : nom, référence, groupe,
@@ -34,6 +40,18 @@ exportées ou importées en JSON.
   référence (`Ctrl K`). La recherche couvre aussi les notes, types, statuts,
   versions, mots-clés et groupes. Deux filtres rapides ciblent type et statut.
 - Une référence déjà utilisée est signalée afin de limiter les doublons.
+- **Référence vérifiée** mémorise la date du dernier contrôle manuel dans
+  l'application professionnelle. **Analyser l'impact** remonte les documents
+  susceptibles d'être affectés par une modification.
+- Une relation peut recevoir une importance (informative, recommandée,
+  obligatoire ou conditionnelle) et une note de contexte.
+
+### Parcours documentaires
+
+- Un parcours ordonne les références utilisées pour une activité, de la
+  préparation à l'archivage.
+- Les étapes peuvent être déplacées, rendues obligatoires ou facultatives et
+  recevoir une consigne propre au parcours.
 
 ### Carte
 
@@ -74,7 +92,7 @@ exportées ou importées en JSON.
 - Troisième vue, façon arbre généalogique : un document racine en haut, ses
   documents liés en dessous, puis les leurs, sur 1 à 4 niveaux.
 - Ouvrez-la depuis une fiche (« Arbre des liens »), depuis le tiroir de la
-  carte, ou depuis l'onglet Arbre (touche `3`) en choisissant une racine.
+  carte, ou depuis l'onglet Arbre (touche `4`) en choisissant une racine.
 - Chaque document n'apparaît qu'une fois, au niveau le plus proche de la
   racine. Le badge « ↺ n » signale des liens vers des documents déjà affichés
   ailleurs dans l'arbre ; « +n ▾ » signale des liens non déployés au dernier
@@ -82,6 +100,8 @@ exportées ou importées en JSON.
 - Cliquer sur un document le place à la racine (« ← » revient en arrière) ;
   le bouton « fiche » ouvre sa fiche. Les boutons − / + agrandissent ou
   réduisent l'arbre.
+- Les branches peuvent être repliées individuellement. L'arbre se filtre par
+  sens, type et importance de relation, et peut être imprimé ou exporté en PDF.
 
 ### Menu (⋯)
 
@@ -99,20 +119,21 @@ exportées ou importées en JSON.
 | --- | --- |
 | `N` | Nouveau document |
 | `Ctrl K` | Recherche (index ou carte selon la vue) |
-| `1` / `2` / `3` | Vue Fiches / Carte / Arbre |
+| `1` / `2` / `3` / `4` / `5` | Accueil / Fiches / Carte / Arbre / Parcours |
 | `Échap` | Fermer le tiroir, annuler la création |
 
 ## Format des données
 
 ```json
 {
-  "version": 2,
+  "version": 3,
   "groups": [
     { "id": "g_equipe", "name": "Équipe commune", "color": "#6a4d9c" },
     { "id": "g_ec_base", "name": "Base documentaire EC", "color": "#9d88ba", "parent": "g_equipe" }
   ],
-  "docs":   [{ "id": "d…", "name": "Manuel qualité", "ref": "MQ-001", "group": "g_qualite", "type": "Référentiel", "status": "Applicable", "docVersion": "3", "tags": "qualité, organisation", "note": "" }],
-  "links":  [{ "a": "d…", "b": "d…", "type": "requires", "note": "" }]
+  "docs":   [{ "id": "d…", "name": "Manuel qualité", "ref": "MQ-001", "group": "g_qualite", "type": "Référentiel", "status": "Applicable", "docVersion": "3", "tags": "qualité, organisation", "verifiedAt": 1789560000000, "note": "" }],
+  "links":  [{ "a": "d…", "b": "d…", "type": "requires", "importance": "required", "note": "À contrôler avant intervention" }],
+  "journeys": [{ "id": "j…", "name": "Préparer une intervention", "steps": [{ "docId": "d…", "required": true, "note": "" }] }]
 }
 ```
 

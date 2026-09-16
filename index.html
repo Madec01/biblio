@@ -266,7 +266,7 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .meta-field.wide{grid-column:span 2}
 .meta-field input,.meta-field select{width:100%;height:40px;padding:0 11px;border-radius:9px;border:1px solid var(--line);background:var(--paper-2);outline:none}
 .meta-field input:focus,.meta-field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);background:var(--card)}
-.relation-add{display:grid;grid-template-columns:190px 1fr;gap:8px;align-items:start}
+.relation-add{display:grid;grid-template-columns:180px 145px 1fr;gap:8px;align-items:start}
 .relation-add select{height:46px;padding:0 10px;border:1px solid var(--line-2);border-radius:12px;background:var(--paper-2);outline:none}
 .relation-badge,.status-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:2px 7px;border-radius:999px;font-size:10.5px;line-height:1.35;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .status-badge{background:var(--paper-3);color:var(--ink-2);margin-left:6px}
@@ -351,6 +351,37 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .card-foot .spacer{flex:1}
 .new-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:26px}
 
+/* ---------- Accueil opérationnel ---------- */
+.home{height:100%;overflow:auto;padding:34px clamp(20px,4vw,64px) 70px}
+.home-inner{max-width:1250px;margin:auto}
+.home-hero{display:flex;align-items:end;gap:24px;margin-bottom:24px}
+.home-hero h2{font-family:var(--font-display);font-size:38px;margin:0 0 5px}.home-hero p{margin:0;color:var(--ink-2)}
+.home-search{max-width:620px;height:50px;margin:20px 0 28px}.home-search input{font-size:16px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}
+.kpi{padding:17px 18px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);box-shadow:var(--shadow)}
+.kpi strong{display:block;font-family:var(--font-display);font-size:28px}.kpi span{font-size:12px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
+.home-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);min-width:0}
+.panel h3{font-family:var(--font-display);font-size:20px;margin:0 0 14px}.panel-head{display:flex;align-items:center;gap:10px}.panel-head .spacer{flex:1}
+.mini-list{display:grid;gap:5px}.mini-doc{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px;border-radius:9px;text-align:left;width:100%}.mini-doc:hover{background:var(--paper-2)}
+.mini-doc .dot{width:8px;height:8px;border-radius:50%;background:var(--g)}.mini-doc .txt{min-width:0}.mini-doc .txt strong,.mini-doc .txt small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mini-doc .txt small{color:var(--ink-3)}
+.alert-empty{padding:18px;color:var(--ink-3);text-align:center;border:1px dashed var(--line);border-radius:10px}
+
+/* ---------- Parcours documentaires ---------- */
+.journeys-layout{height:100%;display:grid;grid-template-columns:300px 1fr;min-height:0}
+.journeys-side{border-right:1px solid var(--line);padding:18px;background:color-mix(in srgb,var(--paper-2) 60%,transparent);overflow:auto}
+.journeys-side h2{font-family:var(--font-display);margin:0 0 14px}.journey-list{display:grid;gap:6px;margin:14px 0}.journey-item{width:100%;text-align:left;padding:10px;border-radius:10px}.journey-item:hover,.journey-item.on{background:var(--card);box-shadow:var(--shadow)}
+.journey-item strong,.journey-item small{display:block}.journey-item small{color:var(--ink-3);margin-top:2px}
+.journey-main{overflow:auto;padding:36px clamp(20px,4vw,55px)}.journey-editor{max-width:900px;margin:auto}
+.journey-title{width:100%;font-family:var(--font-display);font-size:32px;border:0;border-bottom:1px solid transparent;background:none;outline:none}.journey-title:focus{border-color:var(--accent)}
+.journey-desc{width:100%;min-height:70px;margin:8px 0 20px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);resize:vertical}
+.steps{display:grid;gap:10px;margin:18px 0}.step{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:start;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.step-num{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-family:var(--font-mono)}
+.step-main strong,.step-main small{display:block}.step-main small{color:var(--ink-3)}.step-note{margin-top:7px;width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:5px 0;outline:none}.step-actions{display:flex;gap:4px}
+
+.impact-level{margin:16px 0}.impact-level h3{font-size:14px;color:var(--ink-2)}
+.relation-note{font-size:11.5px;color:var(--ink-3);white-space:normal}.importance-required{color:var(--danger);background:var(--danger-soft)}.importance-recommended{color:#8a6500;background:rgba(192,122,28,.13)}
+
 /* état vide */
 .empty{
   min-height:70vh;display:grid;place-items:center;text-align:center;padding:40px
@@ -409,6 +440,7 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .tnode.root .tname{font-family:var(--font-display);font-weight:600;font-size:19px;letter-spacing:-.01em}
 .tnode.root .tbar{width:5px}
 @media (max-width:900px){
+  .kpis{grid-template-columns:1fr 1fr}.home-grid{grid-template-columns:1fr}.journeys-layout{grid-template-columns:1fr}.journeys-side{border-right:0;border-bottom:1px solid var(--line);max-height:240px}
   .tree-bar{padding:10px 12px;gap:8px}
   .tree-change{width:100%}
   .tree-wrap{padding:24px 16px 60px}
@@ -519,6 +551,9 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
 .reveal{animation:rise .55s cubic-bezier(.2,.7,.2,1) both}
 .reveal.d1{animation-delay:.05s}.reveal.d2{animation-delay:.12s}.reveal.d3{animation-delay:.2s}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media print{
+  .topbar,.tree-bar{display:none!important}main{position:static}.view{display:none!important}#view-arbre.on{display:block!important;position:static}.tree-view,.tree-wrap{position:static;height:auto;overflow:visible;padding:10px}.tree-scale{zoom:1!important}.tnode{break-inside:avoid;background:#fff;color:#111}
+}
 
 /* ==========================================================================
    Responsive
@@ -559,9 +594,11 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
     <small>Documents liés</small>
   </a>
   <nav class="seg nav" aria-label="Vues">
-    <button data-view="fiches" class="on">Fiches</button>
+    <button data-view="accueil" class="on">Accueil</button>
+    <button data-view="fiches">Fiches</button>
     <button data-view="carte">Carte</button>
     <button data-view="arbre">Arbre</button>
+    <button data-view="parcours">Parcours</button>
   </nav>
   <div class="spacer"></div>
   <button class="btn primary" id="btn-new" title="Nouveau document (N)">
@@ -583,8 +620,10 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
 </header>
 
 <main>
+  <!-- ================= ACCUEIL ================= -->
+  <section id="view-accueil" class="view on"><div class="home" id="home"></div></section>
   <!-- ================= FICHES ================= -->
-  <section id="view-fiches" class="view on">
+  <section id="view-fiches" class="view">
     <aside class="index reveal d1">
       <div class="index-head">
         <label class="search">
@@ -640,6 +679,9 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
   <section id="view-arbre" class="view">
     <div class="tree-view" id="tree-view"></div>
   </section>
+
+  <!-- ================= PARCOURS ================= -->
+  <section id="view-parcours" class="view"><div id="journeys" class="journeys-layout"></div></section>
 </main>
 
 <dialog id="dlg"></dialog>
@@ -692,7 +734,7 @@ const DEFAULT_GROUPS = [
 const PALETTE = ['#1d4b7c', '#a8326f', '#0f7c8c', '#8a6b0e', '#5b5f9e', '#b0522a', '#2c7a4b', '#7d4b3a', '#c2185b', '#00695c'];
 
 function freshState() {
-  return { version: 2, groups: DEFAULT_GROUPS.map(g => ({ ...g })), docs: [], links: [] };
+  return { version: 3, groups: DEFAULT_GROUPS.map(g => ({ ...g })), docs: [], links: [], journeys: [] };
 }
 function load() {
   try {
@@ -717,13 +759,15 @@ function sanitize(s) {
     type: DOC_TYPES.includes(d.type) ? d.type : 'Autre',
     status: DOC_STATUSES.includes(d.status) ? d.status : 'À vérifier',
     docVersion: String(d.docVersion ?? ''), tags: String(d.tags ?? ''),
+    verifiedAt: Number.isFinite(d.verifiedAt) ? d.verifiedAt : null,
     group: gids.has(d.group) ? d.group : out.groups.find(g => !g.parent).id,
     x: Number.isFinite(d.x) ? d.x : undefined, y: Number.isFinite(d.y) ? d.y : undefined,
     createdAt: d.createdAt || Date.now(), updatedAt: d.updatedAt || Date.now(),
   }));
   const dids = new Set(out.docs.map(d => d.id));
   const seen = new Set();
-  out.links = (Array.isArray(s.links) ? s.links : []).filter(l => l && dids.has(l.a) && dids.has(l.b) && l.a !== l.b).map(l => ({ a:String(l.a), b:String(l.b), type:RELATION_TYPES.some(t => t.id === l.type) ? l.type : 'related', note:String(l.note ?? '') })).filter(l => { const k = [l.a,l.b].sort().join('|'); if (seen.has(k)) return false; seen.add(k); return true; });
+  out.links = (Array.isArray(s.links) ? s.links : []).filter(l => l && dids.has(l.a) && dids.has(l.b) && l.a !== l.b).map(l => ({ a:String(l.a), b:String(l.b), type:RELATION_TYPES.some(t => t.id === l.type) ? l.type : 'related', importance:['required','recommended','info','conditional'].includes(l.importance) ? l.importance : 'info', note:String(l.note ?? '') })).filter(l => { const k = [l.a,l.b].sort().join('|'); if (seen.has(k)) return false; seen.add(k); return true; });
+  out.journeys = (Array.isArray(s.journeys) ? s.journeys : []).filter(j => j && j.id).map(j => ({ id:String(j.id), name:String(j.name || 'Parcours sans titre'), description:String(j.description || ''), steps:(Array.isArray(j.steps) ? j.steps : []).filter(x => x && dids.has(x.docId)).map(x => ({ docId:String(x.docId), required:x.required !== false, note:String(x.note || '') })) }));
   return out;
 }
 let state = load() || freshState();
@@ -755,9 +799,9 @@ function shadeOf(parentHex, i) {
 const linkedIds = id => state.links.filter(l => l.a === id || l.b === id).map(l => l.a === id ? l.b : l.a);
 const degree = id => state.links.reduce((n, l) => n + (l.a === id || l.b === id), 0);
 const isLinked = (a, b) => state.links.some(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
-function addLink(a, b, type = 'related', note = '') {
+function addLink(a, b, type = 'related', note = '', importance = 'info') {
   if (a === b || isLinked(a, b) || !getDoc(a) || !getDoc(b)) return false;
-  state.links.push({ a, b, type: RELATION_TYPES.some(t => t.id === type) ? type : 'related', note });
+  state.links.push({ a, b, type: RELATION_TYPES.some(t => t.id === type) ? type : 'related', note, importance });
   touch(a); touch(b); save(); graph.sync(); return true;
 }
 const linkBetween = (a,b) => state.links.find(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
@@ -788,6 +832,7 @@ function duplicateDoc(id) {
 function deleteDoc(id) {
   state.docs = state.docs.filter(d => d.id !== id);
   state.links = state.links.filter(l => l.a !== id && l.b !== id);
+  state.journeys.forEach(j => j.steps = j.steps.filter(s => s.docId !== id));
   save(); graph.sync();
 }
 function sortedDocs(list) { return [...list].sort((a, b) => collator.compare(a.name || a.ref, b.name || b.ref)); }
@@ -845,7 +890,7 @@ function sampleData() {
    État d'interface
    ========================================================================== */
 const ui = {
-  view: 'fiches',
+  view: 'accueil',
   selectedId: null,
   creating: null,          // brouillon {name, ref, group, note, links:[]} quand on crée un document
   filter: 'all',           // 'all' | groupId | 'orphan'
@@ -858,6 +903,11 @@ const ui = {
   treeDepth: 2,
   treeZoom: 1,
   treeHistory: [],
+  treeRelation: 'all',
+  treeImportance: 'all',
+  treeDirection: 'all',
+  treeCollapsed: new Set(),
+  journeyId: null,
   mapQuery: '',
   statusFilter: 'all',
   typeFilter: 'all',
@@ -889,9 +939,11 @@ function setView(v) {
   closeMenu();
   if (v === 'carte') { graph.sync(); graph.resize(); renderLegend(); renderDrawer(); if (!graph.fitted) graph.follow(); else graph.wake(); }
   if (v === 'arbre') renderTree();
+  if (v === 'accueil') renderHome();
+  if (v === 'parcours') renderJourneys();
 }
 $$('.seg.nav button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
-$('#brand').addEventListener('click', e => { e.preventDefault(); setView('fiches'); });
+$('#brand').addEventListener('click', e => { e.preventDefault(); setView('accueil'); });
 
 function select(id, { pushHistory = false, scroll = true } = {}) {
   if (pushHistory && ui.selectedId && ui.selectedId !== id) ui.history.push(ui.selectedId);
@@ -909,6 +961,59 @@ function startCreate(prefill = {}) {
   document.body.classList.add('show-fiche');
   renderIndex(); renderFiche();
   $('#fiche .f-name')?.focus();
+}
+
+/* ==========================================================================
+   Accueil opérationnel
+   ========================================================================== */
+const verificationDue = d => !d.verifiedAt || Date.now() - d.verifiedAt > 180 * 864e5;
+function miniDocHtml(d, extra = '') {
+  const g = groupOf(d);
+  return `<button class="mini-doc" data-doc="${d.id}" style="--g:${g.color}"><span class="dot"></span><span class="txt"><strong>${esc(d.name || 'Sans titre')}</strong><small>${esc(d.ref || '—')} · ${esc(extra || groupLabel(g))}</small></span><span>›</span></button>`;
+}
+function renderHome() {
+  const host = $('#home');
+  const due = state.docs.filter(verificationDue).sort((a,b)=>(a.verifiedAt||0)-(b.verifiedAt||0));
+  const recent = [...state.docs].sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,6);
+  const orphans = state.docs.filter(d => degree(d.id) === 0).slice(0,5);
+  host.innerHTML = `<div class="home-inner">
+    <div class="home-hero"><div><h2>Bibliothèque documentaire</h2><p>Retrouver une référence, comprendre ses dépendances et préparer un parcours.</p></div><span class="spacer"></span><button class="btn primary" id="home-new">+ Nouveau document</button></div>
+    <label class="search home-search"><span>⌕</span><input id="home-q" placeholder="Rechercher une référence, un document ou un mot-clé…"><span class="kbd">Ctrl K</span></label>
+    <div class="kpis"><div class="kpi"><strong>${state.docs.length}</strong><span>Documents</span></div><div class="kpi"><strong>${state.links.length}</strong><span>Relations</span></div><div class="kpi"><strong>${state.journeys.length}</strong><span>Parcours</span></div><div class="kpi"><strong>${due.length}</strong><span>À vérifier</span></div></div>
+    <div class="home-grid">
+      <section class="panel"><div class="panel-head"><h3>À vérifier</h3><span class="spacer"></span><button class="btn sm" id="home-due">Tout afficher</button></div><div class="mini-list">${due.length ? due.slice(0,6).map(d=>miniDocHtml(d,d.verifiedAt ? `vérifié le ${fmtDate(d.verifiedAt)}` : 'jamais vérifié')).join('') : '<div class="alert-empty">Toutes les références ont été vérifiées récemment.</div>'}</div></section>
+      <section class="panel"><div class="panel-head"><h3>Modifiés récemment</h3><span class="spacer"></span></div><div class="mini-list">${recent.length ? recent.map(d=>miniDocHtml(d,fmtDate(d.updatedAt))).join('') : '<div class="alert-empty">Aucun document.</div>'}</div></section>
+      <section class="panel"><div class="panel-head"><h3>Parcours documentaires</h3><span class="spacer"></span><button class="btn sm" id="home-journeys">Ouvrir</button></div><div class="mini-list">${state.journeys.length ? state.journeys.slice(0,5).map(j=>`<button class="mini-doc" data-journey="${j.id}"><span class="dot" style="background:var(--accent)"></span><span class="txt"><strong>${esc(j.name)}</strong><small>${j.steps.length} étape${j.steps.length>1?'s':''}</small></span><span>›</span></button>`).join('') : '<div class="alert-empty">Créez un parcours pour ordonner les références utilisées dans une activité.</div>'}</div></section>
+      <section class="panel"><div class="panel-head"><h3>Documents isolés</h3><span class="spacer"></span></div><div class="mini-list">${orphans.length ? orphans.map(d=>miniDocHtml(d)).join('') : '<div class="alert-empty">Aucun document sans relation.</div>'}</div></section>
+    </div></div>`;
+  $('#home-new').addEventListener('click',()=>startCreate());
+  $('#home-q').addEventListener('keydown',e=>{ if(e.key==='Enter' && e.target.value.trim()){ ui.query=e.target.value; setView('fiches'); renderIndex(); $('#q').value=ui.query; } });
+  $('#home-due').addEventListener('click',()=>{ ui.statusFilter='À vérifier'; setView('fiches'); renderFilters(); renderIndex(); });
+  $('#home-journeys').addEventListener('click',()=>setView('parcours'));
+  $$('[data-doc]',host).forEach(b=>b.addEventListener('click',()=>{ select(b.dataset.doc); setView('fiches'); }));
+  $$('[data-journey]',host).forEach(b=>b.addEventListener('click',()=>{ ui.journeyId=b.dataset.journey; setView('parcours'); }));
+}
+
+/* ==========================================================================
+   Parcours documentaires
+   ========================================================================== */
+function renderJourneys() {
+  const host = $('#journeys');
+  let current = state.journeys.find(j=>j.id===ui.journeyId) || state.journeys[0] || null;
+  ui.journeyId = current?.id || null;
+  host.innerHTML = `<aside class="journeys-side"><h2>Parcours</h2><button class="btn primary" id="journey-new">+ Nouveau parcours</button><div class="journey-list">${state.journeys.map(j=>`<button class="journey-item ${j.id===ui.journeyId?'on':''}" data-j="${j.id}"><strong>${esc(j.name)}</strong><small>${j.steps.length} étape${j.steps.length>1?'s':''}</small></button>`).join('')}</div></aside><div class="journey-main">${current ? '<div class="journey-editor" id="journey-editor"></div>' : '<div class="empty"><div class="inner"><div class="glyph">↳</div><h2>Construisez un parcours</h2><p>Ordonnez les documents nécessaires à une activité, de la préparation à l’archivage.</p><button class="btn primary" id="journey-empty-new">Créer le premier parcours</button></div></div>'}</div>`;
+  const create = () => { const j={id:uid('j'),name:'Nouveau parcours',description:'',steps:[]}; state.journeys.push(j); ui.journeyId=j.id; save(); renderJourneys(); setTimeout(()=>$('.journey-title')?.select(),0); };
+  $('#journey-new').addEventListener('click',create); $('#journey-empty-new')?.addEventListener('click',create);
+  $$('.journey-item',host).forEach(b=>b.addEventListener('click',()=>{ui.journeyId=b.dataset.j;renderJourneys()}));
+  if (current) renderJourneyEditor(current);
+}
+function renderJourneyEditor(j) {
+  const host=$('#journey-editor');
+  host.innerHTML=`<input class="journey-title" value="${esc(j.name)}" aria-label="Nom du parcours"><textarea class="journey-desc" placeholder="Objectif ou contexte du parcours…">${esc(j.description)}</textarea><div class="panel-head"><h3>Étapes</h3><span class="spacer"></span><button class="btn sm danger" id="journey-delete">Supprimer le parcours</button></div><div class="steps">${j.steps.map((s,i)=>{const d=getDoc(s.docId);if(!d)return'';return `<div class="step" data-i="${i}"><span class="step-num">${i+1}</span><span class="step-main"><strong>${esc(d.ref||'—')} — ${esc(d.name||'Sans titre')}</strong><small>${s.required?'Obligatoire':'Facultatif'} · ${esc(groupLabel(groupOf(d)))}</small><input class="step-note" value="${esc(s.note)}" placeholder="Consigne ou condition d’utilisation…"></span><span class="step-actions"><button class="btn sm ghost step-required" title="Obligatoire / facultatif">${s.required?'Requis':'Option'}</button><button class="btn sm ghost step-up" title="Monter">↑</button><button class="btn sm ghost step-down" title="Descendre">↓</button><button class="btn sm danger step-remove" title="Retirer">×</button></span></div>`}).join('')}</div><div class="panel"><h3>Ajouter une étape</h3><div id="journey-linker"></div></div>`;
+  $('.journey-title',host).addEventListener('input',e=>{j.name=e.target.value;save()}); $('.journey-desc',host).addEventListener('input',e=>{j.description=e.target.value;save()});
+  $$('.step',host).forEach(row=>{const i=+row.dataset.i; $('.step-note',row).addEventListener('input',e=>{j.steps[i].note=e.target.value;save()}); $('.step-required',row).addEventListener('click',()=>{j.steps[i].required=!j.steps[i].required;save();renderJourneys()}); $('.step-up',row).addEventListener('click',()=>{if(i){[j.steps[i-1],j.steps[i]]=[j.steps[i],j.steps[i-1]];save();renderJourneys()}}); $('.step-down',row).addEventListener('click',()=>{if(i<j.steps.length-1){[j.steps[i+1],j.steps[i]]=[j.steps[i],j.steps[i+1]];save();renderJourneys()}}); $('.step-remove',row).addEventListener('click',()=>{j.steps.splice(i,1);save();renderJourneys()});});
+  mountLinker($('#journey-linker'),{exclude:()=>new Set(j.steps.map(s=>s.docId)),allowCreate:false,onPick:d=>{j.steps.push({docId:d.id,required:true,note:''});save();renderJourneys()},placeholder:'Ajouter un document au parcours…',icon:'+'});
+  $('#journey-delete').addEventListener('click',async()=>{if(await confirmDialog({title:'Supprimer ce parcours ?',text:`« ${j.name} » sera supprimé. Les documents ne seront pas affectés.`,okLabel:'Supprimer',danger:true})){state.journeys=state.journeys.filter(x=>x.id!==j.id);ui.journeyId=null;save();renderJourneys()}});
 }
 
 /* ==========================================================================
@@ -1010,12 +1115,14 @@ function renderFiche() {
       <textarea class="f-note" id="f-note" rows="1" placeholder="Note, contexte, où le trouver… (facultatif)">${esc(doc.note)}</textarea>
 
       <div class="divider"><h3>Documents liés</h3><span class="n" id="links-count">${degree(doc.id)}</span></div>
-      <div class="relation-add"><select id="relation-type" aria-label="Type de relation">${RELATION_TYPES.map(x => `<option value="${x.id}">${esc(x.label)}…</option>`).join('')}</select><div id="linker"></div></div>
+      <div class="relation-add"><select id="relation-type" aria-label="Type de relation">${RELATION_TYPES.map(x => `<option value="${x.id}">${esc(x.label)}…</option>`).join('')}</select><select id="relation-importance" aria-label="Importance"><option value="info">Informatif</option><option value="recommended">Recommandé</option><option value="required">Obligatoire</option><option value="conditional">Conditionnel</option></select><div id="linker"></div></div>
       <div id="links"></div>
 
       <div class="card-foot">
-        <span>Créé le ${fmtDate(doc.createdAt)} · modifié le ${fmtDate(doc.updatedAt)}</span>
+        <span>Créé le ${fmtDate(doc.createdAt)} · modifié le ${fmtDate(doc.updatedAt)}${doc.verifiedAt ? ` · référence vérifiée le ${fmtDate(doc.verifiedAt)}` : ' · référence jamais vérifiée'}</span>
         <span class="spacer"></span>
+        <button class="btn sm" id="f-verify">✓ Référence vérifiée</button>
+        <button class="btn sm" id="f-impact">Analyser l’impact</button>
         <button class="btn sm" id="f-map">Voir sur la carte</button>
         <button class="btn sm" id="f-tree" title="Arbre des liens : ce document et ses liens, niveau par niveau">Arbre des liens</button>
         <button class="btn sm" id="f-dup" title="Créer une copie de cette fiche, avec tous ses liens">Dupliquer</button>
@@ -1047,8 +1154,8 @@ function renderFiche() {
   // — liens —
   mountLinker($('#linker'), {
     exclude: () => new Set([doc.id, ...linkedIds(doc.id)]),
-    onPick: other => { addLink(doc.id, other.id, $('#relation-type').value); renderLinks(); renderIndex(); flash(); toast(`Relation ajoutée avec ${other.ref || other.name}`); },
-    onCreate: draft => { const nd = createDoc(draft); addLink(doc.id, nd.id, $('#relation-type').value); renderLinks(); renderIndex(); flash(); toast(`« ${nd.name} » créé et lié`); },
+    onPick: other => { addLink(doc.id, other.id, $('#relation-type').value, '', $('#relation-importance').value); renderLinks(); renderIndex(); flash(); toast(`Relation ajoutée avec ${other.ref || other.name}`); },
+    onCreate: draft => { const nd = createDoc(draft); addLink(doc.id, nd.id, $('#relation-type').value, '', $('#relation-importance').value); renderLinks(); renderIndex(); flash(); toast(`« ${nd.name} » créé et lié`); },
   });
   const renderLinks = () => {
     $('#links-count').textContent = degree(doc.id);
@@ -1064,6 +1171,8 @@ function renderFiche() {
   $('#back-hist')?.addEventListener('click', () => { const prev = ui.history.pop(); if (prev) { ui.selectedId = prev; renderIndex(); renderFiche(); } });
   $('#f-map').addEventListener('click', () => { setView('carte'); ui.isolate = 1; graph.setSelected(doc.id); renderDrawer(); graph.centerOn(doc.id); });
   $('#f-tree').addEventListener('click', () => openTree(doc.id));
+  $('#f-verify').addEventListener('click',()=>{doc.verifiedAt=Date.now();doc.status=doc.status==='À vérifier'?'Applicable':doc.status;touch(doc.id);save();renderFiche();renderIndex();toast('Référence marquée comme vérifiée')});
+  $('#f-impact').addEventListener('click',()=>showImpact(doc.id));
   $('#f-dup').addEventListener('click', () => {
     const copy = duplicateDoc(doc.id);
     select(copy.id); renderIndex();
@@ -1103,7 +1212,7 @@ function renderCreateForm(host) {
       <textarea class="f-note" id="f-note" rows="1" placeholder="Note, contexte, où le trouver… (facultatif)">${esc(c.note)}</textarea>
 
       <div class="divider"><h3>Documents liés</h3><span class="n" id="links-count">${c.links.length}</span></div>
-      <div class="relation-add"><select id="relation-type" aria-label="Type de relation">${RELATION_TYPES.map(x => `<option value="${x.id}">${esc(x.label)}…</option>`).join('')}</select><div id="linker"></div></div>
+      <div class="relation-add"><select id="relation-type" aria-label="Type de relation">${RELATION_TYPES.map(x => `<option value="${x.id}">${esc(x.label)}…</option>`).join('')}</select><select id="relation-importance" aria-label="Importance"><option value="info">Informatif</option><option value="recommended">Recommandé</option><option value="required">Obligatoire</option><option value="conditional">Conditionnel</option></select><div id="linker"></div></div>
       <div id="links"></div>
 
       <div class="new-actions">
@@ -1124,8 +1233,8 @@ function renderCreateForm(host) {
   });
   mountLinker($('#linker'), {
     exclude: () => new Set(c.links.map(x => x.id)),
-    onPick: other => { c.links.push({id:other.id,type:$('#relation-type').value}); renderLinks(); },
-    onCreate: draft => { const nd = createDoc(draft); c.links.push({id:nd.id,type:$('#relation-type').value}); renderLinks(); renderIndex(); toast(`« ${nd.name} » créé`); },
+    onPick: other => { c.links.push({id:other.id,type:$('#relation-type').value,importance:$('#relation-importance').value}); renderLinks(); },
+    onCreate: draft => { const nd = createDoc(draft); c.links.push({id:nd.id,type:$('#relation-type').value,importance:$('#relation-importance').value}); renderLinks(); renderIndex(); toast(`« ${nd.name} » créé`); },
   });
   const renderLinks = () => {
     $('#links-count').textContent = c.links.length;
@@ -1144,7 +1253,7 @@ function renderCreateForm(host) {
     const duplicate = state.docs.find(x => c.ref.trim() && norm(x.ref) === norm(c.ref));
     if (duplicate) { refEl.focus(); toast(`Cette référence existe déjà : ${duplicate.name || duplicate.ref}`); return; }
     const d = createDoc({ name: c.name || c.ref, ref: c.ref, group: c.group, note: c.note, type:c.type, status:c.status, docVersion:c.docVersion, tags:c.tags });
-    c.links.forEach(o => addLink(d.id, o.id, o.type));
+    c.links.forEach(o => addLink(d.id, o.id, o.type, '', o.importance));
     ui.creating = null; select(d.id); toast('Document créé');
   });
 }
@@ -1200,16 +1309,24 @@ function renderLinkList(host, docs, { onOpen, onRemove, noNav = false, rootId = 
         <div class="link-row" data-id="${d.id}" role="${noNav ? 'listitem' : 'link'}" tabindex="0" title="${noNav ? '' : 'Ouvrir la fiche'}">
           <span class="bar"></span>
           <span class="ref">${esc(d.ref || '—')}</span>
-          <span class="link-main"><span class="name">${esc(d.name || 'Sans titre')}</span>${rootId ? (onRemove ? `<select class="rel-edit" aria-label="Type de relation">${RELATION_TYPES.map(t => `<option value="${t.id}" ${linkBetween(rootId,d.id)?.type === t.id ? 'selected' : ''}>${esc(rootId === linkBetween(rootId,d.id)?.a || !t.directed ? t.label : t.reverse)}</option>`).join('')}</select>` : `<span class="relation-badge">${esc(relationText(linkBetween(rootId,d.id),rootId))}</span>`) : ''}</span>
-          ${onRemove ? `<button class="x" title="Retirer le lien" aria-label="Retirer le lien">×</button>` : '<span></span>'}
+          <span class="link-main"><span class="name">${esc(d.name || 'Sans titre')}</span>${rootId ? (onRemove ? `<select class="rel-edit" aria-label="Type de relation">${RELATION_TYPES.map(t => `<option value="${t.id}" ${linkBetween(rootId,d.id)?.type === t.id ? 'selected' : ''}>${esc(rootId === linkBetween(rootId,d.id)?.a || !t.directed ? t.label : t.reverse)}</option>`).join('')}</select>` : `<span class="relation-badge">${esc(relationText(linkBetween(rootId,d.id),rootId))}</span>`)+`${linkBetween(rootId,d.id)?.importance && linkBetween(rootId,d.id).importance!=='info'?`<span class="relation-badge importance-${linkBetween(rootId,d.id).importance}">${({required:'Obligatoire',recommended:'Recommandé',conditional:'Conditionnel'})[linkBetween(rootId,d.id).importance]||''}</span>`:''}${linkBetween(rootId,d.id)?.note?`<span class="relation-note">${esc(linkBetween(rootId,d.id).note)}</span>`:''}` : ''}</span>
+          ${onRemove ? `<span style="display:flex"><button class="btn sm ghost rel-more" title="Détails de la relation">•••</button><button class="x" title="Retirer le lien" aria-label="Retirer le lien">×</button></span>` : '<span></span>'}
         </div>`).join('')}
     </div>`).join('')}</div>`;
   $$('.link-row', host).forEach(row => {
-    row.addEventListener('click', e => { if (e.target.closest('.x,.rel-edit')) return; if (!noNav) onOpen(row.dataset.id); });
+    row.addEventListener('click', e => { if (e.target.closest('.x,.rel-edit,.rel-more')) return; if (!noNav) onOpen(row.dataset.id); });
     row.addEventListener('keydown', e => { if (e.key === 'Enter' && !noNav) onOpen(row.dataset.id); });
     row.querySelector('.x')?.addEventListener('click', () => onRemove(row.dataset.id));
     row.querySelector('.rel-edit')?.addEventListener('change', e => { const link = linkBetween(rootId,row.dataset.id); if (link) { link.type = e.target.value; touch(rootId); save(); graph.dirty = true; toast('Type de relation mis à jour'); } });
+    row.querySelector('.rel-more')?.addEventListener('click',()=>showRelationDialog(rootId,row.dataset.id,()=>renderFiche()));
   });
+}
+
+function showRelationDialog(fromId,toId,onDone=()=>{}) {
+  const link=linkBetween(fromId,toId), other=getDoc(toId); if(!link)return;
+  openDialog(`<h2>Détails de la relation</h2><p><span class="mono">${esc(other.ref||'—')}</span> — ${esc(other.name||'Sans titre')}</p><label class="meta-field"><span class="label">Importance</span><select id="rel-importance"><option value="info">Informatif</option><option value="recommended">Recommandé</option><option value="required">Obligatoire</option><option value="conditional">Conditionnel</option></select></label><label class="meta-field" style="margin-top:14px"><span class="label">Note sur cette relation</span><textarea id="rel-note" class="journey-desc" placeholder="Pourquoi ces documents sont-ils liés ? Dans quel cas ?">${esc(link.note||'')}</textarea></label><div class="actions"><button class="btn ghost" id="rel-cancel">Annuler</button><button class="btn primary" id="rel-save">Enregistrer</button></div>`);
+  $('#rel-importance').value=link.importance||'info';
+  $('#rel-cancel').addEventListener('click',closeDialog); $('#rel-save').addEventListener('click',()=>{link.importance=$('#rel-importance').value;link.note=$('#rel-note').value.trim();touch(fromId);save();closeDialog();onDone();toast('Relation mise à jour')});
 }
 
 /* Combobox « Lier un document » */
@@ -1730,9 +1847,20 @@ function buildTree(rootId, depth) {
   for (let d = 0; d < depth && level.length; d++) {
     const next = [];
     for (const node of level) {
-      for (const doc of sortedDocs(linkedIds(node.id).map(getDoc).filter(Boolean))) {
+      if (ui.treeCollapsed.has(node.id)) continue;
+      const candidates=state.links.filter(l=>{
+        if(l.a!==node.id&&l.b!==node.id)return false;
+        if(ui.treeRelation!=='all'&&l.type!==ui.treeRelation)return false;
+        if(ui.treeImportance!=='all'&&(l.importance||'info')!==ui.treeImportance)return false;
+        const directed=(RELATION_TYPES.find(t=>t.id===l.type)||RELATION_TYPES[0]).directed;
+        if(ui.treeDirection==='out'&&directed&&l.a!==node.id)return false;
+        if(ui.treeDirection==='in'&&directed&&l.b!==node.id)return false;
+        return true;
+      });
+      for (const doc of sortedDocs(candidates.map(l=>getDoc(l.a===node.id?l.b:l.a)).filter(Boolean))) {
         if (byId.has(doc.id)) { if (doc.id !== node.parent) node.elsewhere++; continue; }
-        const child = { id: doc.id, parent: node.id, relation:relationText(linkBetween(node.id,doc.id),node.id), children: [], elsewhere: 0, beyond: 0 };
+        const edge=linkBetween(node.id,doc.id);
+        const child = { id: doc.id, parent: node.id, relation:relationText(edge,node.id), importance:edge?.importance||'info', note:edge?.note||'', children: [], elsewhere: 0, beyond: 0 };
         byId.set(doc.id, child); node.children.push(child); next.push(child);
       }
     }
@@ -1772,10 +1900,13 @@ function renderTree() {
       <span class="tref">${esc(d.ref || '—')}</span>
       <span class="tname">${esc(d.name || 'Sans titre')}</span>
       ${n.relation ? `<span class="relation-badge">${esc(n.relation)}</span>` : ''}
+      ${n.importance && n.importance!=='info' ? `<span class="relation-badge importance-${n.importance}">${({required:'Obligatoire',recommended:'Recommandé',conditional:'Conditionnel'})[n.importance]||''}</span>` : ''}
+      ${n.note ? `<span class="relation-note">${esc(n.note)}</span>` : ''}
       <span class="tfoot">
         <span class="tdeg">${deg} lien${deg > 1 ? 's' : ''}</span>
         ${n.beyond ? `<span class="tmore" title="Liens non déployés à ce niveau : cliquez pour continuer l’arbre depuis ce document">+${n.beyond} ▾</span>` : ''}
         ${n.elsewhere ? `<span class="telse" title="Liens vers des documents déjà affichés ailleurs dans l’arbre">↺ ${n.elsewhere}</span>` : ''}
+        ${deg&&!isRoot?`<button class="topen tcollapse" title="Replier ou déplier" data-collapse="${n.id}">${ui.treeCollapsed.has(n.id)?'déplier':'replier'}</button>`:''}
         <button class="topen" title="Ouvrir la fiche" aria-label="Ouvrir la fiche" data-open="${n.id}">fiche</button>
       </span>
     </div>`;
@@ -1790,8 +1921,12 @@ function renderTree() {
       <span class="label">Niveaux</span>
       <div class="seg small" id="tree-depth">${[1, 2, 3, 4].map(n => `<button data-d="${n}" class="${ui.treeDepth === n ? 'on' : ''}">${n}</button>`).join('')}</div>
       <div class="seg small" id="tree-zoom"><button data-z="-1" title="Réduire">−</button><button data-z="0" title="Taille normale">${Math.round(ui.treeZoom * 100)} %</button><button data-z="1" title="Agrandir">+</button></div>
+      <select id="tree-direction" class="btn sm"><option value="all">Tous les sens</option><option value="out">Dépend de…</option><option value="in">Est utilisé par…</option></select>
+      <select id="tree-relation" class="btn sm"><option value="all">Toutes les relations</option>${RELATION_TYPES.map(t=>`<option value="${t.id}">${esc(t.label)}</option>`).join('')}</select>
+      <select id="tree-importance" class="btn sm"><option value="all">Toutes les importances</option><option value="required">Obligatoires</option><option value="recommended">Recommandées</option><option value="conditional">Conditionnelles</option><option value="info">Informatives</option></select>
       <button class="btn sm" id="tree-fiche">Ouvrir la fiche</button>
       <button class="btn sm" id="tree-map">Voir sur la carte</button>
+      <button class="btn sm" id="tree-print">Imprimer / PDF</button>
       <div id="tree-change" class="tree-change"></div>
     </div>
     <div class="tree-wrap">
@@ -1806,13 +1941,37 @@ function renderTree() {
     el.addEventListener('click', e => { if (e.target.closest('.topen')) return; go(); });
     el.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
   });
-  $$('.topen', host).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); select(b.dataset.open); setView('fiches'); }));
+  $$('.topen:not(.tcollapse)', host).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); select(b.dataset.open); setView('fiches'); }));
+  $$('.tcollapse',host).forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const id=b.dataset.collapse;ui.treeCollapsed.has(id)?ui.treeCollapsed.delete(id):ui.treeCollapsed.add(id);renderTree()}));
   $$('#tree-depth button', host).forEach(b => b.addEventListener('click', () => { ui.treeDepth = +b.dataset.d; renderTree(); }));
   $$('#tree-zoom button', host).forEach(b => b.addEventListener('click', () => { const z = +b.dataset.z; ui.treeZoom = z === 0 ? 1 : Math.min(1.6, Math.max(.4, +(ui.treeZoom + z * .15).toFixed(2))); renderTree(); }));
   $('#tree-back')?.addEventListener('click', () => { const prev = ui.treeHistory.pop(); if (prev) openTree(prev, { push: false }); });
   $('#tree-fiche').addEventListener('click', () => { select(doc.id); setView('fiches'); });
   $('#tree-map').addEventListener('click', () => { setView('carte'); ui.isolate = 1; graph.setSelected(doc.id); renderDrawer(); graph.centerOn(doc.id); });
+  $('#tree-print').addEventListener('click',()=>window.print());
+  $('#tree-direction').value=ui.treeDirection; $('#tree-relation').value=ui.treeRelation; $('#tree-importance').value=ui.treeImportance;
+  $('#tree-direction').addEventListener('change',e=>{ui.treeDirection=e.target.value;renderTree()}); $('#tree-relation').addEventListener('change',e=>{ui.treeRelation=e.target.value;renderTree()}); $('#tree-importance').addEventListener('change',e=>{ui.treeImportance=e.target.value;renderTree()});
   mountLinker($('#tree-change'), { exclude: () => new Set([doc.id]), onPick: d => openTree(d.id), allowCreate: false, placeholder: 'Changer de racine…', icon: '⌕' });
+}
+
+function impactLevels(rootId,maxDepth=3) {
+  const seen=new Set([rootId]), levels=[]; let frontier=[rootId];
+  for(let depth=1;depth<=maxDepth;depth++){
+    const next=[];
+    for(const id of frontier) for(const l of state.links){
+      const t=RELATION_TYPES.find(x=>x.id===l.type)||RELATION_TYPES[0]; let affected=null;
+      if(!t.directed){ if(l.a===id) affected=l.b; else if(l.b===id) affected=l.a; }
+      else if(l.b===id) affected=l.a;
+      if(affected && !seen.has(affected)){seen.add(affected);next.push(affected)}
+    }
+    if(!next.length)break; levels.push(next); frontier=next;
+  }
+  return levels;
+}
+function showImpact(id) {
+  const root=getDoc(id),levels=impactLevels(id);
+  openDialog(`<h2>Analyse d’impact</h2><p>Si <span class="mono">${esc(root.ref||'—')}</span> change, voici les documents susceptibles de devoir être contrôlés. Le calcul suit les relations orientées dans le sens des dépendances.</p>${levels.length?levels.map((ids,i)=>`<div class="impact-level"><h3>Niveau ${i+1} — ${i?'Impact indirect':'Impact direct'}</h3><div class="mini-list">${ids.map(x=>miniDocHtml(getDoc(x),relationText(linkBetween(x,i?levels[i-1][0]:id),x))).join('')}</div></div>`).join(''):'<div class="alert-empty">Aucun document dépendant identifié.</div>'}<div class="actions"><button class="btn primary" id="impact-close">Fermer</button></div>`);
+  $('#impact-close').addEventListener('click',closeDialog); $$('[data-doc]',dlg).forEach(b=>b.addEventListener('click',()=>{const target=b.dataset.doc;closeDialog();select(target);setView('fiches')}));
 }
 
 const dlg = $('#dlg');
@@ -1894,7 +2053,7 @@ function groupsDialog() {
   };
   render();
 }
-function refreshAll() { renderFilters(); renderIndex(); renderFiche(); graph.sync(); graph.computeAnchors(); if (ui.view === 'carte') { renderLegend(); renderDrawer(); } }
+function refreshAll() { renderFilters(); renderIndex(); renderFiche(); renderHome(); if(ui.view==='parcours')renderJourneys(); graph.sync(); graph.computeAnchors(); if (ui.view === 'carte') { renderLegend(); renderDrawer(); } }
 
 /* Export / import */
 function exportJSON() {
@@ -1909,7 +2068,7 @@ $('#file-import').addEventListener('change', async e => {
   try { incoming = sanitize(JSON.parse(await f.text())); } catch { toast('Fichier illisible'); return; }
   openDialog(`
     <h2>Importer une base</h2>
-    <div class="import-preview">${incoming.docs.length} documents · ${incoming.links.length} liens · ${incoming.groups.length} groupes</div>
+    <div class="import-preview">${incoming.docs.length} documents · ${incoming.links.length} liens · ${incoming.journeys.length} parcours · ${incoming.groups.length} groupes</div>
     <p>Fusionner ajoute les documents et liens absents de votre base actuelle. Remplacer efface la base actuelle (${state.docs.length} documents).</p>
     <div class="actions"><button class="btn ghost" id="i-no">Annuler</button><button class="btn" id="i-merge">Fusionner</button><button class="btn primary" id="i-replace">Remplacer</button></div>`);
   $('#i-no').addEventListener('click', closeDialog);
@@ -1925,6 +2084,7 @@ $('#file-import').addEventListener('change', async e => {
     let nd = 0, nl = 0;
     for (const d of incoming.docs) if (!getDoc(d.id)) { state.docs.push({ ...d, group: gmap.get(d.group) || defaultGroup().id }); nd++; }
     for (const l of incoming.links) if (getDoc(l.a) && getDoc(l.b) && !isLinked(l.a, l.b)) { state.links.push(l); nl++; }
+    for (const j of incoming.journeys) if (!state.journeys.some(x=>x.id===j.id || norm(x.name)===norm(j.name))) state.journeys.push(j);
     save(); closeDialog(); refreshAll(); toast(`${nd} document(s) et ${nl} lien(s) ajoutés`);
   });
 });
@@ -1958,19 +2118,21 @@ $('#btn-new').addEventListener('click', () => startCreate());
 
 document.addEventListener('keydown', e => {
   const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || dlg.open;
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); (ui.view === 'carte' ? $('#map-q') : $('#q')).focus(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); (ui.view === 'carte' ? $('#map-q') : ui.view==='accueil' ? $('#home-q') : $('#q')).focus(); return; }
   if (typing) { if (e.key === 'Escape' && document.activeElement.tagName === 'INPUT') document.activeElement.blur(); return; }
   if (e.key === 'n' || e.key === 'N') { e.preventDefault(); startCreate(); }
   else if (e.key === 'Escape') { if (ui.view === 'carte' && ui.selectedId) { ui.selectedId = null; graph.setSelected(null); renderDrawer(); } else if (ui.creating) { ui.creating = null; document.body.classList.remove('show-fiche'); renderIndex(); renderFiche(); } }
-  else if (e.key === '1') setView('fiches');
-  else if (e.key === '2') setView('carte');
-  else if (e.key === '3') setView('arbre');
+  else if (e.key === '1') setView('accueil');
+  else if (e.key === '2') setView('fiches');
+  else if (e.key === '3') setView('carte');
+  else if (e.key === '4') setView('arbre');
+  else if (e.key === '5') setView('parcours');
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => graph.refreshColors());
 window.addEventListener('beforeunload', () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {} });
 
 applyTheme();
-renderFilters(); renderIndex(); renderFiche(); graph.sync();
+renderFilters(); renderIndex(); renderFiche(); renderHome(); graph.sync();
 </script>
 </body>
 </html>
