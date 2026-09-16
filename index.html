@@ -668,6 +668,15 @@ function createDoc({ name, ref = '', group, note = '' }) {
   const d = { id: uid(), name: name.trim(), ref: ref.trim(), note, group: group || defaultGroup().id, createdAt: Date.now(), updatedAt: Date.now() };
   state.docs.push(d); save(); graph.sync(); return d;
 }
+/* Copie d'un document : mêmes champs, mêmes liens (la copie n'est pas liée à l'original). */
+function duplicateDoc(id) {
+  const src = getDoc(id); if (!src) return null;
+  const copy = createDoc({ name: (src.name || src.ref) + ' (copie)', ref: src.ref, group: src.group, note: src.note });
+  const s = graph.byId.get(id), n = graph.byId.get(copy.id);
+  if (s && n) { n.x = copy.x = s.x + 40; n.y = copy.y = s.y + 40; graph.wake(.3); }
+  for (const other of linkedIds(id)) addLink(copy.id, other);
+  return copy;
+}
 function deleteDoc(id) {
   state.docs = state.docs.filter(d => d.id !== id);
   state.links = state.links.filter(l => l.a !== id && l.b !== id);
@@ -874,6 +883,7 @@ function renderFiche() {
         <span>Créé le ${fmtDate(doc.createdAt)} · modifié le ${fmtDate(doc.updatedAt)}</span>
         <span class="spacer"></span>
         <button class="btn sm" id="f-map">Voir sur la carte</button>
+        <button class="btn sm" id="f-dup" title="Créer une copie de cette fiche, avec tous ses liens">Dupliquer</button>
         <button class="btn sm danger" id="f-delete">Supprimer</button>
       </div>
     </article>`;
@@ -914,6 +924,12 @@ function renderFiche() {
   $('#back-list').addEventListener('click', () => { document.body.classList.remove('show-fiche'); });
   $('#back-hist')?.addEventListener('click', () => { const prev = ui.history.pop(); if (prev) { ui.selectedId = prev; renderIndex(); renderFiche(); } });
   $('#f-map').addEventListener('click', () => { setView('carte'); ui.isolate = 1; graph.setSelected(doc.id); renderDrawer(); graph.centerOn(doc.id); });
+  $('#f-dup').addEventListener('click', () => {
+    const copy = duplicateDoc(doc.id);
+    select(copy.id); renderIndex();
+    const nameEl = $('#f-name'); if (nameEl) { nameEl.focus(); nameEl.select(); }
+    toast(`Copie créée avec ${degree(copy.id)} lien(s)`);
+  });
   $('#f-delete').addEventListener('click', async () => {
     const ok = await confirmDialog({ title: 'Supprimer ce document ?', text: `« ${doc.name || doc.ref} » et ses ${degree(doc.id)} lien(s) seront retirés de la base. Cette action est définitive.`, okLabel: 'Supprimer', danger: true });
     if (!ok) return;

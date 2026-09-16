@@ -21,6 +21,9 @@ exportées ou importées en JSON.
   Flèche bas dans le champ vide affiche les documents récemment modifiés.
 - Les fiches existantes s'enregistrent automatiquement à chaque modification.
 - Cliquer sur un document lié ouvre sa fiche ; « Retour à … » revient en arrière.
+- **Dupliquer** (bas de la fiche) crée une copie du document avec tous ses
+  liens, et ouvre la copie prête à renommer. Pratique pour une nouvelle version
+  ou un document jumeau.
 - L'index à gauche filtre par groupe ou « Sans lien », et cherche par nom ou
   référence (`Ctrl K`).
 
