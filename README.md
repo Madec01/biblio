@@ -19,13 +19,21 @@ exportées ou importées en JSON.
   « Lier un document ». Si le document n'existe pas encore, l'option
   « Créer … et le lier » l'ajoute à la base sans quitter la fiche.
   Flèche bas dans le champ vide affiche les documents récemment modifiés.
+- Avant de choisir le document, sélectionnez la **nature de la relation** :
+  lié à, nécessite, produit, s’applique à, remplace ou justifie. Les relations
+  orientées sont reformulées automatiquement depuis l’autre document.
+- Chaque fiche peut préciser son **type**, son **statut**, sa **version / indice**
+  et ses **mots-clés**. La référence reste l’identifiant opérationnel à copier
+  dans l’application documentaire professionnelle.
 - Les fiches existantes s'enregistrent automatiquement à chaque modification.
 - Cliquer sur un document lié ouvre sa fiche ; « Retour à … » revient en arrière.
 - **Dupliquer** (bas de la fiche) crée une copie du document avec tous ses
   liens, et ouvre la copie prête à renommer. Pratique pour une nouvelle version
   ou un document jumeau.
 - L'index à gauche filtre par groupe ou « Sans lien », et cherche par nom ou
-  référence (`Ctrl K`).
+  référence (`Ctrl K`). La recherche couvre aussi les notes, types, statuts,
+  versions, mots-clés et groupes. Deux filtres rapides ciblent type et statut.
+- Une référence déjà utilisée est signalée afin de limiter les doublons.
 
 ### Carte
 
@@ -98,17 +106,19 @@ exportées ou importées en JSON.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "groups": [
     { "id": "g_equipe", "name": "Équipe commune", "color": "#6a4d9c" },
     { "id": "g_ec_base", "name": "Base documentaire EC", "color": "#9d88ba", "parent": "g_equipe" }
   ],
-  "docs":   [{ "id": "d…", "name": "Manuel qualité", "ref": "MQ-001", "group": "g_qualite", "note": "" }],
-  "links":  [{ "a": "d…", "b": "d…" }]
+  "docs":   [{ "id": "d…", "name": "Manuel qualité", "ref": "MQ-001", "group": "g_qualite", "type": "Référentiel", "status": "Applicable", "docVersion": "3", "tags": "qualité, organisation", "note": "" }],
+  "links":  [{ "a": "d…", "b": "d…", "type": "requires", "note": "" }]
 }
 ```
 
-Les liens sont non orientés : un lien de A vers B apparaît sur les deux fiches.
+Tous les liens apparaissent sur les deux fiches. Certains sont orientés : par
+exemple « A nécessite B » devient « B est nécessaire à A » depuis la fiche B.
+Les anciennes bases restent compatibles ; leurs liens deviennent « Est lié à ».
 Un groupe avec `parent` est un sous-groupe de ce grand groupe (un seul niveau).
 
 ## Hébergement
