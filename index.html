@@ -346,6 +346,59 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .empty p{color:var(--ink-2);margin:0 0 22px}
 .empty .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 
+/* ---------- Vue Arbre ---------- */
+.tree-view{position:absolute;inset:0;display:flex;flex-direction:column;min-height:0}
+.tree-view .empty{flex:1}
+.tree-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:color-mix(in srgb,var(--paper-2) 60%,transparent)}
+.tree-root{display:inline-flex;align-items:center;gap:10px;padding:6px 14px 6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);min-width:0;max-width:min(520px,100%)}
+.tree-root .swatch{width:10px;height:10px;border-radius:50%;background:var(--g);flex:none}
+.tree-root .mono{font-size:12.5px;color:var(--ink-3);white-space:nowrap}
+.tree-root strong{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tree-change{width:240px}
+.tree-change .linker-input{height:36px;padding-left:36px;font-size:13.5px;border-radius:999px}
+.tree-change .plus{font-size:16px;left:13px}
+.tree-wrap{flex:1;overflow:auto;padding:36px 30px 60px;scrollbar-width:thin;position:relative}
+.tree-scale{width:max-content;min-width:100%;display:flex;justify-content:center}
+.tree-stats{font-size:12.5px;color:var(--ink-3);white-space:nowrap}
+.tree,.tree ul{display:flex;justify-content:center;list-style:none;margin:0;padding:0;position:relative}
+.tree ul{padding-top:30px}
+.tree ul::before{content:"";position:absolute;top:0;left:50%;width:0;height:30px;border-left:1.5px solid var(--line-2)}
+.tree li{display:flex;flex-direction:column;align-items:center;position:relative;padding:30px 8px 0}
+.tree>li{padding-top:0}
+.tree li::before,.tree li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:30px;border-top:1.5px solid var(--line-2)}
+.tree li::after{right:auto;left:50%;border-left:1.5px solid var(--line-2)}
+.tree li:first-child::before,.tree li:last-child::after{border-top:0}
+.tree li:last-child::before{border-right:1.5px solid var(--line-2);border-radius:0 8px 0 0}
+.tree li:first-child::after{border-radius:8px 0 0 0}
+.tree li:only-child::before{display:none}
+.tree li:only-child::after{border-top:0;border-radius:0}
+.tree>li::before,.tree>li::after{display:none}
+.tnode{
+  position:relative;width:196px;padding:12px 12px 8px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;
+  animation:rise .35s cubic-bezier(.2,.7,.2,1) both
+}
+.tnode:hover{transform:translateY(-2px);border-color:var(--g);box-shadow:var(--shadow-lg)}
+.tnode .tbar{position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 3px 3px 0;background:var(--g)}
+.tnode .tgrp{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--g);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tnode .tref{font-family:var(--font-mono);font-size:12px;color:var(--ink-3)}
+.tnode .tname{font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tnode .tfoot{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:11.5px;color:var(--ink-3);flex-wrap:wrap}
+.tnode .tmore{color:var(--accent);font-weight:500}
+.tnode .telse{opacity:.8}
+.tnode .topen{margin-left:auto;font-size:11px;color:var(--accent);padding:2px 7px;border-radius:999px;border:1px solid transparent;opacity:0;transition:opacity .15s}
+.tnode:hover .topen,.tnode:focus-within .topen{opacity:1}
+.tnode .topen:hover{border-color:var(--accent);background:var(--accent-soft)}
+.tnode.root{width:240px;cursor:default;border-color:var(--g);background:linear-gradient(180deg,color-mix(in srgb,var(--g) 10%,var(--card)),var(--card))}
+.tnode.root:hover{transform:none}
+.tnode.root .tname{font-family:var(--font-display);font-weight:600;font-size:19px;letter-spacing:-.01em}
+.tnode.root .tbar{width:5px}
+@media (max-width:900px){
+  .tree-bar{padding:10px 12px;gap:8px}
+  .tree-change{width:100%}
+  .tree-wrap{padding:24px 16px 60px}
+}
+
 /* ---------- Vue Carte ---------- */
 .map-wrap{position:absolute;inset:0;overflow:hidden}
 #map{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
@@ -492,6 +545,7 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
   <nav class="seg nav" aria-label="Vues">
     <button data-view="fiches" class="on">Fiches</button>
     <button data-view="carte">Carte</button>
+    <button data-view="arbre">Arbre</button>
   </nav>
   <div class="spacer"></div>
   <button class="btn primary" id="btn-new" title="Nouveau document (N)">
@@ -560,6 +614,11 @@ dialog[open]{animation:pop .2s cubic-bezier(.2,.7,.2,1) both}
       </div>
       <aside class="drawer" id="drawer"></aside>
     </div>
+  </section>
+
+  <!-- ================= ARBRE ================= -->
+  <section id="view-arbre" class="view">
+    <div class="tree-view" id="tree-view"></div>
   </section>
 </main>
 
@@ -756,6 +815,10 @@ const ui = {
   hiddenGroups: new Set(),
   layout: 'groups',
   isolate: 0,              // 0 = tout, 1 ou 2 = niveaux de voisinage autour du document sélectionné
+  treeRoot: null,          // racine de l'arbre des liens
+  treeDepth: 2,
+  treeZoom: 1,
+  treeHistory: [],
   mapQuery: '',
 };
 
@@ -784,6 +847,7 @@ function setView(v) {
   $$('.view').forEach(s => s.classList.toggle('on', s.id === 'view-' + v));
   closeMenu();
   if (v === 'carte') { graph.sync(); graph.resize(); renderLegend(); renderDrawer(); if (!graph.fitted) graph.follow(); else graph.wake(); }
+  if (v === 'arbre') renderTree();
 }
 $$('.seg.nav button').forEach(b => b.addEventListener('click', () => setView(b.dataset.view)));
 $('#brand').addEventListener('click', e => { e.preventDefault(); setView('fiches'); });
@@ -898,6 +962,7 @@ function renderFiche() {
         <span>Créé le ${fmtDate(doc.createdAt)} · modifié le ${fmtDate(doc.updatedAt)}</span>
         <span class="spacer"></span>
         <button class="btn sm" id="f-map">Voir sur la carte</button>
+        <button class="btn sm" id="f-tree" title="Arbre des liens : ce document et ses liens, niveau par niveau">Arbre des liens</button>
         <button class="btn sm" id="f-dup" title="Créer une copie de cette fiche, avec tous ses liens">Dupliquer</button>
         <button class="btn sm danger" id="f-delete">Supprimer</button>
       </div>
@@ -939,6 +1004,7 @@ function renderFiche() {
   $('#back-list').addEventListener('click', () => { document.body.classList.remove('show-fiche'); });
   $('#back-hist')?.addEventListener('click', () => { const prev = ui.history.pop(); if (prev) { ui.selectedId = prev; renderIndex(); renderFiche(); } });
   $('#f-map').addEventListener('click', () => { setView('carte'); ui.isolate = 1; graph.setSelected(doc.id); renderDrawer(); graph.centerOn(doc.id); });
+  $('#f-tree').addEventListener('click', () => openTree(doc.id));
   $('#f-dup').addEventListener('click', () => {
     const copy = duplicateDoc(doc.id);
     select(copy.id); renderIndex();
@@ -1078,8 +1144,8 @@ function renderLinkList(host, docs, { onOpen, onRemove, noNav = false }) {
 }
 
 /* Combobox « Lier un document » */
-function mountLinker(host, { exclude, onPick, onCreate }) {
-  host.innerHTML = `<div class="linker"><span class="plus">+</span><input class="linker-input" placeholder="Lier un document : tapez un nom ou une référence… (↓ pour les récents)" autocomplete="off" aria-label="Lier un document"><div class="linker-menu" hidden></div></div>`;
+function mountLinker(host, { exclude, onPick, onCreate, allowCreate = true, placeholder = 'Lier un document : tapez un nom ou une référence… (↓ pour les récents)', icon = '+' }) {
+  host.innerHTML = `<div class="linker"><span class="plus">${icon}</span><input class="linker-input" placeholder="${esc(placeholder)}" autocomplete="off" aria-label="${esc(placeholder)}"><div class="linker-menu" hidden></div></div>`;
   const input = $('.linker-input', host), menu = $('.linker-menu', host);
   let items = [], hi = -1, creating = false;
   const close = () => { menu.hidden = true; creating = false; hi = -1; };
@@ -1089,7 +1155,7 @@ function mountLinker(host, { exclude, onPick, onCreate }) {
     const pool = state.docs.filter(d => !ex.has(d.id));
     items = (q ? pool.filter(d => matches(d, q)) : sortedDocs(pool).sort((a, b) => b.updatedAt - a.updatedAt)).slice(0, 8);
     if (!q && !items.length) { close(); return; }
-    const hasExact = q && items.some(d => norm(d.name) === norm(q) || norm(d.ref) === norm(q));
+    const hasExact = !allowCreate || (q && items.some(d => norm(d.name) === norm(q) || norm(d.ref) === norm(q)));
     menu.innerHTML = `
       ${!q ? `<div class="linker-empty">Récemment modifiés</div>` : ''}
       ${items.map((d, i) => `<button class="linker-item ${i === hi ? 'hi' : ''}" data-i="${i}" style="--g:${groupOf(d).color}"><span class="swatch"></span><span class="ref">${highlight(d.ref || '—', q)}</span><span class="name">${highlight(d.name || 'Sans titre', q)}</span><span class="grp">${esc(groupLabel(groupOf(d)))}</span></button>`).join('')}
@@ -1137,7 +1203,7 @@ function mountLinker(host, { exclude, onPick, onCreate }) {
   input.addEventListener('keydown', e => {
     if (menu.hidden && e.key === 'ArrowDown' && !creating) { e.preventDefault(); hi = 0; render(); return; }
     if (menu.hidden || creating) { if (e.key === 'Escape') close(); return; }
-    const max = items.length + (input.value.trim() && !items.some(d => norm(d.name) === norm(input.value) || norm(d.ref) === norm(input.value)) ? 1 : 0);
+    const max = items.length + (allowCreate && input.value.trim() && !items.some(d => norm(d.name) === norm(input.value) || norm(d.ref) === norm(input.value)) ? 1 : 0);
     if (e.key === 'ArrowDown') { e.preventDefault(); hi = Math.min(max - 1, hi + 1); render(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); hi = Math.max(0, hi - 1); render(); }
     else if (e.key === 'Enter') { e.preventDefault(); if (max === 0) return; choose(hi < 0 ? 0 : hi); }
@@ -1561,7 +1627,7 @@ function renderDrawer() {
       <div class="ref">${esc(doc.ref || '—')}</div>
       <h2>${esc(doc.name || 'Sans titre')}</h2>
       ${doc.note ? `<p class="note">${esc(doc.note)}</p>` : ''}
-      <div class="row"><button class="btn sm primary" id="dr-open">Ouvrir la fiche</button><button class="btn sm" id="dr-center">Centrer</button></div>
+      <div class="row"><button class="btn sm primary" id="dr-open">Ouvrir la fiche</button><button class="btn sm" id="dr-tree">Arbre des liens</button><button class="btn sm" id="dr-center">Centrer</button></div>
       <div class="iso"><span>Voisinage</span>
         <div class="seg small" id="iso-seg">
           <button data-iso="0" class="${ui.isolate === 0 ? 'on' : ''}">Tout</button>
@@ -1577,12 +1643,108 @@ function renderDrawer() {
   $('#dr-close').addEventListener('click', () => { ui.selectedId = null; graph.setSelected(null); renderDrawer(); });
   $('#dr-open').addEventListener('click', () => { select(doc.id); setView('fiches'); });
   $('#dr-center').addEventListener('click', () => graph.centerOn(doc.id));
+  $('#dr-tree').addEventListener('click', () => openTree(doc.id));
   $$('#iso-seg button').forEach(b => b.addEventListener('click', () => { ui.isolate = +b.dataset.iso; $$('#iso-seg button').forEach(x => x.classList.toggle('on', x === b)); graph.wake(.5); setTimeout(() => graph.fit(), 250); }));
 }
 
 /* ==========================================================================
    Modales
    ========================================================================== */
+/* ==========================================================================
+   Arbre des liens : le document racine, puis ses liens niveau par niveau (parcours en largeur,
+   chaque document n'apparaît qu'une fois, au niveau le plus proche de la racine).
+   ========================================================================== */
+function buildTree(rootId, depth) {
+  const root = { id: rootId, children: [], elsewhere: 0, beyond: 0 };
+  const byId = new Map([[rootId, root]]);
+  let level = [root];
+  for (let d = 0; d < depth && level.length; d++) {
+    const next = [];
+    for (const node of level) {
+      for (const doc of sortedDocs(linkedIds(node.id).map(getDoc).filter(Boolean))) {
+        if (byId.has(doc.id)) { if (doc.id !== node.parent) node.elsewhere++; continue; }
+        const child = { id: doc.id, parent: node.id, children: [], elsewhere: 0, beyond: 0 };
+        byId.set(doc.id, child); node.children.push(child); next.push(child);
+      }
+    }
+    level = next;
+  }
+  // feuilles au dernier niveau : liens non déployés
+  for (const node of level) node.beyond = linkedIds(node.id).filter(id => !byId.has(id)).length;
+  return { root, count: byId.size };
+}
+function openTree(id, { push = true } = {}) {
+  if (push && ui.treeRoot && ui.treeRoot !== id) ui.treeHistory.push(ui.treeRoot);
+  ui.treeRoot = id; ui.selectedId = id;
+  setView('arbre');
+}
+function renderTree() {
+  const host = $('#tree-view');
+  const doc = getDoc(ui.treeRoot);
+  if (!doc) {
+    host.innerHTML = `<div class="empty"><div class="inner">
+      <div class="glyph">⌥</div>
+      <h2>Arbre des liens</h2>
+      <p>Choisissez un document racine : l’arbre montre ses documents liés, puis les leurs, niveau par niveau, comme un arbre généalogique.</p>
+      <div id="tree-picker" style="text-align:left;margin:0 auto;max-width:440px"></div>
+    </div></div>`;
+    mountLinker($('#tree-picker'), { exclude: () => new Set(), onPick: d => openTree(d.id), allowCreate: false, placeholder: 'Document racine : nom ou référence… (↓ pour les récents)', icon: '⌕' });
+    setTimeout(() => $('#tree-picker .linker-input')?.focus(), 30);
+    return;
+  }
+  const { root, count } = buildTree(doc.id, ui.treeDepth);
+  const g = groupOf(doc);
+  const back = ui.treeHistory.length ? getDoc(ui.treeHistory[ui.treeHistory.length - 1]) : null;
+  const nodeHtml = (n, isRoot) => {
+    const d = getDoc(n.id), gg = groupOf(d), deg = degree(n.id);
+    return `<div class="tnode ${isRoot ? 'root' : ''}" data-id="${n.id}" style="--g:${gg.color}" tabindex="0" title="${isRoot ? '' : 'Placer ce document à la racine'}">
+      <span class="tbar"></span>
+      <span class="tgrp">${esc(groupLabel(gg))}</span>
+      <span class="tref">${esc(d.ref || '—')}</span>
+      <span class="tname">${esc(d.name || 'Sans titre')}</span>
+      <span class="tfoot">
+        <span class="tdeg">${deg} lien${deg > 1 ? 's' : ''}</span>
+        ${n.beyond ? `<span class="tmore" title="Liens non déployés à ce niveau : cliquez pour continuer l’arbre depuis ce document">+${n.beyond} ▾</span>` : ''}
+        ${n.elsewhere ? `<span class="telse" title="Liens vers des documents déjà affichés ailleurs dans l’arbre">↺ ${n.elsewhere}</span>` : ''}
+        <button class="topen" title="Ouvrir la fiche" aria-label="Ouvrir la fiche" data-open="${n.id}">fiche</button>
+      </span>
+    </div>`;
+  };
+  const sub = n => n.children.length ? `<ul>${n.children.map(c => `<li>${nodeHtml(c, false)}${sub(c)}</li>`).join('')}</ul>` : '';
+  host.innerHTML = `
+    <div class="tree-bar">
+      ${back ? `<button class="btn sm ghost" id="tree-back">← ${esc(back.ref || back.name)}</button>` : ''}
+      <div class="tree-root" style="--g:${g.color}"><span class="swatch"></span><span class="mono">${esc(doc.ref || '—')}</span><strong>${esc(doc.name || 'Sans titre')}</strong></div>
+      <span class="tree-stats">${count} document${count > 1 ? 's' : ''}${root.children.length ? '' : ' · aucun lien'}</span>
+      <div class="spacer"></div>
+      <span class="label">Niveaux</span>
+      <div class="seg small" id="tree-depth">${[1, 2, 3, 4].map(n => `<button data-d="${n}" class="${ui.treeDepth === n ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <div class="seg small" id="tree-zoom"><button data-z="-1" title="Réduire">−</button><button data-z="0" title="Taille normale">${Math.round(ui.treeZoom * 100)} %</button><button data-z="1" title="Agrandir">+</button></div>
+      <button class="btn sm" id="tree-fiche">Ouvrir la fiche</button>
+      <button class="btn sm" id="tree-map">Voir sur la carte</button>
+      <div id="tree-change" class="tree-change"></div>
+    </div>
+    <div class="tree-wrap">
+      <div class="tree-scale" style="zoom:${ui.treeZoom}">
+        <ul class="tree"><li>${nodeHtml(root, true)}${sub(root)}</li></ul>
+      </div>
+    </div>`;
+  // la racine est au centre de l'arbre : on centre le défilement horizontal dessus
+  const wrap = $('.tree-wrap', host); wrap.scrollLeft = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
+  $$('.tnode:not(.root)', host).forEach(el => {
+    const go = () => openTree(el.dataset.id);
+    el.addEventListener('click', e => { if (e.target.closest('.topen')) return; go(); });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  });
+  $$('.topen', host).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); select(b.dataset.open); setView('fiches'); }));
+  $$('#tree-depth button', host).forEach(b => b.addEventListener('click', () => { ui.treeDepth = +b.dataset.d; renderTree(); }));
+  $$('#tree-zoom button', host).forEach(b => b.addEventListener('click', () => { const z = +b.dataset.z; ui.treeZoom = z === 0 ? 1 : Math.min(1.6, Math.max(.4, +(ui.treeZoom + z * .15).toFixed(2))); renderTree(); }));
+  $('#tree-back')?.addEventListener('click', () => { const prev = ui.treeHistory.pop(); if (prev) openTree(prev, { push: false }); });
+  $('#tree-fiche').addEventListener('click', () => { select(doc.id); setView('fiches'); });
+  $('#tree-map').addEventListener('click', () => { setView('carte'); ui.isolate = 1; graph.setSelected(doc.id); renderDrawer(); graph.centerOn(doc.id); });
+  mountLinker($('#tree-change'), { exclude: () => new Set([doc.id]), onPick: d => openTree(d.id), allowCreate: false, placeholder: 'Changer de racine…', icon: '⌕' });
+}
+
 const dlg = $('#dlg');
 function openDialog(html) {
   dlg.innerHTML = `<div class="modal">${html}</div>`;
@@ -1732,6 +1894,7 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') { if (ui.view === 'carte' && ui.selectedId) { ui.selectedId = null; graph.setSelected(null); renderDrawer(); } else if (ui.creating) { ui.creating = null; document.body.classList.remove('show-fiche'); renderIndex(); renderFiche(); } }
   else if (e.key === '1') setView('fiches');
   else if (e.key === '2') setView('carte');
+  else if (e.key === '3') setView('arbre');
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => graph.refreshColors());
 window.addEventListener('beforeunload', () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {} });

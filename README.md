@@ -61,6 +61,20 @@ exportées ou importées en JSON.
 - Sur la carte, chaque sous-groupe forme un territoire dessiné à l'intérieur
   de celui de son grand groupe ; la légende permet de masquer l'un ou l'autre.
 
+### Arbre des liens
+
+- Troisième vue, façon arbre généalogique : un document racine en haut, ses
+  documents liés en dessous, puis les leurs, sur 1 à 4 niveaux.
+- Ouvrez-la depuis une fiche (« Arbre des liens »), depuis le tiroir de la
+  carte, ou depuis l'onglet Arbre (touche `3`) en choisissant une racine.
+- Chaque document n'apparaît qu'une fois, au niveau le plus proche de la
+  racine. Le badge « ↺ n » signale des liens vers des documents déjà affichés
+  ailleurs dans l'arbre ; « +n ▾ » signale des liens non déployés au dernier
+  niveau.
+- Cliquer sur un document le place à la racine (« ← » revient en arrière) ;
+  le bouton « fiche » ouvre sa fiche. Les boutons − / + agrandissent ou
+  réduisent l'arbre.
+
 ### Menu (⋯)
 
 - **Gérer les groupes** : renommer, recolorer, ajouter ou supprimer un grand
@@ -77,7 +91,7 @@ exportées ou importées en JSON.
 | --- | --- |
 | `N` | Nouveau document |
 | `Ctrl K` | Recherche (index ou carte selon la vue) |
-| `1` / `2` | Vue Fiches / Carte |
+| `1` / `2` / `3` | Vue Fiches / Carte / Arbre |
 | `Échap` | Fermer le tiroir, annuler la création |
 
 ## Format des données
