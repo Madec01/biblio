@@ -188,6 +188,8 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .pills.sub{padding-left:8px;border-left:2px solid var(--g);margin-left:6px;align-items:center}
 .pills.sub .pill{padding:4px 10px 4px 7px;font-size:12.5px}
 .group-head.sub{padding-top:8px;padding-left:22px;letter-spacing:.08em}
+.group-head.dim,.doc-item.dim{opacity:.5;transition:opacity .15s}
+.doc-item.dim:hover,.doc-item.dim.on{opacity:1}
 .group-head.sub .swatch{border-radius:50%;width:8px;height:8px}
 .lg-item.sub{padding-left:24px;font-size:13px}
 .lg-item.sub .swatch{width:9px;height:9px;border-radius:50%}
@@ -649,7 +651,15 @@ const orderedGroups = () => topGroups().flatMap(t => [t, ...childrenOf(t.id)]);
 /* Un document est « dans » un groupe s'il y est directement ou via un de ses sous-groupes. */
 const inGroup = (doc, gid) => doc.group === gid || rootIdOfDoc(doc) === gid;
 const countInGroup = gid => state.docs.filter(d => inGroup(d, gid)).length;
-const tint = (hex, amt = .28) => { const [r, g, b] = hexToRgb(hex); const f = v => Math.round(v + (255 - v) * amt).toString(16).padStart(2, '0'); return '#' + f(r) + f(g) + f(b); };
+const hexToHsl = hex => { let [r, g, b] = hexToRgb(hex).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; if (mx === mn) return [0, 0, l]; const d = mx - mn, s = l > .5 ? d / (2 - mx - mn) : d / (mx + mn); let h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [h * 60, s, l]; };
+const hslToHex = (h, s, l) => { h = ((h % 360) + 360) % 360; const f = n => { const k = (n + h / 30) % 12; const c = l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return Math.round(c * 255).toString(16).padStart(2, '0'); }; return '#' + f(0) + f(8) + f(4); };
+/* Nuance n° i dans la même famille chromatique que la couleur parente : teinte conservée (léger décalage), luminosité et saturation variées. */
+function shadeOf(parentHex, i) {
+  const [h, s, l] = hexToHsl(parentHex);
+  const steps = [[0, .14, -.06], [14, .06, .04], [-14, .22, -.1], [0, -.09, .08], [24, .1, 0], [-24, .18, .06], [8, -.14, .12], [-8, .28, -.14]];
+  const [dh, dl, ds] = steps[i % steps.length];
+  return hslToHex(h + dh, Math.min(.85, Math.max(.18, s + ds)), Math.min(.74, Math.max(.3, l + dl)));
+}
 const linkedIds = id => state.links.filter(l => l.a === id || l.b === id).map(l => l.a === id ? l.b : l.a);
 const degree = id => state.links.reduce((n, l) => n + (l.a === id || l.b === id), 0);
 const isLinked = (a, b) => state.links.some(l => (l.a === a && l.b === b) || (l.a === b && l.b === a));
@@ -705,7 +715,7 @@ function highlight(text, q) {
    ========================================================================== */
 function sampleData() {
   const s = freshState();
-  s.groups.push({ id: 'g_ec_base', name: 'Base documentaire EC', color: tint('#6a4d9c'), parent: 'g_equipe' });
+  s.groups.push({ id: 'g_ec_base', name: 'Base documentaire EC', color: shadeOf('#6a4d9c', 0), parent: 'g_equipe' });
   const mk = (ref, name, group, note = '') => { const d = { id: uid(), ref, name, group, note, createdAt: Date.now(), updatedAt: Date.now() }; s.docs.push(d); return d.id; };
   const MQ  = mk('MQ-001',      'Manuel qualité',                          'g_qualite', 'Document chapeau du système qualité. Décrit l’organisation, les responsabilités et les processus.');
   const PQ  = mk('PQ-012',      'Procédure de traitement des écarts',       'g_qualite', 'À appliquer dès qu’un écart est constaté en intervention.');
@@ -819,10 +829,12 @@ function renderFilters() {
 function filteredDocs() {
   return state.docs.filter(d => {
     if (ui.filter === 'orphan' && degree(d.id) > 0) return false;
-    if (ui.filter !== 'all' && ui.filter !== 'orphan' && !inGroup(d, ui.filter)) return false;
+    if (ui.filter !== 'all' && ui.filter !== 'orphan' && !inGroup(d, rootOf(getGroup(ui.filter)).id)) return false;
     return matches(d, ui.query);
   });
 }
+/* Sous-groupe filtré : il vient en premier, le reste du grand groupe est atténué. */
+function focusedSubId() { const g = (ui.filter !== 'all' && ui.filter !== 'orphan') ? getGroup(ui.filter) : null; return g && g.parent ? g.id : null; }
 function renderIndex() {
   const list = $('#index-list');
   const docs = filteredDocs();
@@ -834,10 +846,13 @@ function renderIndex() {
     $('#ie-sample')?.addEventListener('click', loadSample);
     return;
   }
-  list.innerHTML = groupedDocs(docs).map(({ group, docs }) => `
-    <div class="group-head ${group.parent ? 'sub' : ''}" style="--g:${group.color}"><span class="swatch"></span>${esc(group.name)}<span class="n">${docs.length}</span></div>
+  const focus = focusedSubId();
+  let sections = groupedDocs(docs);
+  if (focus) sections = [...sections.filter(x => x.group.id === focus), ...sections.filter(x => x.group.id !== focus)];
+  list.innerHTML = sections.map(({ group, docs }) => `
+    <div class="group-head ${group.parent ? 'sub' : ''} ${focus && group.id !== focus ? 'dim' : ''}" style="--g:${group.color}"><span class="swatch"></span>${esc(group.name)}<span class="n">${docs.length}</span></div>
     ${docs.map(d => `
-      <button class="doc-item ${d.id === ui.selectedId ? 'on' : ''}" data-id="${d.id}" style="--g:${group.color}">
+      <button class="doc-item ${d.id === ui.selectedId ? 'on' : ''} ${focus && group.id !== focus ? 'dim' : ''}" data-id="${d.id}" style="--g:${group.color}">
         <span class="tab"></span>
         <span class="txt">
           <span class="ref">${highlight(d.ref || '—', ui.query)}</span>
@@ -1150,7 +1165,7 @@ class Graph {
   }
   refreshColors() {
     const cs = getComputedStyle(document.documentElement);
-    this.colors = { ink: cs.getPropertyValue('--ink').trim(), ink3: cs.getPropertyValue('--ink-3').trim(), paper: cs.getPropertyValue('--card').trim(), edge: cs.getPropertyValue('--canvas-edge').trim(), accent: cs.getPropertyValue('--accent').trim() };
+    this.colors = { ink: cs.getPropertyValue('--ink').trim(), ink2: cs.getPropertyValue('--ink-2').trim(), ink3: cs.getPropertyValue('--ink-3').trim(), paper: cs.getPropertyValue('--card').trim(), edge: cs.getPropertyValue('--canvas-edge').trim(), accent: cs.getPropertyValue('--accent').trim() };
     this.dirty = true;
   }
   resize() {
@@ -1193,14 +1208,14 @@ class Graph {
     // ses sous-groupes se placent autour de son centre.
     const tops = topGroups();
     const counts = tops.map(t => this.nodes.filter(n => n.root === t.id).length);
-    const radii = counts.map(c => c ? 34 * Math.sqrt(c) + 50 : 0);
+    const radii = counts.map(c => c ? 46 * Math.sqrt(c) + 60 : 0);
     const present = tops.map((g, i) => i).filter(i => counts[i] > 0);
-    const circ = present.reduce((s, i) => s + 2 * radii[i] + 110, 0);
-    const R = present.length <= 1 ? 0 : Math.max(220, circ / (2 * Math.PI));
+    const circ = present.reduce((s, i) => s + 2 * radii[i] + 130, 0);
+    const R = present.length <= 1 ? 0 : Math.max(260, circ / (2 * Math.PI));
     this.anchors = new Map();
     let ang = -Math.PI / 2;
     for (const i of present) {
-      const half = (2 * radii[i] + 110) / circ * Math.PI;
+      const half = (2 * radii[i] + 130) / circ * Math.PI;
       ang += half;
       const t = tops[i], cx = Math.cos(ang) * R, cy = Math.sin(ang) * R;
       this.anchors.set(t.id, { x: cx, y: cy });
@@ -1230,11 +1245,13 @@ class Graph {
       const p = N[i]; if (!vis.has(p.id)) continue;
       for (let j = i + 1; j < N.length; j++) {
         const q = N[j]; if (!vis.has(q.id)) continue;
-        let dx = q.x - p.x, dy = q.y - p.y, d2 = dx * dx + dy * dy;
-        if (d2 < 1) { dx = (Math.random() - .5); dy = (Math.random() - .5); d2 = 1; }
-        const min = (p.r + q.r + 26); const m2 = min * min;
-        let f = 2600 / d2; if (d2 < m2) f += (m2 - d2) / m2 * 8; // répulsion + anti-chevauchement
-        const inv = 1 / Math.sqrt(d2); const fx = dx * inv * f, fy = dy * inv * f;
+        let dx = q.x - p.x, dy = q.y - p.y;
+        if (dx * dx + dy * dy < 1) { dx = (Math.random() - .5); dy = (Math.random() - .5); }
+        // les étiquettes sont larges : distance « aplatie » pour écarter davantage en largeur qu'en hauteur
+        const ax = dx * .55, d2 = ax * ax + dy * dy;
+        const min = (p.r + q.r + 72); const m2 = min * min;
+        let f = 3000 / d2; if (d2 < m2) f += (m2 - d2) / m2 * 10; // répulsion + anti-chevauchement
+        const inv = 1 / Math.sqrt(d2); const fx = ax * inv * f, fy = dy * inv * f;
         p.fx -= fx; p.fy -= fy; q.fx += fx; q.fy += fy;
       }
     }
@@ -1242,7 +1259,7 @@ class Graph {
       if (!vis.has(e.a.id) || !vis.has(e.b.id)) continue;
       const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
       const cross = ui.layout === 'groups' && e.a.root !== e.b.root;
-      const L = 80 + e.a.r + e.b.r + (cross ? 120 : 0);
+      const L = 110 + e.a.r + e.b.r + (cross ? 140 : 0);
       const f = (d - L) * (cross ? .012 : .045); const fx = dx / d * f, fy = dy / d * f;
       e.a.fx += fx; e.a.fy += fy; e.b.fx -= fx; e.b.fy -= fy;
     }
@@ -1354,19 +1371,35 @@ class Graph {
       if (isSel) { ctx.beginPath(); ctx.arc(n.x, n.y, r + 3 / k, 0, Math.PI * 2); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5 / k; ctx.stroke(); }
       ctx.globalAlpha = 1;
     }
-    // étiquettes
+    // étiquettes, avec désencombrement : les documents les plus liés d'abord ; une étiquette qui en
+    // recouvrirait une autre (ou un nœud) est réduite à la référence, ou masquée jusqu'au prochain zoom.
     if (k > .5) {
       ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      for (const n of this.nodes) {
-        if (!vis.has(n.id)) continue;
-        const dim = dimOf(n); if (dim < .5 && !(focus === n.id)) continue;
-        const label = n.doc.ref || n.doc.name || '—';
-        const fs = Math.max(10, 11.5 / k);
-        ctx.font = `500 ${fs}px "IBM Plex Mono", Consolas, monospace`;
+      const fs = Math.max(10, 11.5 / k), lh = fs * 1.25;
+      const monoFont = `500 ${fs}px "IBM Plex Mono", Consolas, monospace`;
+      const sansFont = `400 ${fs * .95}px "IBM Plex Sans", "Segoe UI", sans-serif`;
+      const placed = [];
+      const overlaps = b => placed.some(p => !(b.x1 < p.x0 || b.x0 > p.x1 || b.y1 < p.y0 || b.y0 > p.y1));
+      const order = this.nodes.filter(n => vis.has(n.id) && (dimOf(n) >= .5 || focus === n.id))
+        .sort((a, b) => (b.id === focus) - (a.id === focus) || b.r - a.r);
+      for (const n of order) placed.push({ x0: n.x - n.r, y0: n.y - n.r, x1: n.x + n.r, y1: n.y + n.r, node: n });
+      for (const n of order) {
+        const isFocus = n.id === focus;
+        const lines = [];
+        if (n.doc.ref) lines.push({ t: n.doc.ref, font: monoFont, color: C.ink });
+        if (n.doc.name && (k > .7 || isFocus)) { ctx.font = sansFont; for (const t of wrapText(ctx, n.doc.name, fs * 11, 2)) lines.push({ t, font: sansFont, color: n.doc.ref ? C.ink2 : C.ink }); }
+        if (!lines.length) lines.push({ t: '—', font: monoFont, color: C.ink });
         const y = n.y + n.r + 4 / k;
-        const tw = ctx.measureText(label).width;
-        ctx.fillStyle = rgba(hexOf(C.paper), .8); ctx.fillRect(n.x - tw / 2 - 3 / k, y - 1 / k, tw + 6 / k, fs + 3 / k);
-        ctx.fillStyle = C.ink; ctx.globalAlpha = dim; ctx.fillText(label, n.x, y); ctx.globalAlpha = 1;
+        const boxOf = ls => { let tw = 0; for (const L of ls) { ctx.font = L.font; tw = Math.max(tw, ctx.measureText(L.t).width); } return { x0: n.x - tw / 2 - 4 / k, y0: y - 1 / k, x1: n.x + tw / 2 + 4 / k, y1: y + ls.length * lh + 1 / k, tw }; };
+        const own = b => ({ ...b, hit: placed.filter(p => p.node !== n).some(p => !(b.x1 < p.x0 || b.x0 > p.x1 || b.y1 < p.y0 || b.y0 > p.y1)) });
+        let ls = lines, box = own(boxOf(ls));
+        if (box.hit && !isFocus && ls.length > 1 && n.doc.ref) { ls = [lines[0]]; box = own(boxOf(ls)); }
+        if (box.hit && !isFocus) continue;
+        placed.push({ ...box, node: n });
+        ctx.globalAlpha = dimOf(n);
+        ctx.fillStyle = rgba(hexOf(C.paper), .85); ctx.fillRect(box.x0, box.y0, box.x1 - box.x0, box.y1 - box.y0);
+        ls.forEach((L, i) => { ctx.font = L.font; ctx.fillStyle = L.color; ctx.fillText(L.t, n.x, y + i * lh); });
+        ctx.globalAlpha = 1;
       }
     }
     ctx.restore();
@@ -1463,6 +1496,20 @@ class Graph {
       this.tx = e.offsetX - (e.offsetX - this.tx) * (k / this.k); this.ty = e.offsetY - (e.offsetY - this.ty) * (k / this.k); this.k = k; this.dirty = true; hideTip();
     }, { passive: false });
   }
+}
+/* Replie un texte sur maxLines lignes de largeur maxW, avec « … » si besoin. */
+function wrapText(ctx, text, maxW, maxLines) {
+  const words = String(text).split(/\s+/).filter(Boolean), lines = []; let cur = '';
+  for (const w of words) {
+    const t = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(t).width <= maxW || !cur) cur = t; else { lines.push(cur); cur = w; if (lines.length === maxLines) break; }
+  }
+  if (lines.length < maxLines && cur) lines.push(cur);
+  const overflow = lines.length > maxLines || (words.join(' ') !== lines.join(' '));
+  if (lines.length > maxLines) lines.length = maxLines;
+  let last = lines[lines.length - 1];
+  if (overflow || ctx.measureText(last).width > maxW) { while (last.length > 1 && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1); lines[lines.length - 1] = last.replace(/[\s.,;:]+$/, '') + '…'; }
+  return lines;
 }
 function convexHull(pts) { // chaîne monotone d'Andrew
   if (pts.length < 3) return pts.slice();
@@ -1600,7 +1647,7 @@ function groupsDialog() {
     $$('.g-sub', dlg).forEach(b => b.addEventListener('click', () => {
       const parent = getGroup(b.dataset.parent);
       const id = uid('g');
-      state.groups.push({ id, name: 'Nouveau sous-groupe', color: tint(parent.color, .25 + .15 * childrenOf(parent.id).length), parent: parent.id });
+      state.groups.push({ id, name: 'Nouveau sous-groupe', color: shadeOf(parent.color, childrenOf(parent.id).length), parent: parent.id });
       save(); refreshAll(); render();
       const inp = $(`.grp-row[data-id="${id}"] input[type=text]`, dlg); if (inp) { inp.focus(); inp.select(); }
     }));

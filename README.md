@@ -31,6 +31,10 @@ exportées ou importées en JSON.
 
 - Chaque document est un nœud, coloré par groupe ; sa taille suit son nombre
   de liens. Les groupes forment des territoires nommés.
+- Chaque nœud porte sa référence et son titre (replié sur deux lignes, tronqué
+  s'il est très long). Quand la place manque, les documents les plus liés
+  gardent leur titre et les autres n'affichent que leur référence : zoomez
+  pour tout voir. Le survol montre toujours le titre complet.
 - Molette pour zoomer, glisser pour déplacer, glisser un nœud pour le placer.
 - Clic sur un nœud : tiroir de détail avec ses liens. Double-clic : ouvre la fiche.
 - **Voisinage** (dans le tiroir) : n'affiche que le document et ses liens à
@@ -50,7 +54,10 @@ exportées ou importées en JSON.
 - Sur la fiche, choisissez d'abord le grand groupe ; s'il a des sous-groupes,
   une seconde rangée apparaît pour préciser.
 - Dans l'index, le filtre d'un grand groupe montre tous ses documents et
-  propose ses sous-groupes pour affiner.
+  propose ses sous-groupes. Choisir un sous-groupe le place en tête de liste
+  et atténue le reste du grand groupe, qui reste visible.
+- Un nouveau sous-groupe reçoit automatiquement une nuance de la couleur de
+  son grand groupe (même teinte, luminosité différente), modifiable ensuite.
 - Sur la carte, chaque sous-groupe forme un territoire dessiné à l'intérieur
   de celui de son grand groupe ; la légende permet de masquer l'un ou l'autre.
 
