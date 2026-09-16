@@ -102,6 +102,9 @@ exportées ou importées en JSON.
   réduisent l'arbre.
 - Les branches peuvent être repliées individuellement. L'arbre se filtre par
   sens, type et importance de relation, et peut être imprimé ou exporté en PDF.
+- L'affichage sépare visuellement trois niveaux : dépendances principales,
+  guides/précisions et simples références associées. L'arbre peut également
+  prendre un grand groupe ou un sous-groupe comme point de départ.
 
 ### Menu (⋯)
 
