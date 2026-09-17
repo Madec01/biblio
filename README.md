@@ -89,8 +89,8 @@ exportées ou importées en JSON.
 
 ### Arbre des liens
 
-- Troisième vue, façon arbre généalogique horizontal : un document racine à
-  gauche, ses documents filles à droite, puis les leurs, sur 1 à 4 niveaux.
+- Troisième vue, façon arbre généalogique vertical : un document racine en
+  haut, ses documents filles en dessous, puis les leurs, sur 1 à 4 niveaux.
 - Ouvrez-la depuis une fiche (« Arbre des liens »), depuis le tiroir de la
   carte, ou depuis l'onglet Arbre (touche `4`) en choisissant une racine.
 - Chaque document n'apparaît qu'une fois, au niveau le plus proche de la
@@ -105,8 +105,16 @@ exportées ou importées en JSON.
 - Les liens « s’applique à » et « est issu de » construisent les branches
   principales en trait plein. Les guides/aides sont décalés sous le document
   concerné et reliés par un trait pointillé coloré.
-- Un switch visible affiche ou masque les cadres colorés des grands groupes et
-  sous-groupes. L'arbre peut également prendre un groupe comme point de départ.
+- Le switch **Afficher les mères** ajoute au-dessus de chaque document ses
+  autres documents d'origine, puis leurs ancêtres. Ainsi, si A et C donnent
+  tous deux naissance à B, C reste visible lorsque B est affiché sous A. Un
+  clic sur une mère permet de remonter l'arbre depuis celle-ci.
+- Le switch **Cadres groupes** dessine un territoire commun autour de tous les
+  documents d'un grand groupe ou d'un sous-groupe, au lieu d'encadrer chaque
+  tuile séparément.
+- L'arbre peut également prendre un groupe comme point de départ. Cette vue
+  conserve les documents du groupe comme points d'entrée, puis affiche tous
+  leurs liens, y compris vers des documents situés dans d'autres groupes.
 
 ### Menu (⋯)
 
