@@ -89,29 +89,26 @@ exportées ou importées en JSON.
 
 ### Arbre des liens
 
-- Troisième vue, façon arbre généalogique vertical : un document racine en
-  haut, ses documents filles en dessous, puis les leurs, sur 1 à 4 niveaux.
+- Troisième vue, façon arbre généalogique : les mères occupent les lignes du
+  haut, le document sélectionné reste au centre et ses filles se déploient sur
+  les lignes du bas.
 - Ouvrez-la depuis une fiche (« Arbre des liens »), depuis le tiroir de la
   carte, ou depuis l'onglet Arbre (touche `4`) en choisissant une racine.
-- Chaque document n'apparaît qu'une fois, au niveau le plus proche de la
-  racine. Le badge « ↺ n » signale des liens vers des documents déjà affichés
-  ailleurs dans l'arbre ; « +n ▾ » signale des liens non déployés au dernier
-  niveau.
-- Cliquer sur un document le place à la racine (« ← » revient en arrière) ;
+- Les réglages **Au-dessus** et **En dessous** choisissent indépendamment de
+  0 à 4 générations de mères et de filles. Les guides/aides ne comptent pas
+  comme une génération.
+- Cliquer sur un document le place au centre (« ← » revient en arrière) ;
   le bouton « fiche » ouvre sa fiche. Les boutons − / + agrandissent ou
   réduisent l'arbre.
-- Les branches peuvent être repliées individuellement et l'arbre peut être
-  imprimé ou exporté en PDF.
+- L'arbre peut être imprimé ou exporté en PDF.
 - Les liens « s’applique à » et « est issu de » construisent les branches
-  principales en trait plein. Les guides/aides sont décalés sous le document
-  concerné et reliés par un trait pointillé coloré.
-- Le switch **Afficher les mères** ajoute au-dessus de chaque document ses
-  autres documents d'origine, puis leurs ancêtres. Ainsi, si A et C donnent
-  tous deux naissance à B, C reste visible lorsque B est affiché sous A. Un
-  clic sur une mère permet de remonter l'arbre depuis celle-ci.
+  principales en trait plein avec une flèche. Toutes les relations entre les
+  documents visibles sont tracées, y compris les liens multiples ou ceux qui
+  sautent une génération. Les guides/aides restent sur la même ligne que le
+  document concerné et sont reliés par un trait pointillé coloré.
 - Le switch **Cadres groupes** dessine un territoire commun autour de tous les
-  documents d'un grand groupe ou d'un sous-groupe, au lieu d'encadrer chaque
-  tuile séparément.
+  documents d'un grand groupe présents sur une même génération. Les cadres de
+  sous-groupes sont imbriqués à l'intérieur du grand groupe.
 - L'arbre peut également prendre un groupe comme point de départ. Cette vue
   conserve les documents du groupe comme points d'entrée, puis affiche tous
   leurs liens, y compris vers des documents situés dans d'autres groupes.

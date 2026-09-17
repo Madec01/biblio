@@ -441,6 +441,26 @@ main{position:fixed;inset:var(--topbar-h) 0 0 0}
 .group-boundary.sub{border-style:dashed;border-width:1.5px;background:color-mix(in srgb,var(--frame) 4%,transparent);border-radius:13px}
 .group-boundary .boundary-label{position:absolute;left:12px;top:-11px;padding:2px 8px;border-radius:999px;background:var(--card);border:1px solid var(--frame);color:var(--frame);font-size:10px;font-weight:600;letter-spacing:.05em;white-space:nowrap}
 .tree-switch{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2);white-space:nowrap}.tree-switch input{accent-color:var(--accent)}
+.generation-tree{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:72px;min-width:max-content;padding:34px 42px 48px}
+.generation-row{position:relative;display:grid;grid-template-columns:118px minmax(max-content,1fr);align-items:center;gap:18px;z-index:1}
+.generation-label{position:sticky;left:8px;z-index:4;align-self:start;margin-top:18px;padding:7px 10px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:center}
+.generation-row.selected .generation-label{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+.generation-groups{display:flex;align-items:stretch;justify-content:center;gap:26px;min-height:132px}
+.generation-group{position:relative;display:flex;align-items:center;gap:18px;min-width:230px;padding:34px 20px 20px;border:2px solid var(--group-color);border-radius:18px;background:color-mix(in srgb,var(--group-color) 5%,var(--card));box-shadow:0 7px 22px rgba(24,31,27,.05)}
+.generation-group-title{position:absolute;top:-12px;left:16px;padding:3px 10px;border:1px solid var(--group-color);border-radius:999px;background:var(--card);color:var(--group-color);font-size:10px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap}
+.generation-direct,.generation-subgroups{display:flex;align-items:stretch;gap:14px}
+.generation-subgroup{position:relative;display:flex;align-items:center;min-width:210px;padding:28px 14px 14px;border:1.5px dashed var(--sub-color);border-radius:13px;background:color-mix(in srgb,var(--sub-color) 5%,var(--card))}
+.generation-subgroup-title{position:absolute;top:-10px;left:12px;padding:2px 8px;border:1px dashed var(--sub-color);border-radius:999px;background:var(--card);color:var(--sub-color);font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.generation-docs{display:flex;align-items:center;gap:12px}
+.generation-entry{position:relative;z-index:2}
+.generation-entry.guide .support-node{position:relative;width:180px;border-color:var(--g);background:var(--card)}
+.generation-entry.guide .support-node::after{content:"Guide / aide";display:block;position:absolute;right:7px;top:4px;font-size:8px;letter-spacing:.05em;text-transform:uppercase;color:var(--g)}
+.tree-connectors{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:0}
+.tree-connectors .lineage{fill:none;stroke:var(--line-2);stroke-width:2}
+.tree-connectors .guide-link{fill:none;stroke-width:2;stroke-dasharray:6 5}
+.generation-row.selected .tnode.root{box-shadow:0 0 0 4px color-mix(in srgb,var(--g) 14%,transparent),var(--shadow-lg)}
+.tree-view:not(.frames-on) .generation-group,.tree-view:not(.frames-on) .generation-subgroup{border-color:transparent;background:transparent;box-shadow:none}
+.tree-view:not(.frames-on) .generation-group-title,.tree-view:not(.frames-on) .generation-subgroup-title{display:none}
 .tnode{
   position:relative;width:196px;padding:12px 12px 8px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);
   box-shadow:var(--shadow);display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;
@@ -920,7 +940,8 @@ const ui = {
   layout: 'groups',
   isolate: 0,              // 0 = tout, 1 ou 2 = niveaux de voisinage autour du document sélectionné
   treeRoot: null,          // racine de l'arbre des liens
-  treeDepth: 2,
+  treeUpDepth: 1,
+  treeDownDepth: 2,
   treeZoom: 1,
   treeHistory: [],
   treeRelation: 'all',
@@ -929,7 +950,6 @@ const ui = {
   treeCollapsed: new Set(),
   treeGroup: null,
   treeFrames: true,
-  treeMothers: false,
   journeyId: null,
   mapQuery: '',
   statusFilter: 'all',
@@ -1863,179 +1883,146 @@ function renderDrawer() {
    Arbre des liens : le document racine, puis ses liens niveau par niveau (parcours en largeur,
    chaque document n'apparaît qu'une fois, au niveau le plus proche de la racine).
    ========================================================================== */
-function buildTree(rootId, depth) {
-  const root = { id: rootId, children: [], supports: [], references: [], elsewhere: 0, beyond: 0 };
-  const byId = new Map([[rootId, root]]);
-  let level = [root];
-  for (let d = 0; d < depth && level.length; d++) {
-    const next = [];
-    for (const node of level) {
-      if (ui.treeCollapsed.has(node.id)) continue;
-      const childEdges=state.links.filter(l=>(l.type==='applies'&&l.a===node.id)||(l.type==='derived'&&l.b===node.id));
-      const guideEdges=state.links.filter(l=>l.type==='guide'&&l.b===node.id);
-      for (const doc of sortedDocs(childEdges.map(l=>getDoc(l.type==='applies'?l.b:l.a)).filter(Boolean))) {
-        if (byId.has(doc.id)) { if (doc.id !== node.parent) node.elsewhere++; continue; }
-        const edge=linkBetween(node.id,doc.id);
-        const child = { id: doc.id, parent: node.id, relation:relationText(edge,node.id), importance:edge?.importance||'info', note:edge?.note||'', children: [], supports: [], references: [], elsewhere: 0, beyond: 0 };
-        byId.set(doc.id, child); node.children.push(child); next.push(child);
-      }
-      const addSide=(edge,bucket)=>{
-        const doc=getDoc(edge.a===node.id?edge.b:edge.a); if(!doc)return;
-        if(byId.has(doc.id)){if(doc.id!==node.parent)node.elsewhere++;return}
-        const support={id:doc.id,parent:node.id,relation:relationText(edge,node.id),importance:edge.importance||'info',note:edge.note||''};
-        byId.set(doc.id,support);node[bucket].push(support);
-      };
-      for(const edge of guideEdges)addSide(edge,'supports');
-    }
-    level = next;
-  }
-  // feuilles au dernier niveau : liens non déployés
-  for (const node of level) node.beyond = linkedIds(node.id).filter(id => !byId.has(id)).length;
-  return { root, count: byId.size };
-}
 function openTree(id, { push = true } = {}) {
   if (push && ui.treeRoot && ui.treeRoot !== id) ui.treeHistory.push(ui.treeRoot);
   ui.treeRoot = id; ui.selectedId = id; ui.treeGroup = null;
   setView('arbre');
 }
 function treeGroupOptions(selected){return orderedGroups().map(g=>`<option value="${g.id}" ${g.id===selected?'selected':''}>${g.parent?'↳ ':''}${esc(groupLabel(g))}</option>`).join('')}
-function motherLineage(id,excludeId=null,maxDepth=3){
-  const seen=new Set([id,excludeId].filter(Boolean)),out=[];let level=[id];
-  for(let depth=1;depth<=maxDepth;depth++){
-    const next=[];
-    for(const child of level)for(const link of state.links){
-      let mother=null;if(link.type==='applies'&&link.b===child)mother=link.a;else if(link.type==='derived'&&link.a===child)mother=link.b;
-      if(mother&&!seen.has(mother)){seen.add(mother);out.push({id:mother,depth,child,link});next.push(mother)}
+function lineageNeighbours(id,direction){
+  const out=[];
+  for(const link of state.links){
+    if(link.type==='applies'){
+      if(direction==='up'&&link.b===id)out.push(link.a);
+      if(direction==='down'&&link.a===id)out.push(link.b);
+    }else if(link.type==='derived'){
+      if(direction==='up'&&link.a===id)out.push(link.b);
+      if(direction==='down'&&link.b===id)out.push(link.a);
     }
-    if(!next.length)break;level=next;
   }
-  return out;
+  return [...new Set(out)].filter(getDoc);
 }
-function motherHtml(id,parentId=null){
-  if(!ui.treeMothers)return'';const mothers=motherLineage(id,parentId,ui.treeDepth);if(!mothers.length)return'';
-  return `<div class="mother-rail"><span class="support-title" style="width:100%;text-align:center">Documents mères</span>${mothers.map(m=>{const d=getDoc(m.id),g=groupOf(d),rg=rootOf(g);return `<button class="mother-node" data-mother="${d.id}" data-group="${g.id}" data-root-group="${rg.id}" style="--g:${g.color}" title="Niveau mère ${m.depth}"><span class="bar"></span><span><strong>${esc(d.ref||d.name||'—')}</strong><small>${m.depth>1?`Ancêtre niveau ${m.depth}`:relationText(m.link,d.id)} · ${esc(d.name||'')}</small></span></button>`}).join('')}</div>`;
-}
-function renderGroupBoundaries(host){
-  const scale=$('.tree-scale',host);if(!scale)return;$$('.group-boundary',scale).forEach(x=>x.remove());if(!ui.treeFrames)return;
-  const base=scale.getBoundingClientRect(),zoom=ui.treeZoom||1;
-  const add=(g,nodes,isSub)=>{if(!nodes.length)return;const rs=nodes.map(n=>n.getBoundingClientRect());const pad=isSub?14:26;const left=(Math.min(...rs.map(r=>r.left))-base.left)/zoom-pad,top=(Math.min(...rs.map(r=>r.top))-base.top)/zoom-pad,right=(Math.max(...rs.map(r=>r.right))-base.left)/zoom+pad,bottom=(Math.max(...rs.map(r=>r.bottom))-base.top)/zoom+pad;const el=document.createElement('div');el.className='group-boundary'+(isSub?' sub':'');el.style.cssText=`--frame:${g.color};left:${left}px;top:${top}px;width:${right-left}px;height:${bottom-top}px`;el.innerHTML=`<span class="boundary-label">${esc(groupLabel(g))}</span>`;scale.prepend(el)};
-  for(const g of topGroups())add(g,$$(`[data-root-group="${g.id}"]`,scale),false);
-  for(const g of state.groups.filter(x=>x.parent))add(g,$$(`[data-group="${g.id}"]`,scale),true);
-}
-function renderGroupTree(host) {
-  const group=getGroup(ui.treeGroup), exact=!!group.parent;
-  const docs=state.docs.filter(d=>exact?d.group===group.id:inGroup(d,group.id));
-  const ids=new Set(docs.map(d=>d.id));
-  const isChild=(l,parent)=>((l.type==='applies'&&l.a===parent)||(l.type==='derived'&&l.b===parent));
-  const hasParent=id=>state.links.some(l=>ids.has(l.a)&&ids.has(l.b)&&((l.type==='applies'&&l.b===id)||(l.type==='derived'&&l.a===id)));
-  let roots=sortedDocs(docs.filter(d=>!hasParent(d.id))); if(!roots.length)roots=sortedDocs(docs);
-  const seen=new Set();
-  const branch=(d,depth=0,parentId=null)=>{
-    if(!d||seen.has(d.id))return'';seen.add(d.id);
-    const main=state.links.filter(l=>isChild(l,d.id)).map(l=>getDoc(l.type==='applies'?l.b:l.a)).filter(x=>x&&!seen.has(x.id));
-    const guides=state.links.filter(l=>l.type==='guide'&&l.b===d.id).map(l=>getDoc(l.a)).filter(x=>x&&!seen.has(x.id));
-    const gg=groupOf(d),rg=rootOf(gg);
-    const guideHtml=guides.length?`<div class="guide-rail" style="--g:${gg.color}"><span class="support-title">Guides / aides</span>${guides.map(x=>{seen.add(x.id);const xg=groupOf(x),xrg=rootOf(xg);return `<button class="support-node" data-group-doc="${x.id}" data-group="${xg.id}" data-root-group="${xrg.id}" style="--g:${xg.color}"><span class="bar"></span><span class="txt"><strong>${esc(x.ref||x.name)}</strong><small>${esc(x.name||'Sans titre')}</small></span></button>`}).join('')}</div>`:'';
-    return `<div class="hbranch ${depth===0?'hroot':''}"><div class="hnode-stack">${motherHtml(d.id,parentId)}<div class="tnode ${depth===0?'root':''}" data-group-doc="${d.id}" data-group="${gg.id}" data-root-group="${rg.id}" style="--g:${gg.color};--root-g:${rg.color};--sub-g:${gg.color}"><span class="tbar"></span><span class="tgrp">${esc(groupLabel(gg))}</span><span class="tref">${esc(d.ref||'—')}</span><span class="tname">${esc(d.name||'Sans titre')}</span></div>${guideHtml}</div>${main.length&&depth<ui.treeDepth?`<div class="hchildren">${main.map(x=>branch(x,depth+1,d.id)).join('')}</div>`:''}</div>`;
+function buildGenerationModel(seedIds,upDepth,downDepth){
+  const seeds=[...new Set(seedIds)].filter(getDoc),generation=new Map(seeds.map(id=>[id,0])),levels=new Map([[0,seeds]]);
+  const expand=(direction,maxDepth,sign)=>{
+    let frontier=seeds;
+    for(let depth=1;depth<=maxDepth&&frontier.length;depth++){
+      const next=[];
+      for(const id of frontier)for(const other of lineageNeighbours(id,direction))if(!generation.has(other)){generation.set(other,sign*depth);next.push(other)}
+      const unique=[...new Set(next)];if(unique.length)levels.set(sign*depth,sortedDocs(unique.map(getDoc)).map(d=>d.id));frontier=unique;
+    }
   };
+  expand('up',upDepth,-1);expand('down',downDepth,1);
+  const guidesByLevel=new Map();
+  for(const [level,ids] of levels)for(const id of ids)for(const link of state.links.filter(l=>l.type==='guide'&&l.b===id)){
+    if(!getDoc(link.a)||generation.has(link.a))continue;
+    if(!guidesByLevel.has(level))guidesByLevel.set(level,new Set());
+    guidesByLevel.get(level).add(link.a);
+  }
+  return {seeds:new Set(seeds),generation,levels,guidesByLevel};
+}
+function generationNodeHtml(d,isSelected){
+  const g=groupOf(d);
+  return `<div class="generation-entry"><div class="tnode ${isSelected?'root':''}" data-tree-id="${esc(d.id)}" style="--g:${g.color}" tabindex="0" title="${isSelected?'Document sélectionné':'Sélectionner ce document'}"><span class="tbar"></span><span class="tgrp">${esc(groupLabel(g))}</span><span class="tref">${esc(d.ref||'—')}</span><span class="tname">${esc(d.name||'Sans titre')}</span><span class="tfoot"><span class="tdeg">${degree(d.id)} lien${degree(d.id)>1?'s':''}</span><button class="topen" data-open="${esc(d.id)}">fiche</button></span></div></div>`;
+}
+function generationGuideHtml(d){
+  const g=groupOf(d);
+  return `<div class="generation-entry guide"><button class="support-node" data-tree-id="${esc(d.id)}" style="--g:${g.color}"><span class="bar"></span><span class="txt"><strong>${esc(d.ref||d.name||'—')}</strong><small>${esc(d.name||'Sans titre')}</small></span></button></div>`;
+}
+function generationGroupHtml(entries){
+  const byRoot=new Map();
+  for(const entry of entries){
+    const g=groupOf(entry.doc),root=rootOf(g);
+    if(!byRoot.has(root.id))byRoot.set(root.id,{root,direct:[],subs:new Map()});
+    const bucket=byRoot.get(root.id);
+    if(g.parent){if(!bucket.subs.has(g.id))bucket.subs.set(g.id,{group:g,entries:[]});bucket.subs.get(g.id).entries.push(entry)}
+    else bucket.direct.push(entry);
+  }
+  const entryHtml=e=>e.guide?generationGuideHtml(e.doc):generationNodeHtml(e.doc,e.selected);
+  return topGroups().filter(g=>byRoot.has(g.id)).map(g=>{
+    const bucket=byRoot.get(g.id);
+    const direct=bucket.direct.length?`<div class="generation-direct"><div class="generation-docs">${bucket.direct.map(entryHtml).join('')}</div></div>`:'';
+    const subs=[...bucket.subs.values()].map(s=>`<div class="generation-subgroup" style="--sub-color:${s.group.color}"><span class="generation-subgroup-title">${esc(groupLabel(s.group))}</span><div class="generation-docs">${s.entries.map(entryHtml).join('')}</div></div>`).join('');
+    return `<section class="generation-group" style="--group-color:${g.color}"><span class="generation-group-title">${esc(groupLabel(g))}</span>${direct}${subs?`<div class="generation-subgroups">${subs}</div>`:''}</section>`;
+  }).join('');
+}
+function generationRowHtml(level,model){
+  const main=(model.levels.get(level)||[]).map(id=>({doc:getDoc(id),selected:model.seeds.has(id),guide:false}));
+  const guides=[...(model.guidesByLevel.get(level)||[])].map(id=>({doc:getDoc(id),selected:false,guide:true}));
+  const label=level<0?`Mères · génération ${Math.abs(level)}`:level>0?`Filles · génération ${level}`:'Document sélectionné';
+  return `<div class="generation-row ${level===0?'selected':''}" data-level="${level}"><div class="generation-label">${label}</div><div class="generation-groups">${generationGroupHtml([...main,...guides])}</div></div>`;
+}
+function drawGenerationConnectors(host,model){
+  const canvas=$('.generation-tree',host),svg=$('.tree-connectors',host);if(!canvas||!svg)return;
+  const base=canvas.getBoundingClientRect(),zoom=ui.treeZoom||1,nodes=new Map();
+  $$('[data-tree-id]',canvas).forEach(el=>{if(!nodes.has(el.dataset.treeId))nodes.set(el.dataset.treeId,el)});
+  const point=(id,edge)=>{const el=nodes.get(id);if(!el)return null;const r=el.getBoundingClientRect(),rawY=edge==='top'?r.top:edge==='bottom'?r.bottom:r.top+r.height/2;return {x:(r.left+r.width/2-base.left)/zoom,y:(rawY-base.top)/zoom,left:(r.left-base.left)/zoom,right:(r.right-base.left)/zoom}};
+  const paths=[];
+  for(const link of state.links){
+    if(link.type==='guide'){
+      const a=point(link.a,'center'),b=point(link.b,'center');if(!a||!b)continue;
+      const g=groupOf(getDoc(link.a)),fromX=a.x<b.x?a.right:a.left,toX=a.x<b.x?b.left:b.right,mid=(fromX+toX)/2;
+      paths.push(`<path class="guide-link" style="stroke:${g.color}" marker-end="url(#tree-arrow-guide)" d="M ${fromX} ${a.y} H ${mid} V ${b.y} H ${toX}"/>`);
+      continue;
+    }
+    let parent,child;if(link.type==='applies'){parent=link.a;child=link.b}else if(link.type==='derived'){parent=link.b;child=link.a}else continue;
+    if(!nodes.has(parent)||!nodes.has(child))continue;
+    const pg=model.generation.get(parent),cg=model.generation.get(child);
+    if(pg===cg){
+      const a=point(parent,'center'),b=point(child,'center'),y=Math.min(a.y,b.y)-62;
+      paths.push(`<path class="lineage" marker-end="url(#tree-arrow)" d="M ${a.x} ${a.y} V ${y} H ${b.x} V ${b.y}"/>`);
+    }else{
+      const downward=(pg??0)<(cg??0),a=point(parent,downward?'bottom':'top'),b=point(child,downward?'top':'bottom'),mid=(a.y+b.y)/2;
+      paths.push(`<path class="lineage" marker-end="url(#tree-arrow)" d="M ${a.x} ${a.y} V ${mid} H ${b.x} V ${b.y}"/>`);
+    }
+  }
+  svg.setAttribute('viewBox',`0 0 ${canvas.scrollWidth} ${canvas.scrollHeight}`);
+  svg.innerHTML=`<defs><marker id="tree-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--line-2)"/></marker><marker id="tree-arrow-guide" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="context-stroke"/></marker></defs>${paths.join('')}`;
+}
+function depthControlsHtml(){
+  const choices=[0,1,2,3,4];
+  return `<span class="label">Au-dessus</span><div class="seg small" id="tree-up-depth">${choices.map(n=>`<button data-d="${n}" class="${ui.treeUpDepth===n?'on':''}">${n}</button>`).join('')}</div><span class="label">En dessous</span><div class="seg small" id="tree-down-depth">${choices.map(n=>`<button data-d="${n}" class="${ui.treeDownDepth===n?'on':''}">${n}</button>`).join('')}</div>`;
+}
+function bindGenerationTree(host,model){
+  $$('[data-tree-id]',host).forEach(el=>el.addEventListener('click',e=>{if(e.target.closest('[data-open]'))return;openTree(el.dataset.treeId)}));
+  $$('[data-open]',host).forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();select(b.dataset.open);setView('fiches')}));
+  $$('#tree-up-depth button',host).forEach(b=>b.addEventListener('click',()=>{ui.treeUpDepth=+b.dataset.d;renderTree()}));
+  $$('#tree-down-depth button',host).forEach(b=>b.addEventListener('click',()=>{ui.treeDownDepth=+b.dataset.d;renderTree()}));
+  $$('#tree-zoom button',host).forEach(b=>b.addEventListener('click',()=>{const z=+b.dataset.z;ui.treeZoom=z===0?1:Math.min(1.6,Math.max(.4,+(ui.treeZoom+z*.15).toFixed(2)));renderTree()}));
+  $('#tree-frames',host).addEventListener('change',e=>{ui.treeFrames=e.target.checked;renderTree()});
+  $('#tree-print',host).addEventListener('click',()=>window.print());
+  requestAnimationFrame(()=>drawGenerationConnectors(host,model));
+}
+function generationCanvasHtml(model){
+  const levels=[...model.levels.keys()].sort((a,b)=>a-b);
+  return `<div class="tree-wrap"><div class="tree-scale" style="zoom:${ui.treeZoom}"><div class="generation-tree"><svg class="tree-connectors" aria-hidden="true"></svg>${levels.map(level=>generationRowHtml(level,model)).join('')}</div></div></div>`;
+}
+function renderGroupTree(host){
+  const group=getGroup(ui.treeGroup),exact=!!group.parent,docs=sortedDocs(state.docs.filter(d=>exact?d.group===group.id:inGroup(d,group.id)));
+  const model=buildGenerationModel(docs.map(d=>d.id),ui.treeUpDepth,ui.treeDownDepth);
   host.classList.toggle('frames-on',ui.treeFrames);
-  host.innerHTML=`<div class="tree-bar"><div class="tree-root" style="--g:${group.color}"><span class="swatch"></span><strong>${esc(groupLabel(group))}</strong></div><span class="tree-stats">${docs.length} document${docs.length>1?'s':''} dans le groupe · liens externes inclus</span><select id="tree-group-select" class="btn sm">${treeGroupOptions(group.id)}</select><button class="btn sm" id="tree-doc-mode">Revenir à un document</button><span class="spacer"></span><span class="label">Niveaux</span><div class="seg small" id="tree-depth">${[1,2,3,4].map(n=>`<button data-d="${n}" class="${ui.treeDepth===n?'on':''}">${n}</button>`).join('')}</div><label class="tree-switch"><input type="checkbox" id="tree-mothers" ${ui.treeMothers?'checked':''}> Afficher les mères</label><label class="tree-switch"><input type="checkbox" id="tree-frames" ${ui.treeFrames?'checked':''}> Cadres groupes</label><button class="btn sm" id="tree-print">Imprimer / PDF</button></div><div class="tree-wrap"><div class="tree-scale" style="zoom:${ui.treeZoom}">${docs.length?`<div class="tree-horizontal" style="gap:70px">${roots.map(d=>branch(d)).join('')}${sortedDocs(docs.filter(d=>!seen.has(d.id))).map(d=>branch(d)).join('')}</div>`:'<div class="alert-empty">Aucun document dans ce groupe.</div>'}</div></div>`;
+  host.innerHTML=`<div class="tree-bar"><div class="tree-root" style="--g:${group.color}"><span class="swatch"></span><strong>${esc(groupLabel(group))}</strong></div><span class="tree-stats">${docs.length} document${docs.length>1?'s':''} sélectionné${docs.length>1?'s':''} · liens externes inclus</span><select id="tree-group-select" class="btn sm">${treeGroupOptions(group.id)}</select><button class="btn sm" id="tree-doc-mode">Vue document</button><span class="spacer"></span>${depthControlsHtml()}<div class="seg small" id="tree-zoom"><button data-z="-1">−</button><button data-z="0">${Math.round(ui.treeZoom*100)} %</button><button data-z="1">+</button></div><label class="tree-switch"><input type="checkbox" id="tree-frames" ${ui.treeFrames?'checked':''}> Cadres groupes</label><button class="btn sm" id="tree-print">Imprimer / PDF</button></div>${docs.length?generationCanvasHtml(model):'<div class="alert-empty">Aucun document dans ce groupe.</div>'}`;
   $('#tree-group-select').addEventListener('change',e=>{ui.treeGroup=e.target.value;renderTree()});
   $('#tree-doc-mode').addEventListener('click',()=>{ui.treeGroup=null;renderTree()});
-  $$('#tree-depth button',host).forEach(b=>b.addEventListener('click',()=>{ui.treeDepth=+b.dataset.d;renderTree()}));
-  $$('[data-group-doc]',host).forEach(el=>el.addEventListener('click',()=>openTree(el.dataset.groupDoc)));
-  $$('[data-mother]',host).forEach(el=>el.addEventListener('click',()=>openTree(el.dataset.mother)));
-  $('#tree-print').addEventListener('click',()=>window.print());
-  $('#tree-frames').addEventListener('change',e=>{ui.treeFrames=e.target.checked;renderTree()});
-  $('#tree-mothers').addEventListener('change',e=>{ui.treeMothers=e.target.checked;renderTree()});
-  requestAnimationFrame(()=>renderGroupBoundaries(host));
+  if(docs.length)bindGenerationTree(host,model);
 }
-function renderTree() {
-  const host = $('#tree-view');
-  if(ui.treeGroup)return renderGroupTree(host);
-  const doc = getDoc(ui.treeRoot);
-  if (!doc) {
-    host.innerHTML = `<div class="empty"><div class="inner">
-      <div class="glyph">⌥</div>
-      <h2>Arbre des liens</h2>
-      <p>Choisissez un document racine : l’arbre montre ses documents liés, puis les leurs, niveau par niveau, comme un arbre généalogique.</p>
-      <div id="tree-picker" style="text-align:left;margin:0 auto;max-width:440px"></div>
-      <div style="display:flex;gap:8px;margin:16px auto 0;max-width:440px"><select id="tree-empty-group" class="btn" style="flex:1">${treeGroupOptions(topGroups()[0]?.id)}</select><button class="btn" id="tree-empty-group-go">Voir le groupe</button></div>
-    </div></div>`;
-    mountLinker($('#tree-picker'), { exclude: () => new Set(), onPick: d => openTree(d.id), allowCreate: false, placeholder: 'Document racine : nom ou référence… (↓ pour les récents)', icon: '⌕' });
-    $('#tree-empty-group-go').addEventListener('click',()=>{ui.treeGroup=$('#tree-empty-group').value;renderTree()});
-    setTimeout(() => $('#tree-picker .linker-input')?.focus(), 30);
-    return;
+function renderTree(){
+  const host=$('#tree-view');if(ui.treeGroup)return renderGroupTree(host);
+  const doc=getDoc(ui.treeRoot);
+  if(!doc){
+    host.innerHTML=`<div class="empty"><div class="inner"><div class="glyph">⌥</div><h2>Arbre des liens</h2><p>Choisissez un document : ses mères apparaîtront au-dessus et ses filles en dessous.</p><div id="tree-picker" style="text-align:left;margin:0 auto;max-width:440px"></div><div style="display:flex;gap:8px;margin:16px auto 0;max-width:440px"><select id="tree-empty-group" class="btn" style="flex:1">${treeGroupOptions(topGroups()[0]?.id)}</select><button class="btn" id="tree-empty-group-go">Voir le groupe</button></div></div></div>`;
+    mountLinker($('#tree-picker'),{exclude:()=>new Set(),onPick:d=>openTree(d.id),allowCreate:false,placeholder:'Document sélectionné : nom ou référence…',icon:'⌕'});
+    $('#tree-empty-group-go').addEventListener('click',()=>{ui.treeGroup=$('#tree-empty-group').value;renderTree()});setTimeout(()=>$('#tree-picker .linker-input')?.focus(),30);return;
   }
-  const { root, count } = buildTree(doc.id, ui.treeDepth);
-  const g = groupOf(doc);
+  const model=buildGenerationModel([doc.id],ui.treeUpDepth,ui.treeDownDepth),g=groupOf(doc),back=ui.treeHistory.length?getDoc(ui.treeHistory[ui.treeHistory.length-1]):null;
   host.classList.toggle('frames-on',ui.treeFrames);
-  const back = ui.treeHistory.length ? getDoc(ui.treeHistory[ui.treeHistory.length - 1]) : null;
-  const nodeHtml = (n, isRoot) => {
-    const d = getDoc(n.id), gg = groupOf(d), deg = degree(n.id);
-    const rg=rootOf(gg);
-    return `<div class="tnode ${isRoot ? 'root' : ''}" data-id="${n.id}" data-group="${gg.id}" data-root-group="${rg.id}" style="--g:${gg.color};--root-g:${rg.color};--sub-g:${gg.color}" tabindex="0" title="${isRoot ? '' : 'Placer ce document à la racine'}">
-      <span class="tbar"></span>
-      <span class="tgrp">${esc(groupLabel(gg))}</span>
-      <span class="tref">${esc(d.ref || '—')}</span>
-      <span class="tname">${esc(d.name || 'Sans titre')}</span>
-      ${n.relation ? `<span class="relation-badge">${esc(n.relation)}</span>` : ''}
-      ${n.importance && n.importance!=='info' ? `<span class="relation-badge importance-${n.importance}">${({required:'Obligatoire',recommended:'Recommandé',conditional:'Conditionnel'})[n.importance]||''}</span>` : ''}
-      ${n.note ? `<span class="relation-note">${esc(n.note)}</span>` : ''}
-      <span class="tfoot">
-        <span class="tdeg">${deg} lien${deg > 1 ? 's' : ''}</span>
-        ${n.beyond ? `<span class="tmore" title="Liens non déployés à ce niveau : cliquez pour continuer l’arbre depuis ce document">+${n.beyond} ▾</span>` : ''}
-        ${n.elsewhere ? `<span class="telse" title="Liens vers des documents déjà affichés ailleurs dans l’arbre">↺ ${n.elsewhere}</span>` : ''}
-        ${deg&&!isRoot?`<button class="topen tcollapse" title="Replier ou déplier" data-collapse="${n.id}">${ui.treeCollapsed.has(n.id)?'déplier':'replier'}</button>`:''}
-        <button class="topen" title="Ouvrir la fiche" aria-label="Ouvrir la fiche" data-open="${n.id}">fiche</button>
-      </span>
-    </div>`;
-  };
-  const guideHtml=items=>items?.length?`<div class="guide-rail" style="--g:${groupOf(getDoc(items[0].id)).color}"><span class="support-title">Guides / aides</span>${items.map(s=>{const d=getDoc(s.id),gg=groupOf(d),rg=rootOf(gg);return `<button class="support-node" data-support="${d.id}" data-group="${gg.id}" data-root-group="${rg.id}" style="--g:${gg.color}" title="${esc(s.relation)}"><span class="bar"></span><span class="txt"><strong>${esc(d.ref||d.name||'—')}</strong><small>${esc(d.name||'Sans titre')}</small></span></button>`}).join('')}</div>`:'';
-  const branch=(n,isRoot=false)=>`<div class="hbranch ${isRoot?'hroot':''}"><div class="hnode-stack">${motherHtml(n.id,n.parent)}${nodeHtml(n,isRoot)}${guideHtml(n.supports)}</div>${n.children.length?`<div class="hchildren">${n.children.map(c=>branch(c)).join('')}</div>`:''}</div>`;
-  host.innerHTML = `
-    <div class="tree-bar">
-      ${back ? `<button class="btn sm ghost" id="tree-back">← ${esc(back.ref || back.name)}</button>` : ''}
-      <div class="tree-root" style="--g:${g.color}"><span class="swatch"></span><span class="mono">${esc(doc.ref || '—')}</span><strong>${esc(doc.name || 'Sans titre')}</strong></div>
-      <span class="tree-stats">${count} document${count > 1 ? 's' : ''}${root.children.length || root.supports.length || root.references.length ? '' : ' · aucun lien'}</span>
-      <select id="tree-group-mode" class="btn sm"><option value="">Vue document</option>${treeGroupOptions('')}</select>
-      <div class="spacer"></div>
-      <span class="label">Niveaux</span>
-      <div class="seg small" id="tree-depth">${[1, 2, 3, 4].map(n => `<button data-d="${n}" class="${ui.treeDepth === n ? 'on' : ''}">${n}</button>`).join('')}</div>
-      <div class="seg small" id="tree-zoom"><button data-z="-1" title="Réduire">−</button><button data-z="0" title="Taille normale">${Math.round(ui.treeZoom * 100)} %</button><button data-z="1" title="Agrandir">+</button></div>
-      <label class="tree-switch"><input type="checkbox" id="tree-mothers" ${ui.treeMothers?'checked':''}> Afficher les mères</label>
-      <label class="tree-switch"><input type="checkbox" id="tree-frames" ${ui.treeFrames?'checked':''}> Cadres groupes</label>
-      <button class="btn sm" id="tree-fiche">Ouvrir la fiche</button>
-      <button class="btn sm" id="tree-map">Voir sur la carte</button>
-      <button class="btn sm" id="tree-print">Imprimer / PDF</button>
-      <div id="tree-change" class="tree-change"></div>
-    </div>
-    <div class="tree-wrap">
-      <div class="tree-scale" style="zoom:${ui.treeZoom}">
-        <div class="tree-horizontal">${branch(root,true)}</div>
-      </div>
-    </div>`;
-  const wrap = $('.tree-wrap', host); wrap.scrollLeft = 0;
-  $$('.tnode:not(.root)', host).forEach(el => {
-    const go = () => openTree(el.dataset.id);
-    el.addEventListener('click', e => { if (e.target.closest('.topen')) return; go(); });
-    el.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
-  });
-  $$('.support-node',host).forEach(el=>el.addEventListener('click',()=>openTree(el.dataset.support)));
-  $$('[data-mother]',host).forEach(el=>el.addEventListener('click',()=>openTree(el.dataset.mother)));
-  $$('.topen:not(.tcollapse)', host).forEach(b => b.addEventListener('click', e => { e.stopPropagation(); select(b.dataset.open); setView('fiches'); }));
-  $$('.tcollapse',host).forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();const id=b.dataset.collapse;ui.treeCollapsed.has(id)?ui.treeCollapsed.delete(id):ui.treeCollapsed.add(id);renderTree()}));
-  $$('#tree-depth button', host).forEach(b => b.addEventListener('click', () => { ui.treeDepth = +b.dataset.d; renderTree(); }));
-  $$('#tree-zoom button', host).forEach(b => b.addEventListener('click', () => { const z = +b.dataset.z; ui.treeZoom = z === 0 ? 1 : Math.min(1.6, Math.max(.4, +(ui.treeZoom + z * .15).toFixed(2))); renderTree(); }));
-  $('#tree-back')?.addEventListener('click', () => { const prev = ui.treeHistory.pop(); if (prev) openTree(prev, { push: false }); });
-  $('#tree-fiche').addEventListener('click', () => { select(doc.id); setView('fiches'); });
-  $('#tree-map').addEventListener('click', () => { setView('carte'); ui.isolate = 1; graph.setSelected(doc.id); renderDrawer(); graph.centerOn(doc.id); });
+  host.innerHTML=`<div class="tree-bar">${back?`<button class="btn sm ghost" id="tree-back">← ${esc(back.ref||back.name)}</button>`:''}<div class="tree-root" style="--g:${g.color}"><span class="swatch"></span><span class="mono">${esc(doc.ref||'—')}</span><strong>${esc(doc.name||'Sans titre')}</strong></div><span class="tree-stats">${model.generation.size} document${model.generation.size>1?'s':''} dans la filiation</span><select id="tree-group-mode" class="btn sm"><option value="">Vue document</option>${treeGroupOptions('')}</select><span class="spacer"></span>${depthControlsHtml()}<div class="seg small" id="tree-zoom"><button data-z="-1">−</button><button data-z="0">${Math.round(ui.treeZoom*100)} %</button><button data-z="1">+</button></div><label class="tree-switch"><input type="checkbox" id="tree-frames" ${ui.treeFrames?'checked':''}> Cadres groupes</label><button class="btn sm" id="tree-fiche">Ouvrir la fiche</button><button class="btn sm" id="tree-map">Voir sur la carte</button><button class="btn sm" id="tree-print">Imprimer / PDF</button><div id="tree-change" class="tree-change"></div></div>${generationCanvasHtml(model)}`;
+  bindGenerationTree(host,model);
+  $('#tree-back')?.addEventListener('click',()=>{const prev=ui.treeHistory.pop();if(prev)openTree(prev,{push:false})});
+  $('#tree-fiche').addEventListener('click',()=>{select(doc.id);setView('fiches')});
+  $('#tree-map').addEventListener('click',()=>{setView('carte');ui.isolate=1;graph.setSelected(doc.id);renderDrawer();graph.centerOn(doc.id)});
   $('#tree-group-mode').addEventListener('change',e=>{if(e.target.value){ui.treeGroup=e.target.value;renderTree()}});
-  $('#tree-print').addEventListener('click',()=>window.print());
-  $('#tree-frames').addEventListener('change',e=>{ui.treeFrames=e.target.checked;renderTree()});
-  $('#tree-mothers').addEventListener('change',e=>{ui.treeMothers=e.target.checked;renderTree()});
-  mountLinker($('#tree-change'), { exclude: () => new Set([doc.id]), onPick: d => openTree(d.id), allowCreate: false, placeholder: 'Changer de racine…', icon: '⌕' });
-  requestAnimationFrame(()=>renderGroupBoundaries(host));
+  mountLinker($('#tree-change'),{exclude:()=>new Set([doc.id]),onPick:d=>openTree(d.id),allowCreate:false,placeholder:'Changer de document…',icon:'⌕'});
 }
 
 function impactLevels(rootId,maxDepth=3) {
