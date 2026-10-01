@@ -158,3 +158,11 @@ Un groupe avec `parent` est un sous-groupe de ce grand groupe (un seul niveau).
 Le fichier fonctionne ouvert localement (`file://`) ou déposé sur n'importe quel
 hébergement statique, par exemple GitHub Pages. Les polices Google sont
 facultatives : sans réseau, des polices système prennent le relais.
+
+## Autres outils du dépôt
+
+- [`presidentielle-2027/`](presidentielle-2027/README.md) : Boussole 2027, un
+  comparateur de programmes pour la présidentielle 2027 à partir des
+  propositions compilées par la Fondation iFRAP (sélection à l'aveugle,
+  pondération, classement des personnalités, spectre par thème, carte
+  d'identité politique rédigée par Claude).
