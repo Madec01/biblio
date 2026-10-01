@@ -24,14 +24,14 @@ Une page d'accueil présente une carte par thème (10 thèmes, 32 sujets) avec
 son état d'avancement. La page d'un thème empile tous ses sujets : on coche les
 propositions qui conviennent (auteurs cachés, ordre mélangé, doublons regroupés
 en « idées communes » créditant chacun de leurs auteurs), puis « Terminer ce
-thème » : notation de 1 à 5 des idées retenues, et orientation du thème
+thème » : pondération + / ++ / +++ des idées retenues, et orientation du thème
 (position gauche–droite, trois personnalités les plus proches, idées avec
 auteur).
 
 ### Mode swipe (téléphone, par défaut sous 900 px)
 
 Une idée à l'écran à la fois : swipe à droite (ou ✓) = d'accord, à gauche
-(ou ✕) = pas d'accord, vers le haut (ou ?) = je ne sais pas. Flèches du clavier
+(ou ✕) = pas d'accord, vers le haut (ou ?) = pas sûr. Flèches du clavier
 sur ordinateur, bouton « Annuler » pour le dernier swipe, explication en
 langage courant sur la carte.
 
@@ -41,16 +41,22 @@ langage courant sur la carte.
   choix, on arrête quand on veut).
 - **Rythme** : objectif quotidien de 10 à 50 idées, avec dates estimées de fin
   (pré-orientation fiable à 15 idées par thème ; toutes les idées).
-- **Pondération** : toutes les 10 idées aimées, notation de 1 à 5, une idée à
-  la fois avec son explication (reportable).
+- **Pondération** : toutes les N idées jugées (5 à 20, réglable), une touche
+  par idée pour affiner, avec l'explication ouverte. D'accord : **+** oui mais,
+  **++** d'accord, **+++** essentiel ; pas d'accord : **−** non mais, **−−** pas
+  d'accord, **−−−** hors de mes valeurs ; pas sûr : plutôt non / je ne sais
+  pas du tout / plutôt oui, avec « remettre dans la pile » pour y revenir plus
+  tard. Reportable à tout moment.
 
 ### Calcul
 
-Une idée aimée crédite ses auteurs de sa note (1 à 5, 3 par défaut) ; une idée
-rejetée leur retire 3 points ; « je ne sais pas » ne compte pas. Le classement
-va par points nets, avec le taux d'accord sur les idées vues de chaque
-personnalité. Sur le spectre, les idées aimées rapprochent de leurs auteurs,
-les idées rejetées en éloignent ; chaque thème porte un indicateur de solidité
+Chaque idée jugée reçoit un poids signé de −100 à +100 : d'accord 60 / 80 /
+100 (80 par défaut), pas d'accord en miroir, pas sûr ±30 selon la tendance et 0
+sans avis (les idées « je ne sais pas du tout » sont listées dans les résultats
+et peuvent être réexaminées). Le classement
+va par points nets, avec le taux d'accord (points positifs sur points en valeur
+absolue) sur les idées vues de chaque personnalité. Sur le spectre, les poids
+positifs rapprochent de leurs auteurs, les négatifs en éloignent ; chaque thème porte un indicateur de solidité
 (très peu d'idées / en cours / consolidé / terminé).
 
 ### Pré-orientation et résultats

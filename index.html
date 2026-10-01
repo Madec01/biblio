@@ -155,7 +155,19 @@ select, input[type="text"], input[type="password"] {
 .rate-item { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); }
 @media (min-width: 700px) { .rate-item { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px; } }
 .rate-item .txt { white-space: pre-line; }
-.stars { display: inline-flex; gap: 2px; align-items: center; }
+.stars { display: inline-flex; gap: 4px; align-items: center; }
+.lvl { min-width: 44px; height: 34px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-weight: 800; color: var(--muted); letter-spacing: 1px; }
+.stars.yes .lvl.on { color: var(--good); border-color: var(--good); background: var(--surface-2); }
+.stars.no .lvl.on { color: var(--left); border-color: var(--left); background: var(--surface-2); }
+.stars.unsure .lvl.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.mark { display: inline-block; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; letter-spacing: .5px; }
+.mark.yes { color: var(--good); } .mark.no { color: var(--left); } .mark.unsure { color: var(--ink-2); }
+.linkbtn { background: transparent; border: 0; padding: 0; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; font-size: 0.85rem; }
+.rate-title { text-align: center; font-weight: 700; color: var(--ink-2); font-size: 0.95rem; }
+.rate-title.yes { color: var(--good); } .rate-title.no { color: var(--left); }
+.scard.yes { border-color: var(--good); } .scard.no { border-color: var(--left); } .scard.unsure { border-color: var(--mid); }
+.rate-acts.yes .rbtn .ic { color: var(--good); } .rate-acts.no .rbtn .ic { color: var(--left); } .rate-acts.unsure .rbtn .ic { color: var(--ink-2); }
+.rbtn.on { border-color: var(--accent); background: var(--accent-soft); }
 .star { width: 32px; height: 32px; border: 0; background: transparent; border-radius: 6px; font-size: 1.35rem; line-height: 1; color: var(--line); padding: 0; }
 .star:hover, .star.on { color: var(--accent); }
 .stars .lbl { font-size: 0.8rem; color: var(--muted); margin-left: 8px; min-width: 7ch; }
@@ -294,8 +306,8 @@ body.fs .swipe-stage { flex: 1; min-height: 0; }
 .sbtn:active { transform: scale(.94); }
 .toast { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 3; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: var(--paper); font-size: 0.85rem; font-weight: 600; white-space: nowrap; }
 .rate-acts { display: flex; justify-content: center; gap: 8px; padding: 4px 0; }
-.rbtn { display: grid; justify-items: center; gap: 2px; align-content: center; flex: 1 1 0; max-width: 84px; height: 64px; min-width: 0; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); padding: 0; }
-.rbtn .ic { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; color: var(--accent); line-height: 1; }
+.rbtn { display: grid; justify-items: center; gap: 2px; align-content: center; flex: 1 1 0; max-width: 140px; height: 64px; min-width: 0; border-radius: 16px; border: 2px solid var(--line); background: var(--surface); padding: 0; }
+.rbtn .ic { font-size: 1.4rem; font-weight: 800; color: var(--accent); line-height: 1; letter-spacing: 1px; }
 .rbtn .lb { font-size: 0.5rem; line-height: 1.1; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; text-align: center; }
 .rbtn:active { transform: scale(.94); }
 .recap-idea.rejected .txt { color: var(--muted); }
@@ -387,13 +399,21 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     ["claude-sonnet-5-5", "Claude Sonnet 5.5"],
   ];
   const fresh = () => ({ phase: 1, theme: null, tview: "ideas", sel: {}, no: {}, skip: {}, rate: {}, seen: {}, stage: {}, skipped: {}, model: DEFAULT_MODEL, keepKey: false, key: "", card: "", expl: {}, open: {},
-    mode: "auto", sview: "home", toRate: [], quota: 10, daily: { d: "", n: 0 }, scope: { type: "mix", theme: null, subs: [] }, hist: [], lastPos: [], finished: false });
-  const NO_WEIGHT = 3;
+    mode: "auto", sview: "home", toRate: [], quota: 10, batch: 10, unsure: {}, w: {}, daily: { d: "", n: 0 }, scope: { type: "mix", theme: null, subs: [] }, hist: [], lastPos: [], finished: false });
+  // Barème : poids signé de -100 à +100 par idée, fixé à la pondération ; défaut ±80 (d'accord / pas d'accord), 0 (pas sûr).
+  const LEVELS = {
+    yes: [[60, "+", "Oui, mais"], [80, "++", "D'accord"], [100, "+++", "Essentiel"]],
+    no: [[-60, "−", "Non, mais"], [-80, "−−", "Pas d'accord"], [-100, "−−−", "Hors de mes valeurs"]],
+    unsure: [[-30, "−", "Plutôt non"], [0, "?", "Je ne sais pas du tout"], [30, "+", "Plutôt oui"]],
+  };
+  const DEFAULT_W = { yes: 80, no: -80, unsure: 0 };
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* stockage indisponible */ }
   if (S.theme === undefined && typeof S.cur === "number" && SUBS[S.cur]) S.theme = SUBS[S.cur].theme.id;
   S.no = S.no || {}; S.skip = S.skip || {}; S.toRate = S.toRate || []; S.hist = S.hist || []; S.lastPos = S.lastPos || []; S.daily = S.daily || { d: "", n: 0 };
   S.scope = S.scope || { type: "mix", theme: null, subs: [] }; S.quota = S.quota || 10; S.mode = S.mode || "auto"; S.sview = S.sview || "home";
+  S.unsure = S.unsure || {}; S.batch = S.batch || 10;
+  if (!S.w) { S.w = {}; Object.entries(S.rate || {}).forEach(([id, r]) => { if (S.sel[id]) S.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; }); }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, S, { key: S.keepKey ? S.key : "" }))); } catch (e) { /* ignoré */ } };
 
   /* ---------- Utilitaires ---------- */
@@ -418,7 +438,11 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const shuffled = (ideas) => ideas.slice().sort((a, b) => hash(a.id + "|") - hash(b.id + "|"));
   const pct = (x) => (Math.round(x * 1000) / 10).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " %";
   const candName = (c) => c.first + " " + c.last;
-  const weight = (id) => S.rate[id] || 3;
+  const stateOf = (id) => S.sel[id] ? "yes" : S.no[id] ? "no" : S.unsure[id] ? "unsure" : null;
+  const weight = (id) => { const st = stateOf(id); if (!st) return 0; const w = S.w[id]; return typeof w === "number" ? w : DEFAULT_W[st]; };
+  const levelOf = (id) => { const st = stateOf(id); if (!st) return null; const w = weight(id); return LEVELS[st].find(l => l[0] === w) || LEVELS[st][1]; };
+  const setLevel = (id, w) => { S.w[id] = w; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); };
+  const requeue = (id) => { delete S.sel[id]; delete S.no[id]; delete S.unsure[id]; delete S.w[id]; S.skip[id] = true; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); };
   const plural = (n, s, p) => n + " " + (n > 1 ? (p || s + "s") : s);
   const selectedIds = () => Object.keys(S.sel).filter(id => S.sel[id] && ITEMS[id]);
   const selInSub = (sub) => sub.items.filter(i => S.sel[i.id]);
@@ -429,19 +453,13 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   /* ---------- Calculs ---------- */
   function compute(themeIds) {
     const keep = themeIds ? new Set(themeIds) : null;
-    const inScope = (id) => !keep || keep.has(ITEMS[id].sub.theme.id);
-    const ids = selectedIds().filter(inScope);
-    const nos = Object.keys(S.no).filter(id => S.no[id] && ITEMS[id] && !S.sel[id]).filter(inScope);
+    const all = judgedIds().filter(id => !keep || keep.has(ITEMS[id].sub.theme.id));
+    const ids = all.filter(id => weight(id) > 0), nos = all.filter(id => weight(id) < 0), nul = all.filter(id => weight(id) === 0);
     const pos = {}, neg = {}, count = {}, seen = {};
-    ids.forEach(id => {
+    all.forEach(id => {
       const it = ITEMS[id], w = weight(id);
-      it.cands.forEach(c => { pos[c] = (pos[c] || 0) + w; });
-      (it.members || [id]).forEach(m => { const c = IDEAS[m].c; count[c] = (count[c] || 0) + 1; seen[c] = (seen[c] || 0) + 1; });
-    });
-    nos.forEach(id => {
-      const it = ITEMS[id], w = NO_WEIGHT;
-      it.cands.forEach(c => { neg[c] = (neg[c] || 0) + w; });
-      (it.members || [id]).forEach(m => { const c = IDEAS[m].c; seen[c] = (seen[c] || 0) + 1; });
+      it.cands.forEach(c => { if (w > 0) pos[c] = (pos[c] || 0) + w; else if (w < 0) neg[c] = (neg[c] || 0) - w; });
+      (it.members || [id]).forEach(m => { const c = IDEAS[m].c; seen[c] = (seen[c] || 0) + 1; if (w > 0) count[c] = (count[c] || 0) + 1; });
     });
     const cands = [...new Set([...Object.keys(pos), ...Object.keys(neg)])];
     const nets = cands.map(c => (pos[c] || 0) - (neg[c] || 0));
@@ -451,22 +469,26 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       accord: (pos[c] || 0) / ((pos[c] || 0) + (neg[c] || 0)), seen: seen[c] || 0,
       n: count[c] || 0, of: TOTAL_BY_CAND[c], adhesion: (count[c] || 0) / TOTAL_BY_CAND[c],
     })).sort((a, b) => b.net - a.net || b.accord - a.accord || b.adhesion - a.adhesion);
-    const spectrum = (liked, rejected) => {
-      if (!liked.length && !rejected.length) return null;
+    const spectrum = (subset) => {
+      const weighted = subset.filter(id => weight(id) !== 0);
+      if (!weighted.length) return subset.length ? { pos: 0, min: 0, max: 0, n: subset.length, flat: true } : null;
       let sw = 0, sp = 0, min = Infinity, max = -Infinity;
-      liked.forEach(id => { const it = ITEMS[id], w = weight(id) / it.cands.length; it.cands.forEach(c => { const p = CAND[c].pos; sw += w; sp += w * p; min = Math.min(min, p); max = Math.max(max, p); }); });
-      rejected.forEach(id => { const it = ITEMS[id], w = NO_WEIGHT / it.cands.length; it.cands.forEach(c => { sw += w; sp -= w * CAND[c].pos; }); });
-      if (min === Infinity) { min = max = sp / sw; }
-      return { pos: Math.max(-10, Math.min(10, sp / sw)), min, max, n: liked.length + rejected.length };
+      weighted.forEach(id => { const it = ITEMS[id], w = weight(id) / it.cands.length;
+        it.cands.forEach(c => { const p = CAND[c].pos; sw += Math.abs(w); sp += w * p; if (w > 0) { min = Math.min(min, p); max = Math.max(max, p); } }); });
+      const pos_ = Math.max(-10, Math.min(10, sp / sw));
+      if (min === Infinity) { min = max = pos_; }
+      return { pos: pos_, min, max, n: subset.length };
     };
     const themes = D.themes.filter(t => !keep || keep.has(t.id)).map(t => {
-      const subs = t.subs.map(s => ({ sub: s, ids: s.items.filter(i => S.sel[i.id]).map(i => i.id), nos: s.items.filter(i => S.no[i.id] && !S.sel[i.id]).map(i => i.id) })).filter(s => s.ids.length || s.nos.length);
-      const tids = subs.flatMap(s => s.ids), tnos = subs.flatMap(s => s.nos);
-      const judged = tids.length + tnos.length;
-      return { theme: t, subs, ids: tids, nos: tnos, judged, total: themeItems(t), sp: spectrum(tids, tnos),
+      const subs = t.subs.map(s => ({ sub: s,
+        ids: s.items.filter(i => weight(i.id) > 0).map(i => i.id), nos: s.items.filter(i => weight(i.id) < 0).map(i => i.id),
+        nul: s.items.filter(i => S.unsure[i.id] && weight(i.id) === 0).map(i => i.id) })).filter(s => s.ids.length || s.nos.length || s.nul.length);
+      const tids = subs.flatMap(s => s.ids), tnos = subs.flatMap(s => s.nos), tnul = subs.flatMap(s => s.nul);
+      const judged = tids.length + tnos.length + tnul.length;
+      return { theme: t, subs, ids: tids, nos: tnos, nul: tnul, judged, total: themeItems(t), sp: spectrum([...tids, ...tnos, ...tnul]),
         reliability: isDone(t) ? "terminé" : judged < 5 ? "très peu d'idées" : judged < 15 ? "en cours" : "consolidé" };
     }).filter(t => t.judged);
-    return { ids, nos, judged: ids.length + nos.length, ranking, themes, overall: spectrum(ids, nos) };
+    return { ids, nos, nul, judged: all.length, ranking, themes, overall: spectrum(all) };
   }
 
   /* ---------- Navigation ---------- */
@@ -576,7 +598,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           h("div.tools", explBtn, i.group ? h("span.chip", "idée commune à " + plural(i.cands.length, "personnalité")) : null), expl);
         if (!EXPL[i.id] && !S.expl[i.id]) explBtn.title = "Explication rédigée à la demande par Claude (clé API nécessaire)";
         box.addEventListener("change", () => {
-          if (box.checked) { S.sel[i.id] = true; delete S.no[i.id]; } else { delete S.sel[i.id]; S.toRate = S.toRate.filter(x => x !== i.id); }
+          if (box.checked) { S.sel[i.id] = true; delete S.no[i.id]; delete S.unsure[i.id]; delete S.w[i.id]; } else { delete S.sel[i.id]; delete S.w[i.id]; S.toRate = S.toRate.filter(x => x !== i.id); }
           delete S.card; save();
           card.classList.toggle("on", box.checked);
           const n = selInSub(sub).length;
@@ -637,16 +659,11 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
   /* ---------- Pondération d'un thème ---------- */
   function starControl(id) {
-    const lbl = h("span.lbl");
-    const names = ["", "Peu important", "Secondaire", "Important", "Très important", "Essentiel"];
-    const btns = [1, 2, 3, 4, 5].map(v => h("button.star", { type: "button", "aria-label": v + " sur 5 : " + names[v], "aria-pressed": "false", onclick: () => { S.rate[id] = v; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); paint(); } }, "★"));
-    function paint() {
-      const r = S.rate[id] || 0;
-      btns.forEach((b, i) => { b.classList.toggle("on", i < r); b.setAttribute("aria-pressed", String(i + 1 === r)); });
-      lbl.textContent = r ? names[r] : "non noté (3)";
-    }
+    const st = stateOf(id) || "yes", lbl = h("span.lbl");
+    const btns = LEVELS[st].map(([w, sign, label]) => h("button.lvl", { type: "button", "aria-label": label, "aria-pressed": "false", onclick: () => { setLevel(id, w); paint(); } }, sign));
+    function paint() { const w = weight(id); LEVELS[st].forEach((l, i) => { btns[i].classList.toggle("on", l[0] === w); btns[i].setAttribute("aria-pressed", String(l[0] === w)); }); const l = levelOf(id); lbl.textContent = l ? l[2] + (S.w[id] == null ? " (défaut)" : "") : ""; }
     paint();
-    return h("div.stars", { role: "group", "aria-label": "Importance sur 5" }, btns, lbl);
+    return h("div.stars", { class: st, role: "group", "aria-label": "Pondération" }, btns, lbl);
   }
   function renderThemeRate(theme) {
     const groups = theme.subs.map(s => ({ sub: s, ids: selInSub(s) })).filter(g => g.ids.length);
@@ -654,14 +671,14 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const item = (i) => h("div.rate-item", h("div.txt", i.t), starControl(i.id));
     const group = (g) => h("section.rate-group",
       h("h3", g.sub.name),
-      h("p.small.muted", plural(g.ids.length, "idée retenue", "idées retenues") + " : quelle importance leur donnez-vous ?"),
+      h("p.small.muted", plural(g.ids.length, "idée retenue", "idées retenues") + " : + oui mais (60), ++ d'accord (80), +++ essentiel (100)."),
       g.ids.map(item));
     const panel = h("section.panel",
       h("div.sec-head", h("div.eyebrow", theme.name + " · pondération"), h("h2", "Pondérer vos choix : " + theme.name),
-        h("p", "Pour chaque sujet où plusieurs idées vous ont plu, notez l'importance que vous accordez à chacune, de 1 (peu important) à 5 (essentiel). Une idée non notée compte 3. La note sert de poids dans l'orientation du thème et dans le classement.")),
+        h("p", "Pour chaque sujet où plusieurs idées vous ont plu, précisez votre degré d'accord : + oui mais, ++ d'accord, +++ essentiel. Une idée non pondérée compte ++. Ce poids sert dans l'orientation du thème et dans le classement.")),
       h("div", multi.length ? multi.map(group) : h("p.empty", "Aucun sujet de ce thème ne contient plusieurs idées retenues : rien à départager. Vous pouvez tout de même noter vos idées ci-dessous.")),
       singles.length ? h("details.singles", { open: !multi.length },
-        h("summary", plural(singles.length, "sujet") + " avec une seule idée retenue (note 3 par défaut, modifiable)"),
+        h("summary", plural(singles.length, "sujet") + " avec une seule idée retenue (++ par défaut, modifiable)"),
         singles.map(group)) : null,
       h("div.panel-foot",
         h("button.btn", { onclick: () => goTheme(theme) }, "← Revenir aux idées"),
@@ -674,12 +691,14 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   function recapTheme(t, withHead) {
     const line = (id, rejected) => { const i = ITEMS[id], e = getExpl(id);
       return h("div.recap-idea", { class: rejected ? "rejected" : "" }, h("div.txt", i.t, e ? h("details.expl-inline", h("summary", "Expliquer"), h("div", e)) : null),
-        h("div.by", rejected ? h("span.chip.no", "rejetée") : miniStars(id), authors(i).map(c => h("span.chip", candName(c) + (c.party ? " · " + c.party : ""))))); };
+        h("div.by", miniStars(id), authors(i).map(c => h("span.chip", candName(c) + (c.party ? " · " + c.party : ""))))); };
     return h("section.recap-theme",
       withHead ? h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "aimée") + ", " + plural(t.nos.length, "rejetée"))) : null,
       t.subs.filter(s => s.ids.length).map(s => h("div.recap-sub", h("h4", s.sub.name), s.ids.map(id => line(id, false)))),
       t.nos.length ? h("details.others", h("summary", plural(t.nos.length, "idée rejetée", "idées rejetées") + " dans ce thème"),
-        t.subs.filter(s => s.nos.length).map(s => h("div.recap-sub", h("h4", s.sub.name), s.nos.map(id => line(id, true))))) : null);
+        t.subs.filter(s => s.nos.length).map(s => h("div.recap-sub", h("h4", s.sub.name), s.nos.map(id => line(id, true))))) : null,
+      t.nul.length ? h("details.others", h("summary", plural(t.nul.length, "idée sans avis", "idées sans avis") + " (je ne sais pas du tout)"),
+        t.nul.map(id => h("div.recap-idea.rejected", h("div.txt", ITEMS[id].t), h("div.by", h("button.linkbtn", { onclick: () => { requeue(id); render(); } }, "Réexaminer"))))) : null);
   }
   function nextButton(primary) {
     const nt = nextTheme();
@@ -726,9 +745,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const ITEM_LIST = SUBS.flatMap(s => s.items);
   const TOTAL_ITEMS = ITEM_LIST.length;
   const today = () => new Date().toISOString().slice(0, 10);
-  const judgedIds = () => ITEM_LIST.filter(it => S.sel[it.id] || S.no[it.id]).map(it => it.id);
+  const judgedIds = () => ITEM_LIST.filter(it => S.sel[it.id] || S.no[it.id] || S.unsure[it.id]).map(it => it.id);
   const judgedCount = () => judgedIds().length;
-  const unjudged = (filter) => ITEM_LIST.filter(it => !S.sel[it.id] && !S.no[it.id] && (!filter || filter(it)));
+  const unjudged = (filter) => ITEM_LIST.filter(it => !S.sel[it.id] && !S.no[it.id] && !S.unsure[it.id] && (!filter || filter(it)));
   const itemPos = (it) => it.cands.reduce((a, c) => a + CAND[c].pos, 0) / it.cands.length;
   const modeIs = () => S.mode === "auto" ? (window.innerWidth < 900 ? "swipe" : "pages") : S.mode;
   function dailyN() { if (S.daily.d !== today()) S.daily = { d: today(), n: 0 }; return S.daily.n; }
@@ -756,17 +775,17 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     return scored[0].it;
   }
   function judge(it, action) {
-    if (action === "yes") { S.sel[it.id] = true; delete S.no[it.id]; delete S.skip[it.id]; if (!S.toRate.includes(it.id)) S.toRate.push(it.id); }
-    else if (action === "no") { S.no[it.id] = true; delete S.sel[it.id]; delete S.skip[it.id]; S.toRate = S.toRate.filter(x => x !== it.id); }
-    else { S.skip[it.id] = true; }
-    if (action !== "skip") { dailyN(); S.daily.n++; S.lastPos = [...S.lastPos, itemPos(it)].slice(-10); }
+    delete S.sel[it.id]; delete S.no[it.id]; delete S.unsure[it.id]; delete S.skip[it.id]; delete S.w[it.id];
+    if (action === "yes") S.sel[it.id] = true; else if (action === "no") S.no[it.id] = true; else S.unsure[it.id] = true;
+    if (!S.toRate.includes(it.id)) S.toRate.push(it.id);
+    dailyN(); S.daily.n++; S.lastPos = [...S.lastPos, itemPos(it)].slice(-10);
     S.hist = [...S.hist, { id: it.id, action }].slice(-30);
     delete S.card; save();
   }
   function undo() {
     const last = S.hist.pop(); if (!last) return null;
-    delete S.sel[last.id]; delete S.no[last.id]; delete S.skip[last.id]; S.toRate = S.toRate.filter(x => x !== last.id);
-    if (last.action !== "skip") { dailyN(); S.daily.n = Math.max(0, S.daily.n - 1); S.lastPos = S.lastPos.slice(0, -1); }
+    delete S.sel[last.id]; delete S.no[last.id]; delete S.unsure[last.id]; delete S.skip[last.id]; delete S.w[last.id]; S.toRate = S.toRate.filter(x => x !== last.id);
+    dailyN(); S.daily.n = Math.max(0, S.daily.n - 1); S.lastPos = S.lastPos.slice(0, -1);
     save(); return ITEMS[last.id];
   }
   const fmtDate = (d) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -806,6 +825,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       h("div", h("b", label), h("div.small.muted", desc)));
     const quotaSel = h("select", { id: "quota", onchange: (ev) => { S.quota = +ev.target.value; save(); renderSwipeHome(); } },
       [10, 20, 30, 50].map(v => h("option", { value: v, selected: q === v }, v + " idées par jour")));
+    const batchSel = h("select", { id: "batch", onchange: (ev) => { S.batch = +ev.target.value; save(); renderSwipeHome(); } },
+      [5, 10, 15, 20].map(v => h("option", { value: v, selected: (S.batch || 10) === v }, "toutes les " + v + " idées")));
     const pending = S.toRate.length;
     app.replaceChildren(h("div.swipe-home",
       isApp() ? h("div.appbar", h("div.abtitle.big", "Boussole 2027"), h("div.abacts",
@@ -817,9 +838,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("div.stat", h("div.v.num", n + " / " + q), h("div.k", "idées jugées aujourd'hui")),
         h("div.stat", h("div.v.num", jc), h("div.k", "idées jugées sur " + TOTAL_ITEMS)),
         h("div.stat", h("div.v.num", selectedIds().length), h("div.k", "idées aimées")),
-        h("div.stat", h("div.v.num", pending), h("div.k", "idées aimées à noter"))),
-      pending >= 10 ? h("div.banner", h("div", h("b", pending + " idées aimées attendent une note"), " : toutes les 10 idées aimées, vous les notez de 1 à 5."),
-        h("div", { style: "margin-top:6px" }, h("button.btn.primary", { onclick: () => setSwipeView("rate") }, "Noter maintenant"))) : null,
+        h("div.stat", h("div.v.num", pending), h("div.k", "idées à pondérer"))),
+      pending >= (S.batch || 10) ? h("div.banner", h("div", h("b", pending + " idées attendent leur pondération"), " : une touche par idée pour préciser votre degré d'accord."),
+        h("div", { style: "margin-top:6px" }, h("button.btn.primary", { onclick: () => setSwipeView("rate") }, "Pondérer maintenant"))) : null,
       h("section.card-ai", { style: "gap:16px" },
         h("div", h("h3", "Que voulez-vous swiper ?"),
           h("div.scope-opts",
@@ -828,18 +849,19 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           scopeTheme ? h("div.field", { style: "margin-top:10px" }, h("label", { for: "scope-theme" }, "Thème"), themeSelect, subsBox) : null),
         h("div", h("h3", "Votre rythme"),
           h("div.field", h("label", { for: "quota" }, "Objectif quotidien"), quotaSel),
+          h("div.field", { style: "margin-top:8px" }, h("label", { for: "batch" }, "Pondération (affiner vos réponses)"), batchSel),
           h("p.small.muted", { style: "margin-top:8px" },
             "À ce rythme : pré-orientation fiable (15 idées jugées par thème) " + (e.needReliable ? "vers le " + fmtDate(addDays(e.daysReliable)) : "déjà atteinte") +
             " · toutes les idées " + (e.remAll ? "vers le " + fmtDate(addDays(e.daysAll)) + " (" + e.remAll + " restantes)" : "jugées") +
             (scopeTheme ? " · ce périmètre : " + (e.remScope ? plural(e.remScope, "idée restante", "idées restantes") + ", " + plural(e.daysScope, "jour") : "terminé") : "") + ".")),
         h("div", { style: "display:flex;flex-wrap:wrap;gap:8px" },
           h("button.btn.primary", { onclick: () => setSwipeView("card"), disabled: !unjudged(scopeFilter()).length }, n >= q ? "Continuer au-delà de l'objectif →" : (n ? "Reprendre la série du jour →" : "Commencer la série du jour →")),
-          pending ? h("button.btn", { onclick: () => setSwipeView("rate") }, "Noter " + plural(pending, "idée aimée", "idées aimées")) : null)),
+          pending ? h("button.btn", { onclick: () => setSwipeView("rate") }, "Pondérer " + plural(pending, "idée")) : null)),
       h("div.panel-foot",
         h("div", jc >= 20 && !allJudged() && !S.finished ? h("button.btn", { onclick: () => setPhase(2) }, "Pré-orientation →") : null, " ",
           (allJudged() || S.finished) ? h("button.btn.primary", { onclick: () => setPhase(3) }, "Voir mes résultats →") : null, " ",
           jc >= 20 && !allJudged() && !S.finished ? finishNowControl() : null),
-        h("span.small.muted", "Swipez à droite si vous êtes d'accord, à gauche sinon, vers le haut si vous ne savez pas."))));
+        h("span.small.muted", "Swipez à droite si vous êtes d'accord, à gauche sinon, vers le haut si vous n'êtes pas sûr."))));
     renderSteps();
   }
   const allJudged = () => unjudged(null).length === 0;
@@ -855,13 +877,13 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const e = getExpl(it.id);
     const expl = h("div.card-expl", { hidden: !withExpl }, h("div.card-expl-in", e || "Pas encore d'explication pour cette idée."));
     const btn = h("button.explain", { type: "button", onclick: (ev) => { ev.stopPropagation(); expl.hidden = !expl.hidden; btn.textContent = expl.hidden ? "Expliquer" : "Masquer l'explication"; } }, withExpl ? "Masquer l'explication" : "Expliquer");
-    const card = h("article.scard",
+    const card = h("article.scard", { class: stateOf(it.id) || "" },
       h("div.scard-body",
         h("div.eyebrow", it.sub.theme.name + " · " + it.sub.name),
         h("div.scard-text", it.t),
         h("div.tools", btn, it.group ? h("span.chip", "idée commune à " + plural(it.cands.length, "personnalité")) : null)),
       expl,
-      h("div.stamp.yes", "D'accord"), h("div.stamp.no", "Pas d'accord"), h("div.stamp.skip", "Je ne sais pas"));
+      h("div.stamp.yes", "D'accord"), h("div.stamp.no", "Pas d'accord"), h("div.stamp.skip", "Pas sûr"));
     card.fit = () => { const t = card.querySelector(".scard-text"); let fs = 1.45; t.style.fontSize = fs + "rem";
       while (card.scrollHeight > card.clientHeight + 2 && fs > 0.9) { fs -= 0.05; t.style.fontSize = fs + "rem"; } };
     return card;
@@ -885,8 +907,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       if (!it) return;
       judge(it, action);
       refreshCounter(); renderSteps();
-      if (action !== "skip" && dailyN() === q) say("Objectif du jour atteint. Continuez si vous voulez.");
-      if (action === "yes" && S.toRate.length >= 10 && S.toRate.length % 10 === 0) { setSwipeView("rate"); return; }
+      if (dailyN() === q) say("Objectif du jour atteint. Continuez si vous voulez.");
+      if (S.toRate.length >= (S.batch || 10)) { setSwipeView("rate"); return; }
       mount(pickNext());
     }
     function flyOut(action) {
@@ -907,13 +929,13 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       const end = () => {
         if (!dragging) return; dragging = false;
         el.classList.remove("lean-yes", "lean-no", "lean-skip");
-        if (dx > 90) flyOut("yes"); else if (dx < -90) flyOut("no"); else if (dy < -110 && Math.abs(dx) < 80) flyOut("skip");
+        if (dx > 90) flyOut("yes"); else if (dx < -90) flyOut("no"); else if (dy < -110 && Math.abs(dx) < 80) flyOut("unsure");
         else { el.style.transition = "transform .2s ease"; el.style.transform = ""; }
       };
       el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
     }
     const onKey = (ev) => { if (S.phase !== 1 || S.sview !== "card") { document.removeEventListener("keydown", onKey); return; }
-      if (ev.key === "ArrowRight") flyOut("yes"); else if (ev.key === "ArrowLeft") flyOut("no"); else if (ev.key === "ArrowUp") { ev.preventDefault(); flyOut("skip"); } };
+      if (ev.key === "ArrowRight") flyOut("yes"); else if (ev.key === "ArrowLeft") flyOut("no"); else if (ev.key === "ArrowUp") { ev.preventDefault(); flyOut("unsure"); } };
     document.addEventListener("keydown", onKey);
     app.replaceChildren(h("div.swipe-wrap",
       h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Terminer et revenir à l'accueil" }, "←"), h("div.abtitle", counter), h("div.abacts")),
@@ -921,26 +943,27 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       h("div.swipe-acts",
         h("button.sbtn.undo", { onclick: () => { const prev = undo(); if (prev) { refreshCounter(); renderSteps(); mount(prev); say("Dernier swipe annulé"); } }, "aria-label": "Annuler le dernier swipe" }, h("span.ic", "↶")),
         h("button.sbtn.no", { onclick: () => flyOut("no"), "aria-label": "Pas d'accord" }, h("span.ic", "✕")),
-        h("button.sbtn.skip", { onclick: () => flyOut("skip"), "aria-label": "Je ne sais pas" }, h("span.ic", "?")),
+        h("button.sbtn.skip", { onclick: () => flyOut("unsure"), "aria-label": "Pas sûr" }, h("span.ic", "?")),
         h("button.sbtn.yes", { onclick: () => flyOut("yes"), "aria-label": "D'accord" }, h("span.ic", "✓"))),
-      h("div.legend", h("span", "✕ pas d'accord"), h("span", "? je ne sais pas"), h("span", "✓ d'accord"))));
+      h("div.legend", h("span", "✕ pas d'accord"), h("span", "? pas sûr"), h("span", "✓ d'accord"))));
     mount(it);
     renderSteps();
   }
   function renderSwipeRate() {
-    S.toRate = S.toRate.filter(id => ITEMS[id] && S.sel[id]);
+    S.toRate = S.toRate.filter(id => ITEMS[id] && stateOf(id));
     const id = S.toRate[0];
-    if (!id) { app.replaceChildren(h("div.swipe-wrap", h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home") }, "←"), h("div.abtitle", "Notation"), h("div.abacts")),
-      h("p.empty", "Toutes vos idées aimées sont notées."), h("p", { style: "text-align:center" }, h("button.btn.primary", { onclick: () => setSwipeView("home") }, "← Retour")))); renderSteps(); return; }
-    const it = ITEMS[id];
-    const names = ["", "Peu important", "Secondaire", "Important", "Très important", "Essentiel"];
-    const total = S.toRate.length;
+    if (!id) { app.replaceChildren(h("div.swipe-wrap", h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home") }, "←"), h("div.abtitle", "Pondération"), h("div.abacts")),
+      h("p.empty", "Toutes vos idées jugées sont pondérées."), h("p", { style: "text-align:center" }, h("button.btn.primary", { onclick: () => setSwipeView("home") }, "← Retour")))); renderSteps(); return; }
+    const it = ITEMS[id], st = stateOf(id), total = S.toRate.length;
+    const titles = { yes: "Vous êtes d'accord : à quel point ?", no: "Vous n'êtes pas d'accord : à quel point ?", unsure: "Pas sûr : vers où penchez-vous ?" };
     const card = ideaCard(it, true);
     app.replaceChildren(h("div.swipe-wrap",
-      h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Plus tard" }, "←"), h("div.abtitle", "Quelle importance ? · " + total + " à noter"), h("div.abacts")),
+      h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Plus tard" }, "←"), h("div.abtitle", total + " à pondérer"), h("div.abacts")),
+      h("div.rate-title", { class: st }, titles[st]),
       h("div.swipe-stage", card),
-      h("div.rate-acts", [1, 2, 3, 4, 5].map(v => h("button.rbtn", { onclick: () => { S.rate[id] = v; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); renderSwipeRate(); }, "aria-label": v + " sur 5 : " + names[v] },
-        h("span.ic", String(v)), h("span.lb", names[v]))))));
+      h("div.rate-acts", { class: st }, LEVELS[st].map(([w, sign, label]) => h("button.rbtn", { class: weight(id) === w ? "on" : "", onclick: () => { setLevel(id, w); renderSwipeRate(); }, "aria-label": label },
+        h("span.ic", sign), h("span.lb", label)))),
+      st === "unsure" ? h("div.legend", h("button.linkbtn", { onclick: () => { requeue(id); renderSwipeRate(); } }, "Remettre dans la pile pour y revenir plus tard")) : null));
     requestAnimationFrame(() => card.fit && card.fit());
     renderSteps();
   }
@@ -1001,8 +1024,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     return box;
   }
   function miniStars(id) {
-    const r = weight(id);
-    return h("span.mini-stars", { title: "Importance " + r + " / 5" }, "★".repeat(r), h("span.off", "★".repeat(5 - r)));
+    const st = stateOf(id), l = levelOf(id);
+    if (!l) return h("span");
+    return h("span.mark", { class: st, title: l[2] + " (" + (l[0] > 0 ? "+" : "") + l[0] + ")" }, l[1] + " " + l[2]);
   }
   let tip = null;
   function showTip(e, html) {
@@ -1038,7 +1062,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
     const banner = partial ? h("div.banner",
       h("div", h("b", "Pré-orientation"), swipe
-        ? " fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + " sur " + TOTAL_ITEMS + " (" + plural(R.ids.length, "aimée") + ", " + plural(R.nos.length, "rejetée") + ")."
+        ? " fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + " sur " + TOTAL_ITEMS + " (" + plural(R.ids.length, "aimée") + ", " + plural(R.nos.length, "rejetée") + ", " + R.nul.length + " sans avis)."
         : " après " + done.length + " thèmes terminés sur " + D.themes.length + ", fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + "."),
       h("div.small", swipe
         ? (weak.length ? "Encore fragile sur : " + weak.map(t => t.theme.name + " (" + t.reliability + ")").join(", ") + ". " : "") + "Les thèmes sans aucune idée jugée n'apparaissent pas encore."
@@ -1077,7 +1101,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités représentées")),
         h("div.stat", h("div.v", posLabel(R.overall.pos)), h("div.k", (partial ? "pré-orientation" : "position d'ensemble") + " (" + fmtPos(R.overall.pos) + ")"))),
       h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix"),
-        h("p", "Chaque idée aimée crédite ses auteurs de sa note d'importance (1 à 5) ; chaque idée rejetée leur retire 3 points. « Je ne sais pas » ne compte pas. Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues.")),
+        h("p", "Chaque idée a un poids de −100 à +100 selon votre geste et votre pondération (+ oui mais 60, ++ d'accord 80, +++ essentiel 100 ; en miroir pour les désaccords ; « pas sûr » pèse ±30 selon la tendance, 0 sans avis). Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues.")),
         rank, others),
       h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
         h("p", "Position de −10 (gauche) à +10 (droite) : les idées aimées vous rapprochent de leurs auteurs, les idées rejetées vous en éloignent. La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos idées aimées ; la mention sous chaque thème indique la solidité de la mesure.")),
@@ -1123,15 +1147,15 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     lines.push("", "Position sur l'axe gauche (−10) / droite (+10), moyenne pondérée des auteurs des idées retenues :");
     R.themes.forEach(t => lines.push("- " + t.theme.name + " : " + fmtPos(t.sp.pos) + " (" + posLabel(t.sp.pos) + "), " + t.ids.length + " idées"));
     lines.push("- Ensemble : " + fmtPos(R.overall.pos) + " (" + posLabel(R.overall.pos) + ")");
-    lines.push("", "Idées aimées, avec l'importance donnée (1 à 5) et leur auteur :");
+    lines.push("", "Idées approuvées (+ oui mais, ++ d'accord, +++ essentiel ; « plutôt oui » pour un pas sûr), avec leur auteur :");
     R.themes.forEach(t => { lines.push("", "## " + t.theme.name); t.subs.forEach(s => { if (!s.ids.length) return; lines.push("### " + s.sub.name);
-      s.ids.forEach(id => { const i = ITEMS[id]; lines.push("- [" + weight(id) + "/5] " + i.t.replace(/\n/g, " ") + " (" + authors(i).map(candName).join(", ") + ")"); }); }); });
+      s.ids.forEach(id => { const i = ITEMS[id], l = levelOf(id); lines.push("- [" + l[1] + " " + l[2] + "] " + i.t.replace(/\n/g, " ") + " (" + authors(i).map(candName).join(", ") + ")"); }); }); });
     if (R.nos.length) { lines.push("", "Idées rejetées (en désaccord), avec leur auteur :");
-      R.themes.forEach(t => t.nos.forEach(id => { const i = ITEMS[id]; lines.push("- [" + t.theme.name + "] " + i.t.replace(/\n/g, " ") + " (" + authors(i).map(candName).join(", ") + ")"); })); }
+      R.themes.forEach(t => t.nos.forEach(id => { const i = ITEMS[id], l = levelOf(id); lines.push("- [" + t.theme.name + " · " + l[2] + "] " + i.t.replace(/\n/g, " ") + " (" + authors(i).map(candName).join(", ") + ")"); })); }
     return lines.join("\n");
   }
   const SYSTEM = [
-    "Tu es un analyste politique neutre, précis et bienveillant. Un citoyen français a utilisé un comparateur de programmes pour la présidentielle 2027 : il a jugé, à l'aveugle, des propositions (d'accord / pas d'accord / je ne sais pas), puis a noté de 1 à 5 l'importance de celles qu'il aime.",
+    "Tu es un analyste politique neutre, précis et bienveillant. Un citoyen français a utilisé un comparateur de programmes pour la présidentielle 2027 : il a jugé, à l'aveugle, des propositions (d'accord / pas d'accord / je ne sais pas), puis a précisé son degré d'accord (oui mais / d'accord / essentiel, et en miroir pour les désaccords).",
     "Rédige sa « carte d'identité politique » en français, en le vouvoyant, en 250 à 400 mots. Reste descriptif : aucune étiquette partisane qu'il n'a pas choisie lui-même, aucun jugement de valeur, aucune consigne de vote.",
     "Structure imposée, en texte simple sans Markdown (pas de #, pas de **, pas de listes à puces) :",
     "Ligne 1 : un titre de 3 à 6 mots qui résume sa sensibilité.",
@@ -1201,6 +1225,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       v: 1, d: D.extractedAt, sel: selectedIds(), no: Object.keys(S.no).filter(k => S.no[k]), rate: S.rate, done: D.themes.filter(t => S.stage[t.id] === "done").map(t => t.id),
       skipped: Object.keys(S.skipped), seen: Object.keys(S.seen).filter(k => S.seen[k]), card: S.card || "",
       toRate: S.toRate, quota: S.quota, daily: S.daily, scope: S.scope, finished: !!S.finished, mode: S.mode,
+      unsure: Object.keys(S.unsure).filter(k => S.unsure[k]), w: S.w, batch: S.batch,
     }))));
   }
   function importState(code) {
@@ -1219,7 +1244,11 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     (o.seen || []).forEach(id => { next.seen[id] = true; });
     next.card = o.card || "";
     (o.no || []).forEach(id => { if (ITEMS[id] && !next.sel[id]) next.no[id] = true; });
-    next.toRate = (o.toRate || []).filter(id => ITEMS[id] && next.sel[id]);
+    (o.unsure || []).forEach(id => { if (ITEMS[id] && !next.sel[id] && !next.no[id]) next.unsure[id] = true; });
+    next.w = {}; Object.entries(o.w || {}).forEach(([id, w]) => { if (ITEMS[id] && typeof w === "number") next.w[id] = w; });
+    if (!o.w) Object.entries(o.rate || {}).forEach(([id, r]) => { if (next.sel[id]) next.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; });
+    if (o.batch) next.batch = o.batch;
+    next.toRate = (o.toRate || []).filter(id => ITEMS[id] && (next.sel[id] || next.no[id] || next.unsure[id]));
     if (o.quota) next.quota = o.quota; if (o.daily) next.daily = o.daily; if (o.scope) next.scope = o.scope; next.finished = !!o.finished; if (o.mode) next.mode = o.mode;
     S = next; save();
     return { n: o.sel.length - unknown, unknown, date: o.d };
