@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boussole 2027</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : une colonne de lecture (~68ch) pour les résultats, un panneau sujet + une
+   colonne de thèmes pour la sélection. Ton institutionnel, sobre, chiffres tabulaires. */
+:root {
+  --paper: #f3f4f7;
+  --surface: #ffffff;
+  --surface-2: #e9ebf1;
+  --ink: #161d3a;
+  --ink-2: #4a5268;
+  --muted: #7a8197;
+  --line: #d6d9e3;
+  --accent: #1f3fbf;
+  --accent-soft: #e4e9fb;
+  --on-accent: #ffffff;
+  --left: #c62f4a;
+  --right: #2b5bd7;
+  --mid: #aeb3c2;
+  --good: #1a7f3c;
+  --warn: #b3541e;
+  --font-display: "Spectral", Georgia, "Times New Roman", serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1220; --surface: #181c2c; --surface-2: #222738; --ink: #eef0f6; --ink-2: #b9bfd0;
+    --muted: #8a91a6; --line: #2d3348; --accent: #7a93ff; --accent-soft: #232b4f; --on-accent: #0f1220;
+    --left: #e4647e; --right: #7a93ff; --mid: #5b617a; --good: #4fc37a; --warn: #e3914f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1220; --surface: #181c2c; --surface-2: #222738; --ink: #eef0f6; --ink-2: #b9bfd0;
+  --muted: #8a91a6; --line: #2d3348; --accent: #7a93ff; --accent-soft: #232b4f; --on-accent: #0f1220;
+  --left: #e4647e; --right: #7a93ff; --mid: #5b617a; --good: #4fc37a; --warn: #e3914f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { height: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 0 48px; }
+@media (min-width: 700px) { .wrap { padding-inline: 28px; } }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(2rem, 5vw, 2.9rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.55rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+a { color: var(--accent); }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.eyebrow { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 0.86rem; }
+
+/* En-tête */
+.top { display: grid; gap: 20px; padding-block: 28px 20px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+@media (min-width: 900px) { .top { grid-template-columns: 1fr auto; align-items: end; } }
+.lede { max-width: 62ch; color: var(--ink-2); margin-top: 10px; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; }
+.steps button {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font-weight: 600;
+}
+.steps button .n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface-2); color: var(--ink-2); font-size: 0.8rem; }
+.steps button.cur { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.steps button.cur .n { background: var(--accent); color: var(--on-accent); }
+.steps button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Phase 1 : sélection */
+.select-layout { display: grid; gap: 24px; align-items: start; }
+@media (min-width: 900px) { .select-layout { grid-template-columns: 270px minmax(0, 1fr); } }
+.themes { display: none; position: sticky; top: env(safe-area-inset-top, 0px); max-height: calc(100vh - 16px); overflow-y: auto; padding-right: 4px; }
+@media (min-width: 900px) { .themes { display: block; } }
+.tgroup { margin-bottom: 14px; }
+.tname { font-weight: 700; font-size: 0.82rem; color: var(--ink-2); padding: 4px 10px; }
+.snav {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 10px; border: 0; background: transparent; border-radius: 8px; text-align: left; color: var(--ink-2);
+}
+.snav:hover { background: var(--surface-2); }
+.snav.cur { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.snav .cnt { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.snav.seen:not(.cur) .cnt::before { content: "✓ "; color: var(--good); }
+.snav .cnt.has { color: var(--accent); font-weight: 700; }
+.panel { min-width: 0; }
+.panel-head { display: grid; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.panel-head .row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+select, input[type="text"], input[type="password"] {
+  font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; max-width: 100%;
+}
+.ideas { display: grid; gap: 8px; }
+.idea {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start;
+  padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  cursor: pointer; transition: border-color .15s, background .15s;
+}
+.idea:hover { border-color: var(--accent); }
+.idea.on { border-color: var(--accent); background: var(--accent-soft); }
+.idea input { width: 18px; height: 18px; margin: 3px 0 0 2px; accent-color: var(--accent); }
+.idea .txt { white-space: pre-line; }
+.panel-foot { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-top: 20px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; font-weight: 600;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--left); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.tally { font-weight: 600; color: var(--ink-2); }
+
+/* Phase 2 : pondération */
+.rate-group { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+.rate-group h3 { margin-bottom: 4px; }
+.rate-item { display: grid; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); }
+@media (min-width: 700px) { .rate-item { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 18px; } }
+.rate-item .txt { white-space: pre-line; }
+.stars { display: inline-flex; gap: 2px; align-items: center; }
+.star { width: 32px; height: 32px; border: 0; background: transparent; border-radius: 6px; font-size: 1.35rem; line-height: 1; color: var(--line); padding: 0; }
+.star:hover, .star.on { color: var(--accent); }
+.stars .lbl { font-size: 0.8rem; color: var(--muted); margin-left: 8px; min-width: 7ch; }
+.singles summary { cursor: pointer; font-weight: 600; color: var(--ink-2); padding: 8px 0; }
+
+/* Phase 3 : résultats */
+.results { display: grid; gap: 36px; }
+.stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.stat { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.stat .v { font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1; }
+.stat .k { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+.sec-head { display: grid; gap: 6px; margin-bottom: 16px; }
+.sec-head p { color: var(--ink-2); max-width: 68ch; }
+.rank { display: grid; gap: 10px; }
+.rank-row { display: grid; grid-template-columns: 28px 52px minmax(0, 1fr); gap: 14px; align-items: center;
+  padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.rank-row .pos { font-family: var(--font-display); font-size: 1.4rem; font-weight: 600; color: var(--muted); }
+.rank-row.first .pos { color: var(--accent); }
+.avatar { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: var(--surface-2); display: grid; place-items: center;
+  font-weight: 700; color: var(--ink-2); font-size: 1rem; flex: none; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rank-row .who { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.rank-row .name { font-weight: 700; font-size: 1.05rem; }
+.rank-row .party { color: var(--muted); font-size: 0.85rem; }
+.bar { position: relative; height: 10px; background: var(--surface-2); border-radius: 4px; margin: 8px 0 6px; overflow: hidden; }
+.bar > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 4px; }
+.rank-row .meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.85rem; color: var(--ink-2); }
+.rank-row .meta b { color: var(--ink); font-size: 1rem; }
+.others { margin-top: 10px; }
+.others summary { cursor: pointer; color: var(--ink-2); font-weight: 600; padding: 6px 0; }
+.others ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.others li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+
+/* Spectre */
+.spectrum { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.sp-axis, .sp-row { display: grid; grid-template-columns: minmax(90px, 32%) minmax(0, 1fr); gap: 12px; align-items: center; }
+.sp-axis { color: var(--muted); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
+.sp-axis .ticks { display: flex; justify-content: space-between; }
+.sp-axis .ticks .l { color: var(--left); } .sp-axis .ticks .r { color: var(--right); }
+.sp-row { padding: 9px 0; border-top: 1px solid var(--line); }
+.sp-row:first-of-type { border-top: 0; }
+.sp-row .lab { font-weight: 600; font-size: 0.92rem; min-width: 0; }
+.sp-row .lab .small { display: block; font-weight: 400; color: var(--muted); }
+.sp-row.total { border-top: 2px solid var(--line); margin-top: 6px; padding-top: 14px; }
+.sp-row.total .lab { font-family: var(--font-display); font-size: 1.1rem; }
+.track { position: relative; height: 28px; }
+.track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; background: var(--line); transform: translateY(-50%); }
+.track::after { content: ""; position: absolute; left: 50%; top: 2px; bottom: 2px; width: 0; border-left: 2px dashed var(--mid); }
+.track .range { position: absolute; top: 50%; height: 8px; transform: translateY(-50%); background: var(--surface-2); border: 1px solid var(--line); border-radius: 4px; }
+.track .dot { position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%; transform: translate(-50%, -50%);
+  border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); background: var(--mid); cursor: default; }
+.track .dot.l { background: var(--left); } .track .dot.r { background: var(--right); }
+.track .val { position: absolute; top: 50%; transform: translateY(-50%); font-size: 0.78rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; background: var(--surface); padding: 0 4px; border-radius: 4px; }
+.tip { position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--paper); padding: 8px 10px; border-radius: 8px;
+  font-size: 0.8rem; max-width: 260px; line-height: 1.35; }
+.sp-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.9rem; }
+.sp-table th, .sp-table td { text-align: left; padding: 6px 8px; border-top: 1px solid var(--line); }
+.sp-table th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.note { font-size: 0.85rem; color: var(--muted); margin-top: 10px; max-width: 72ch; }
+
+/* Récapitulatif */
+.recap-theme { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.recap-theme + .recap-theme { margin-top: 12px; }
+.recap-theme .head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.recap-sub { margin-top: 12px; }
+.recap-sub h4 { margin: 0 0 6px; font-size: 0.95rem; color: var(--ink-2); }
+.recap-idea { display: grid; gap: 6px 14px; padding: 8px 0; border-top: 1px solid var(--line); align-items: start; }
+@media (min-width: 700px) { .recap-idea { grid-template-columns: minmax(0, 1fr) auto; } }
+.recap-idea .txt { white-space: pre-line; }
+.recap-idea .by { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+@media (min-width: 700px) { .recap-idea .by { justify-content: flex-end; } }
+.chip { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.chip.accent { background: var(--accent-soft); color: var(--accent); }
+.mini-stars { color: var(--accent); letter-spacing: 1px; font-size: 0.9rem; white-space: nowrap; }
+.mini-stars .off { color: var(--line); }
+
+/* Carte d'identité (Claude) */
+.card-ai { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: grid; gap: 14px; }
+.card-ai .form { display: grid; gap: 10px; }
+@media (min-width: 700px) { .card-ai .form { grid-template-columns: minmax(0, 1fr) auto; align-items: end; } }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 0.82rem; font-weight: 600; color: var(--ink-2); }
+.check { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; color: var(--ink-2); }
+.ai-out { white-space: pre-line; line-height: 1.6; padding: 16px 18px; border-left: 3px solid var(--accent); background: var(--paper); border-radius: 0 10px 10px 0; }
+.ai-out .t { font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; display: block; margin-bottom: 8px; }
+.ai-err { color: var(--left); font-size: 0.9rem; }
+.ai-busy { color: var(--muted); font-size: 0.9rem; }
+
+.confirm { display: inline-flex; gap: 8px; align-items: center; }
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.82rem; max-width: 72ch; }
+.empty { padding: 32px; text-align: center; color: var(--ink-2); background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Présidentielle 2027 · comparateur de programmes</div>
+      <h1>Boussole 2027</h1>
+      <p class="lede">Cochez les propositions qui vous conviennent, sans savoir qui les porte. Pondérez ensuite celles d'un même sujet, puis découvrez quelles personnalités vos choix rapprochent et où vous vous situez, thème par thème.</p>
+    </div>
+    <ol class="steps" id="steps"></ol>
+  </header>
+  <main id="app"></main>
+  <footer id="foot"></footer>
+</div>
+<script src="data.js"></script>
+<script>
+(() => {
+  "use strict";
+  const D = window.PROGRAMMES;
+  if (!D) { document.getElementById("app").innerHTML = '<p class="empty">Le fichier <code>data.js</code> est introuvable. Lancez <code>node extraire-donnees.mjs</code> à côté de cette page.</p>'; return; }
+
+  /* ---------- Index des données ---------- */
+  const CAND = Object.fromEntries(D.candidates.map(c => [c.id, c]));
+  const SUBS = [];
+  D.themes.forEach(t => t.subs.forEach(s => SUBS.push(Object.assign({ theme: t }, s))));
+  const IDEAS = {};
+  SUBS.forEach(s => s.ideas.forEach(i => { IDEAS[i.id] = Object.assign({ sub: s }, i); }));
+  const TOTAL_BY_CAND = {};
+  Object.values(IDEAS).forEach(i => { TOTAL_BY_CAND[i.c] = (TOTAL_BY_CAND[i.c] || 0) + 1; });
+  const ALL_IDEAS = Object.keys(IDEAS).length;
+
+  /* ---------- État persistant ---------- */
+  const KEY = "boussole2027";
+  const DEFAULT_MODEL = "claude-fable-5-1";
+  const MODELS = [
+    ["claude-fable-5-1", "Claude Fable 5.1 (recommandé)"],
+    ["claude-opus-5-5", "Claude Opus 5.5"],
+    ["claude-sonnet-5-5", "Claude Sonnet 5.5"],
+  ];
+  const fresh = () => ({ phase: 1, cur: 0, sel: {}, rate: {}, seen: {}, model: DEFAULT_MODEL, keepKey: false, key: "", card: "" });
+  let S = fresh();
+  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* stockage indisponible */ }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, S, { key: S.keepKey ? S.key : "" }))); } catch (e) { /* ignoré */ } };
+
+  /* ---------- Utilitaires ---------- */
+  function h(tag, attrs, ...kids) {
+    const [name, ...classes] = tag.split(".");
+    const el = document.createElement(name || "div");
+    if (classes.length) el.className = classes.join(" ");
+    if (attrs && typeof attrs === "object" && !(attrs instanceof Node) && !Array.isArray(attrs)) {
+      for (const [k, v] of Object.entries(attrs)) {
+        if (v == null || v === false) continue;
+        if (k === "class") el.className += (el.className ? " " : "") + v;
+        else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+        else if (k === "html") el.innerHTML = v;
+        else if (k in el && k !== "style") { try { el[k] = v; } catch (e) { el.setAttribute(k, v); } }
+        else el.setAttribute(k, v);
+      }
+    } else if (attrs != null) kids.unshift(attrs);
+    for (const k of kids.flat(Infinity)) if (k != null && k !== false) el.append(k instanceof Node ? k : String(k));
+    return el;
+  }
+  const hash = (s) => { let x = 2166136261; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 16777619); } return x >>> 0; };
+  const shuffled = (ideas) => ideas.slice().sort((a, b) => hash(a.id + "|") - hash(b.id + "|"));
+  const pct = (x) => (Math.round(x * 1000) / 10).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " %";
+  const candName = (c) => c.first + " " + c.last;
+  const weight = (id) => S.rate[id] || 3;
+  const plural = (n, s, p) => n + " " + (n > 1 ? (p || s + "s") : s);
+  const selectedIds = () => Object.keys(S.sel).filter(id => S.sel[id] && IDEAS[id]);
+  const selInSub = (sub) => sub.ideas.filter(i => S.sel[i.id]);
+  const posLabel = (p) => p <= -6 ? "Gauche" : p <= -2 ? "Centre gauche" : p < 2 ? "Centre" : p < 6 ? "Centre droit" : "Droite";
+  const fmtPos = (p) => (p > 0 ? "+" : "") + p.toFixed(1).replace(".", ",");
+
+  /* ---------- Calculs ---------- */
+  function compute() {
+    const ids = selectedIds();
+    const score = {}, count = {};
+    let total = 0;
+    ids.forEach(id => { const i = IDEAS[id], w = weight(id); score[i.c] = (score[i.c] || 0) + w; count[i.c] = (count[i.c] || 0) + 1; total += w; });
+    const ranking = Object.keys(score).map(c => ({
+      cand: CAND[c], share: score[c] / total, n: count[c], of: TOTAL_BY_CAND[c], adhesion: count[c] / TOTAL_BY_CAND[c],
+    })).sort((a, b) => b.share - a.share || b.adhesion - a.adhesion);
+    const spectrum = (subset) => {
+      if (!subset.length) return null;
+      let sw = 0, sp = 0, min = Infinity, max = -Infinity;
+      subset.forEach(id => { const i = IDEAS[id], w = weight(id), p = CAND[i.c].pos; sw += w; sp += w * p; min = Math.min(min, p); max = Math.max(max, p); });
+      return { pos: sp / sw, min, max, n: subset.length };
+    };
+    const themes = D.themes.map(t => {
+      const subs = t.subs.map(s => ({ sub: s, ids: s.ideas.filter(i => S.sel[i.id]).map(i => i.id) })).filter(s => s.ids.length);
+      const ids = subs.flatMap(s => s.ids);
+      return { theme: t, subs, ids, sp: spectrum(ids) };
+    }).filter(t => t.ids.length);
+    return { ids, ranking, themes, overall: spectrum(ids), total };
+  }
+
+  /* ---------- Navigation ---------- */
+  const app = document.getElementById("app");
+  function setPhase(p) { S.phase = p; save(); render(); window.scrollTo({ top: 0 }); }
+  function renderSteps() {
+    const n = selectedIds().length;
+    const steps = [["Choisir", "Cochez les idées qui vous conviennent"], ["Pondérer", "Notez l'importance de vos choix"], ["Résultats", "Classement, thèmes et spectre"]];
+    document.getElementById("steps").replaceChildren(...steps.map(([label, title], i) =>
+      h("li", h("button", { class: S.phase === i + 1 ? "cur" : "", title, disabled: i > 0 && n === 0, onclick: () => setPhase(i + 1) },
+        h("span.n", i + 1), label))));
+  }
+  function render() {
+    renderSteps();
+    if (S.phase === 1) renderSelect();
+    else if (S.phase === 2) renderRate();
+    else renderResults();
+  }
+
+  /* ---------- Phase 1 : sélection ---------- */
+  function renderSelect() {
+    S.cur = Math.max(0, Math.min(S.cur, SUBS.length - 1));
+    const sub = SUBS[S.cur];
+    S.seen[sub.id] = true; save();
+
+    const nav = h("nav.themes", { "aria-label": "Thèmes" }, D.themes.map(t => h("div.tgroup", h("div.tname", t.name),
+      t.subs.map(s => {
+        const idx = SUBS.indexOf(SUBS.find(x => x.id === s.id));
+        const n = selInSub(s).length;
+        return h("button.snav", { class: (s.id === sub.id ? "cur " : "") + (S.seen[s.id] ? "seen" : ""), onclick: () => { S.cur = idx; save(); renderSelect(); window.scrollTo({ top: 0 }); } },
+          h("span", s.name), h("span.cnt.num", { id: "cnt-" + s.id, class: n ? "has" : "" }, n + " / " + s.ideas.length));
+      }))));
+
+    const select = h("select", { id: "sujet-select", "aria-label": "Changer de sujet", onchange: (e) => { S.cur = +e.target.value; save(); renderSelect(); window.scrollTo({ top: 0 }); } },
+      D.themes.map(t => h("optgroup", { label: t.name }, t.subs.map(s => h("option", { value: SUBS.findIndex(x => x.id === s.id), selected: s.id === sub.id }, s.name)))));
+
+    const ideas = h("div.ideas", shuffled(sub.ideas).map(i => {
+      const box = h("input", { type: "checkbox", id: "i-" + i.id, checked: !!S.sel[i.id] });
+      const card = h("label.idea", { class: S.sel[i.id] ? "on" : "", for: "i-" + i.id }, box, h("span.txt", i.t));
+      box.addEventListener("change", () => {
+        if (box.checked) S.sel[i.id] = true; else delete S.sel[i.id];
+        delete S.card; save();
+        card.classList.toggle("on", box.checked);
+        const n = selInSub(sub).length;
+        const cnt = document.getElementById("cnt-" + sub.id);
+        if (cnt) { cnt.textContent = n + " / " + sub.ideas.length; cnt.classList.toggle("has", n > 0); }
+        document.getElementById("sub-tally").textContent = plural(n, "idée retenue", "idées retenues") + " sur ce sujet";
+        updateTally();
+      });
+      return card;
+    }));
+
+    const seenCount = SUBS.filter(s => S.seen[s.id]).length;
+    const panel = h("section.panel", { "aria-live": "polite" },
+      h("div.panel-head",
+        h("div.row", h("div.eyebrow", sub.theme.name + " · sujet " + (S.cur + 1) + " / " + SUBS.length), select),
+        h("h2", sub.name),
+        h("div.row", h("span.muted.small", plural(sub.ideas.length, "proposition") + " de " + plural(new Set(sub.ideas.map(i => i.c)).size, "personnalité") + ", dans un ordre mélangé, sans auteur."),
+          h("span.small.tally", { id: "sub-tally" }, plural(selInSub(sub).length, "idée retenue", "idées retenues") + " sur ce sujet"))),
+      ideas,
+      h("div.panel-foot",
+        h("div", h("button.btn", { disabled: S.cur === 0, onclick: () => { S.cur--; save(); renderSelect(); window.scrollTo({ top: 0 }); } }, "← Sujet précédent"), " ",
+          h("button.btn", { disabled: S.cur === SUBS.length - 1, onclick: () => { S.cur++; save(); renderSelect(); window.scrollTo({ top: 0 }); } }, "Sujet suivant →")),
+        h("div", h("span.tally.num", { id: "tally" }), " ",
+          h("button.btn.primary", { id: "to-rate", onclick: () => setPhase(2) }, "Passer à la pondération →"))),
+      h("p.note", seenCount + " / " + SUBS.length + " sujets parcourus. Vous pouvez passer aux étapes suivantes à tout moment ; seuls les sujets où vous avez coché quelque chose comptent."));
+
+    app.replaceChildren(h("div.select-layout", nav, panel));
+    updateTally();
+  }
+  function updateTally() {
+    const n = selectedIds().length;
+    const t = document.getElementById("tally"); if (t) t.textContent = plural(n, "idée retenue", "idées retenues") + " au total";
+    const b = document.getElementById("to-rate"); if (b) b.disabled = n === 0;
+    renderSteps();
+  }
+
+  /* ---------- Phase 2 : pondération ---------- */
+  function starControl(id) {
+    const lbl = h("span.lbl");
+    const names = ["", "Peu important", "Secondaire", "Important", "Très important", "Essentiel"];
+    const btns = [1, 2, 3, 4, 5].map(v => h("button.star", { type: "button", "aria-label": v + " sur 5 : " + names[v], "aria-pressed": "false", onclick: () => { S.rate[id] = v; delete S.card; save(); paint(); } }, "★"));
+    function paint() {
+      const r = S.rate[id] || 0;
+      btns.forEach((b, i) => { b.classList.toggle("on", i < r); b.setAttribute("aria-pressed", String(i + 1 === r)); });
+      lbl.textContent = r ? names[r] : "non noté (3)";
+    }
+    paint();
+    return h("div.stars", { role: "group", "aria-label": "Importance sur 5" }, btns, lbl);
+  }
+  function renderRate() {
+    const groups = SUBS.map(s => ({ sub: s, ids: selInSub(s) })).filter(g => g.ids.length);
+    const multi = groups.filter(g => g.ids.length > 1), singles = groups.filter(g => g.ids.length === 1);
+    const item = (i) => h("div.rate-item", h("div.txt", i.t), starControl(i.id));
+    const group = (g) => h("section.rate-group",
+      h("div.eyebrow", g.sub.theme.name), h("h3", g.sub.name),
+      h("p.small.muted", plural(g.ids.length, "idée retenue", "idées retenues") + " : quelle importance leur donnez-vous ?"),
+      g.ids.map(item));
+    app.replaceChildren(
+      h("div.sec-head", h("h2", "Pondérer vos choix"),
+        h("p", "Pour chaque sujet où plusieurs idées vous ont plu, notez l'importance que vous accordez à chacune, de 1 (peu important) à 5 (essentiel). Une idée non notée compte 3. La note sert de poids dans le classement et le spectre.")),
+      h("div", multi.length ? multi.map(group) : h("p.empty", "Aucun sujet ne contient plusieurs idées retenues : rien à départager. Vous pouvez tout de même noter vos idées ci-dessous, ou passer aux résultats.")),
+      singles.length ? h("details.singles", { open: !multi.length },
+        h("summary", plural(singles.length, "sujet") + " avec une seule idée retenue (note 3 par défaut, modifiable)"),
+        singles.map(group)) : null,
+      h("div.panel-foot",
+        h("button.btn", { onclick: () => setPhase(1) }, "← Revenir aux idées"),
+        h("button.btn.primary", { onclick: () => setPhase(3) }, "Voir mes résultats →")));
+  }
+
+  /* ---------- Phase 3 : résultats ---------- */
+  function avatar(c) {
+    const initials = (c.first[0] || "") + (c.last[0] || "");
+    const box = h("div.avatar", { "aria-hidden": "true" }, initials);
+    if (c.photo) { const img = new Image(); img.alt = ""; img.onload = () => box.replaceChildren(img); img.src = c.photo; }
+    return box;
+  }
+  function miniStars(id) {
+    const r = weight(id);
+    return h("span.mini-stars", { title: "Importance " + r + " / 5" }, "★".repeat(r), h("span.off", "★".repeat(5 - r)));
+  }
+  let tip = null;
+  function showTip(e, html) {
+    if (!tip) { tip = h("div.tip", { role: "tooltip" }); document.body.append(tip); }
+    tip.innerHTML = html; tip.hidden = false;
+    const x = Math.min(e.clientX + 14, window.innerWidth - 270), y = e.clientY + 14;
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+  }
+  const hideTip = () => { if (tip) tip.hidden = true; };
+
+  function spectrumRow(label, sub, sp, isTotal) {
+    const x = (p) => (50 + p * 5) + "%";
+    const dot = h("span.dot", { class: sp.pos <= -2 ? "l" : sp.pos >= 2 ? "r" : "", style: "left:" + x(sp.pos), tabindex: 0,
+      "aria-label": label + " : " + posLabel(sp.pos) + " (" + fmtPos(sp.pos) + ")" });
+    const html = "<b>" + label + "</b><br>" + posLabel(sp.pos) + " · " + fmtPos(sp.pos) + " sur une échelle de −10 à +10<br>" + plural(sp.n, "idée retenue", "idées retenues") + " · auteurs situés entre " + fmtPos(sp.min) + " et " + fmtPos(sp.max);
+    dot.addEventListener("mousemove", (e) => showTip(e, html)); dot.addEventListener("mouseleave", hideTip);
+    dot.addEventListener("focus", (e) => { const r = dot.getBoundingClientRect(); showTip({ clientX: r.left, clientY: r.bottom }, html); }); dot.addEventListener("blur", hideTip);
+    const valLeft = sp.pos > 5;
+    return h("div.sp-row", { class: isTotal ? "total" : "" },
+      h("div.lab", label, sub ? h("span.small", sub) : null),
+      h("div.track",
+        h("span.range", { style: "left:" + x(sp.min) + ";width:" + ((sp.max - sp.min) * 5) + "%" }),
+        dot,
+        h("span.val.num", { style: valLeft ? "right:" + (50 - sp.pos * 5 + 2.5) + "%" : "left:" + (50 + sp.pos * 5 + 2.5) + "%" }, posLabel(sp.pos))));
+  }
+
+  function renderResults() {
+    const R = compute();
+    if (!R.ids.length) { app.replaceChildren(h("p.empty", "Aucune idée retenue pour l'instant."), h("p", h("button.btn.primary", { onclick: () => setPhase(1) }, "Choisir des idées"))); return; }
+    const top = R.ranking.slice(0, 5), rest = R.ranking.slice(5);
+
+    const rank = h("div.rank", top.map((r, i) => h("div.rank-row", { class: i === 0 ? "first" : "" },
+      h("div.pos.num", i + 1), avatar(r.cand),
+      h("div", { style: "min-width:0" },
+        h("div.who", h("span.name", candName(r.cand)), r.cand.party ? h("span.party", r.cand.party) : null),
+        h("div.bar", h("i", { style: "width:" + (r.share / top[0].share * 100) + "%" })),
+        h("div.meta", h("span", h("b.num", pct(r.share)), " de vos choix pondérés"),
+          h("span", h("b.num", r.n + "/" + r.of), " de ses propositions retenues (" + pct(r.adhesion) + ")"))))));
+
+    const others = rest.length ? h("details.others", h("summary", "Les " + rest.length + " autres personnalités représentées"),
+      h("ul", rest.map(r => h("li", h("span", candName(r.cand), r.cand.party ? h("span.muted.small", " · " + r.cand.party) : null),
+        h("span.num.small", pct(r.share) + " · " + r.n + "/" + r.of))))) : null;
+
+    const spectrum = h("div.spectrum",
+      h("div.sp-axis", h("div", "Thème"), h("div.ticks", h("span.l", "Gauche"), h("span", "Centre"), h("span.r", "Droite"))),
+      R.themes.map(t => spectrumRow(t.theme.name, plural(t.ids.length, "idée"), t.sp, false)),
+      spectrumRow("Ensemble de vos choix", plural(R.ids.length, "idée"), R.overall, true));
+    const table = h("details", h("summary.small", { style: "cursor:pointer;color:var(--ink-2);font-weight:600;margin-top:10px" }, "Voir en tableau"),
+      h("table.sp-table", h("thead", h("tr", h("th", "Thème"), h("th", "Position"), h("th", "Lecture"), h("th", "Idées"))),
+        h("tbody", R.themes.map(t => h("tr", h("td", t.theme.name), h("td.num", fmtPos(t.sp.pos)), h("td", posLabel(t.sp.pos)), h("td.num", t.ids.length))),
+          h("tr", h("td", h("b", "Ensemble")), h("td.num", fmtPos(R.overall.pos)), h("td", posLabel(R.overall.pos)), h("td.num", R.ids.length)))));
+
+    const recap = R.themes.map(t => h("section.recap-theme",
+      h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "idée"))),
+      t.subs.map(s => h("div.recap-sub", h("h4", s.sub.name),
+        s.ids.map(id => { const i = IDEAS[id], c = CAND[i.c]; return h("div.recap-idea", h("div.txt", i.t),
+          h("div.by", miniStars(id), h("span.chip", candName(c) + (c.party ? " · " + c.party : "")))); })))));
+
+    app.replaceChildren(h("div.results",
+      h("div.stat-row",
+        h("div.stat", h("div.v.num", R.ids.length), h("div.k", "idées retenues sur " + ALL_IDEAS.toLocaleString("fr-FR"))),
+        h("div.stat", h("div.v.num", R.themes.length), h("div.k", "thèmes concernés sur " + D.themes.length)),
+        h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités représentées")),
+        h("div.stat", h("div.v", posLabel(R.overall.pos)), h("div.k", "position d'ensemble (" + fmtPos(R.overall.pos) + ")"))),
+      h("section", h("div.sec-head", h("h2", "Les cinq personnalités les plus proches de vos choix"),
+        h("p", "Chaque idée retenue crédite son auteur de sa note d'importance. Le pourcentage est la part de l'auteur dans le total de vos points ; le second chiffre dit quelle part de son programme vous avez retenue.")),
+        rank, others),
+      h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
+        h("p", "Position moyenne pondérée des auteurs de vos idées, de −10 (gauche) à +10 (droite). La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos choix.")),
+        spectrum, table,
+        h("p.note", "Échelle indicative propre à cet outil : chaque personnalité a reçu une position fixe sur l'axe gauche-droite (modifiable dans extraire-donnees.mjs). Elle ne provient pas de la Fondation iFRAP.")),
+      h("section", h("div.sec-head", h("h2", "Les thèmes et idées qui vous parlent"),
+        h("p", "Vos idées retenues, avec leur note d'importance et, maintenant, leur auteur.")),
+        recap),
+      h("section", h("div.sec-head", h("h2", "Votre carte d'identité politique"),
+        h("p", "Claude rédige un portrait court et nuancé à partir de vos choix. La clé API reste dans votre navigateur et n'est envoyée qu'à l'API Anthropic.")),
+        aiCard(R)),
+      h("div.panel-foot",
+        h("div", h("button.btn", { onclick: () => setPhase(1) }, "← Modifier mes idées"), " ", h("button.btn", { onclick: () => setPhase(2) }, "← Revoir les notes")),
+        resetControl())));
+  }
+
+  function resetControl() {
+    const box = h("span.confirm");
+    const ask = () => box.replaceChildren(h("span.small.muted", "Effacer tous vos choix ?"),
+      h("button.btn.danger", { onclick: () => { S = fresh(); save(); render(); window.scrollTo({ top: 0 }); } }, "Oui, tout effacer"),
+      h("button.btn.ghost", { onclick: init }, "Annuler"));
+    const init = () => box.replaceChildren(h("button.btn.ghost.danger", { onclick: ask }, "Tout recommencer"));
+    init();
+    return box;
+  }
+
+  /* ---------- Carte d'identité politique via l'API Claude ---------- */
+  function buildPrompt(R) {
+    const lines = [];
+    lines.push("Nombre d'idées retenues : " + R.ids.length + " sur " + ALL_IDEAS + " propositions (comparateur iFRAP, présidentielle 2027).");
+    lines.push("", "Personnalités les plus représentées (part des points pondérés ; part de leur programme retenue) :");
+    R.ranking.slice(0, 8).forEach((r, i) => lines.push((i + 1) + ". " + candName(r.cand) + (r.cand.party ? " (" + r.cand.party + ")" : "") + " : " + pct(r.share) + " ; " + r.n + "/" + r.of + " propositions"));
+    lines.push("", "Position sur l'axe gauche (−10) / droite (+10), moyenne pondérée des auteurs des idées retenues :");
+    R.themes.forEach(t => lines.push("- " + t.theme.name + " : " + fmtPos(t.sp.pos) + " (" + posLabel(t.sp.pos) + "), " + t.ids.length + " idées"));
+    lines.push("- Ensemble : " + fmtPos(R.overall.pos) + " (" + posLabel(R.overall.pos) + ")");
+    lines.push("", "Idées retenues, avec l'importance donnée (1 à 5) et leur auteur :");
+    R.themes.forEach(t => { lines.push("", "## " + t.theme.name); t.subs.forEach(s => { lines.push("### " + s.sub.name);
+      s.ids.forEach(id => { const i = IDEAS[id]; lines.push("- [" + weight(id) + "/5] " + i.t.replace(/\n/g, " ") + " (" + candName(CAND[i.c]) + ")"); }); }); });
+    return lines.join("\n");
+  }
+  const SYSTEM = [
+    "Tu es un analyste politique neutre, précis et bienveillant. Un citoyen français a utilisé un comparateur de programmes pour la présidentielle 2027 : il a coché, à l'aveugle, les propositions qui lui conviennent, puis les a notées de 1 à 5 selon leur importance.",
+    "Rédige sa « carte d'identité politique » en français, en le vouvoyant, en 250 à 400 mots. Reste descriptif : aucune étiquette partisane qu'il n'a pas choisie lui-même, aucun jugement de valeur, aucune consigne de vote.",
+    "Structure imposée, en texte simple sans Markdown (pas de #, pas de **, pas de listes à puces) :",
+    "Ligne 1 : un titre de 3 à 6 mots qui résume sa sensibilité.",
+    "Puis cinq courts paragraphes, chacun commençant par son intitulé suivi d'un point-virgule : « Vos priorités ; », « Vos valeurs sous-jacentes ; », « Vos proximités et vos tensions ; » (personnalités proches et contradictions éventuelles entre ses choix), « Ce qui vous distingue ; », « Trois questions pour affiner ; » (trois questions numérotées 1), 2), 3) sur une même ligne).",
+    "Appuie-toi sur le contenu réel des idées retenues et sur les notes d'importance, davantage que sur les pourcentages.",
+  ].join("\n");
+
+  function aiCard(R) {
+    const keyInput = h("input", { type: "password", id: "api-key", placeholder: "sk-ant-…", autocomplete: "off", value: S.key || "", oninput: (e) => { S.key = e.target.value; save(); } });
+    const modelSel = h("select", { id: "api-model", onchange: (e) => { S.model = e.target.value; save(); } }, MODELS.map(([v, l]) => h("option", { value: v, selected: v === S.model }, l)));
+    const keep = h("input", { type: "checkbox", id: "api-keep", checked: !!S.keepKey, onchange: (e) => { S.keepKey = e.target.checked; save(); } });
+    const out = h("div", { id: "ai-out" });
+    const btn = h("button.btn.primary", { id: "ai-go" }, "Générer ma carte d'identité politique");
+    const showCard = (text) => {
+      const [title, ...rest] = text.trim().split("\n");
+      out.replaceChildren(h("div.ai-out", h("span.t", title.replace(/^[#*\s]+|[#*\s]+$/g, "")), rest.join("\n").trim()));
+    };
+    if (S.card) showCard(S.card);
+    btn.addEventListener("click", async () => {
+      const key = S.key.trim();
+      if (!key) { out.replaceChildren(h("p.ai-err", "Indiquez d'abord une clé API Anthropic (console.anthropic.com).")); keyInput.focus(); return; }
+      btn.disabled = true; out.replaceChildren(h("p.ai-busy", "Rédaction en cours avec " + S.model + "… (quelques dizaines de secondes)"));
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-api-key": key,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+            "anthropic-beta": "server-side-fallback-2026-07-01",
+          },
+          body: JSON.stringify({
+            model: S.model,
+            max_tokens: 4000,
+            fallbacks: "default",
+            output_config: { effort: "medium" },
+            system: SYSTEM,
+            messages: [{ role: "user", content: "Voici mes choix :\n\n" + buildPrompt(R) }],
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error((data.error && data.error.message) || ("Erreur HTTP " + res.status));
+        if (data.stop_reason === "refusal") throw new Error("La requête a été refusée par les garde-fous du modèle" + (data.stop_details && data.stop_details.explanation ? " : " + data.stop_details.explanation : "."));
+        const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+        if (!text) throw new Error("Réponse vide.");
+        S.card = text; save(); showCard(text);
+      } catch (err) {
+        const net = err instanceof TypeError;
+        out.replaceChildren(h("p.ai-err", net
+          ? "Impossible de joindre l'API Anthropic depuis cette page. Ouvrez le fichier index.html directement dans votre navigateur (ou servez-le localement) : certains hébergements bloquent les appels sortants."
+          : "Échec de la génération : " + err.message));
+      } finally { btn.disabled = false; }
+    });
+    return h("div.card-ai",
+      h("div.form",
+        h("div.field", h("label", { for: "api-key" }, "Clé API Anthropic"), keyInput),
+        h("div.field", h("label", { for: "api-model" }, "Modèle"), modelSel)),
+      h("label.check", keep, "Mémoriser la clé dans ce navigateur"),
+      h("div", btn), out);
+  }
+
+  /* ---------- Pied de page ---------- */
+  document.getElementById("foot").replaceChildren(
+    "Propositions compilées par la Fondation iFRAP (", h("a", { href: D.source, target: "_blank", rel: "noopener" }, "comparateur Présidentielles 2027"),
+    "), extraites le " + D.extractedAt + " : " + ALL_IDEAS.toLocaleString("fr-FR") + " propositions, " + SUBS.length + " sujets, " + D.candidates.length + " personnalités. Vos choix restent dans ce navigateur.");
+
+  render();
+})();
+</script>
+</body>
+</html>
