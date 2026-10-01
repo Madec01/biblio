@@ -5,8 +5,10 @@ serveur. Les propositions viennent du
 [comparateur de la Fondation iFRAP](https://www.ifrap.org/comparateurs/presidentielles-2027)
 (1 164 propositions, 32 sujets regroupés en 10 thèmes, 20 personnalités).
 
-Ouvrez `index.html` dans un navigateur. Les choix restent dans le navigateur
-(stockage local).
+Ouvrez `index.html` dans un navigateur, sur ordinateur comme sur téléphone.
+Les choix restent dans le navigateur (stockage local) ; le bouton
+**Sauvegarder / restaurer** donne un code (ou un fichier) à coller sur un autre
+appareil ou navigateur pour reprendre là où vous en étiez.
 
 ## Parcours
 
@@ -14,6 +16,10 @@ Le parcours se fait **thème par thème** (10 thèmes, 32 sujets).
 
 1. **Choisir** : sujet par sujet, cochez les propositions qui vous conviennent.
    Les auteurs sont cachés et l'ordre est mélangé, pour choisir sur le fond.
+   Le lien **Expliquer** sous chaque proposition demande à Claude une
+   explication en langage courant (termes techniques, qui est concerné, ce qui
+   changerait), sans jamais révéler l'auteur. Il faut une clé API Anthropic ;
+   les explications sont rédigées avec `claude-sonnet-5-5` et mémorisées.
 2. **Terminer le thème** : pour chaque sujet où plusieurs idées ont été
    retenues, notez l'importance de chacune de 1 à 5 (une idée non notée
    compte 3). Vous obtenez aussitôt **votre orientation sur ce thème** :
@@ -37,6 +43,15 @@ Le parcours se fait **thème par thème** (10 thèmes, 32 sujets).
      Cette dernière étape appelle directement `api.anthropic.com` depuis le
      navigateur : elle fonctionne quand la page est ouverte en local ou servie
      depuis un hébergement qui autorise les appels sortants.
+
+## Mise à jour des données
+
+Les programmes évoluent au fil des déclarations. Une routine Claude mensuelle
+(le 1er de chaque mois) relance l'extraction, compare avec `data.js` et, en cas
+de changement, ouvre une pull request avec le détail (propositions ajoutées,
+nouvelles personnalités à positionner). Hors routine : `node
+extraire-donnees.mjs` puis relecture de `POSITIONS` si une personnalité est
+apparue. La page signale elle-même des données de plus de 45 jours.
 
 ## Fichiers
 
