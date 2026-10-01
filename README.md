@@ -15,10 +15,15 @@ appareil ou navigateur pour reprendre là où vous en étiez.
 
 ## Parcours
 
-Le parcours se fait **thème par thème** (10 thèmes, 32 sujets).
+Le parcours se fait **thème par thème** (10 thèmes, 32 sujets), dans l'ordre
+de votre choix depuis la page d'accueil, qui présente une carte par thème
+avec ses sujets et son état d'avancement.
 
-1. **Choisir** : sujet par sujet, cochez les propositions qui vous conviennent.
-   Les auteurs sont cachés et l'ordre est mélangé, pour choisir sur le fond.
+1. **Choisir** : chaque thème a sa page avec tous ses sujets ; cochez les
+   propositions qui vous conviennent. Les auteurs sont cachés et l'ordre est
+   mélangé, pour choisir sur le fond. Les propositions quasi identiques
+   portées par plusieurs personnalités sont regroupées en une « idée commune »
+   (`groupes.js`) : la cocher crédite chacun de ses auteurs.
    Le lien **Expliquer** sous chaque proposition affiche une explication en
    langage courant (termes techniques, sigles, qui est concerné, ce qui
    changerait par rapport à aujourd'hui), sans jamais révéler l'auteur. Les
