@@ -297,6 +297,57 @@ select, input[type="text"], input[type="password"] {
 .ai-busy { color: var(--muted); font-size: 0.9rem; }
 
 .confirm { display: inline-flex; gap: 8px; align-items: center; }
+[hidden] { display: none !important; }
+/* Accueil (swipe) */
+.home-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: env(safe-area-inset-top, 0px); min-height: 48px; }
+.home-top .abtitle.big { flex: 1 1 auto; grid-column: auto; }
+.caps { display: flex; gap: 6px; margin-left: auto; }
+.cap { height: 30px; padding: 0 11px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { display: grid; gap: 4px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); text-align: left; color: var(--ink); font: inherit; }
+.tile b { font-size: 1.05rem; } .tile .small { color: var(--ink-2); }
+.tile.pre { grid-column: 1 / -1; text-align: center; justify-items: center; padding: 18px; border: 0; color: #fff;
+  background: linear-gradient(135deg, var(--good), #2a9d8f); }
+.tile.pre .small { color: rgba(255,255,255,.88); } .tile.pre.off { background: var(--surface-2); color: var(--ink-2); } .tile.pre.off .small { color: var(--muted); }
+.tile.pre.final { background: linear-gradient(135deg, var(--accent), #6a3fd6); }
+.tile.rate { grid-column: 1 / -1; border-color: var(--warn); color: var(--warn); } .tile.rate .small { color: var(--warn); opacity: .85; }
+.home-foot { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: center; padding-top: 12px; color: var(--muted); font-size: .8rem; }
+.btn.small { padding: 6px 12px; font-size: .82rem; }
+body.app .swipe-home.home { min-height: calc(100dvh - 36px); }
+/* Bulles d'information et menu */
+.info-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--accent); font-weight: 800; font-size: .78rem;
+  display: inline-grid; place-items: center; vertical-align: middle; margin-left: 8px; font-family: var(--font-body); }
+.info-box { font-size: .88rem; color: var(--ink-2); padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--paper); border-radius: 0 8px 8px 0; margin: 8px 0 4px; max-width: 72ch; }
+.top-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.top-row h2 { flex: 1 1 auto; }
+.menu-wrap { position: relative; margin-left: auto; }
+.menu-pop { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18); display: grid; min-width: 230px; padding: 6px; }
+.menu-pop button { text-align: left; background: transparent; border: 0; padding: 10px 12px; border-radius: 8px; font-weight: 600; color: var(--ink); font: inherit; font-weight: 600; }
+.menu-pop button:hover { background: var(--surface-2); } .menu-pop button.danger { color: var(--left); }
+/* Tuiles de stats compactes */
+.stat-row.compact { grid-template-columns: 1fr; gap: 10px; }
+.mini-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 8px 6px; }
+.mini-stats > div { text-align: center; padding: 2px 0; } .mini-stats > div + div { border-left: 1px solid var(--line); }
+.mini-stats .v { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; line-height: 1.1; }
+.mini-stats .yes .v { color: var(--good); } .mini-stats .no .v { color: var(--left); } .mini-stats .unsure .v { color: var(--ink-2); }
+.mini-stats .k { margin-top: 2px; font-size: .78rem; }
+.orient-tile { display: grid; gap: 6px; padding: 16px 18px; text-align: center; justify-items: center; }
+.orient-tile .v { font-size: 2.3rem; } .orient-tile .track { width: 100%; max-width: 420px; }
+.orient-tile .profile { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; color: var(--accent); }
+.cand-orient { font-size: .76rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.cand-orient.l { color: var(--left); } .cand-orient.r { color: var(--right); }
+/* Carte d'identité locale */
+.idcard { display: grid; gap: 14px; }
+.idcard .t { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; }
+.idcard p { color: var(--ink-2); }
+.id-axes { display: grid; gap: 6px; }
+.id-axis { display: grid; grid-template-columns: minmax(90px, 30%) minmax(0, 1fr); gap: 10px; align-items: center; font-size: .9rem; }
+.id-axis .lab { font-weight: 600; } .id-axis .lab .small { display: block; font-weight: 400; color: var(--muted); }
+.fam { display: grid; grid-template-columns: minmax(110px, 32%) minmax(0, 1fr) 48px; gap: 10px; align-items: center; font-size: .88rem; padding: 4px 0; }
+.fam .bar { margin: 0; } .fam .bar > i { background: var(--good); }
+.fam.l .bar > i { background: var(--left); } .fam.r .bar > i { background: var(--right); }
+.id-list b { display: inline-block; min-width: 9ch; }
 .install-box:empty { display: none; }
 .install-box { display: flex; align-items: center; gap: 8px; }
 .recap-mini { display: grid; gap: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
@@ -483,6 +534,10 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const shuffled = (ideas) => ideas.slice().sort((a, b) => hash(a.id + "|") - hash(b.id + "|"));
   const pct = (x) => (Math.round(x * 1000) / 10).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " %";
   const candName = (c) => c.first + " " + c.last;
+  const PARTY_FALLBACK = { "Bertrand": "Divers droite", "Cazeneuve": "La Convention", "Hollande": "PS", "Maurel": "GRS", "Mélenchon": "LFI", "Roussel": "PCF", "Ruffin": "Debout !" };
+  const party = (c) => c.party || PARTY_FALLBACK[c.last] || "Sans étiquette";
+  const orientChip = (c) => h("span.cand-orient", { class: c.pos <= -2 ? "l" : c.pos >= 2 ? "r" : "", title: "Position indicative " + fmtPos(c.pos) }, posLabel(c.pos));
+  const APP_VERSION = "1.3";
   const stateOf = (id) => S.sel[id] ? "yes" : S.no[id] ? "no" : S.unsure[id] ? "unsure" : null;
   const weight = (id) => { const st = stateOf(id); if (!st) return 0; const w = S.w[id]; return typeof w === "number" ? w : DEFAULT_W[st]; };
   const levelOf = (id) => { const st = stateOf(id); if (!st) return null; const w = weight(id); return LEVELS[st].find(l => l[0] === w) || LEVELS[st][1]; };
@@ -582,7 +637,34 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     else if (S.phase === 2) renderResults(true);
     else if (S.phase === 4) renderReperes();
     else renderResults(false);
-    if (isApp() && S.phase !== 1) app.prepend(appBar(S.phase === 4 ? "Repères politiques" : S.phase === 2 ? "Pré-orientation" : "Résultats", "Accueil", () => { S.sview = "home"; setPhase(1); }));
+    if (isApp() && S.phase !== 1) {
+      const info = appInfo; appInfo = null;
+      app.prepend(appBar(S.phase === 4 ? "Repères politiques" : S.phase === 2 ? "Pré-orientation" : "Résultats", "Accueil", () => { S.sview = "home"; setPhase(1); },
+        S.phase === 4 ? null : [info ? info.btn : null, menuButton()]));
+    }
+  }
+  var appInfo = null;
+  function infoBubble(text) {
+    const box = h("div.info-box", text); box.hidden = true;
+    const btn = h("button.info-btn", { type: "button", "aria-label": "Explication", title: "Explication", "aria-expanded": "false", onclick: () => { box.hidden = !box.hidden; btn.setAttribute("aria-expanded", String(!box.hidden)); } }, "i");
+    return { btn, box };
+  }
+  function menuButton() {
+    const wrap = h("div.menu-wrap"), pop = h("div.menu-pop"); pop.hidden = true;
+    const item = (label, fn, cls) => h("button", { type: "button", class: cls || "", onclick: () => { pop.hidden = true; fn(); } }, label);
+    const finish = h("button", { type: "button", class: "danger", onclick: () => { if (finish.dataset.c) { S.finished = true; save(); setPhase(3); } else { finish.dataset.c = "1"; finish.textContent = "Confirmer : terminer maintenant"; } } }, "Terminer maintenant");
+    pop.append(...[
+      allJudged() || S.finished ? null : item("Continuer à swiper", () => { S.sview = "card"; setPhase(1); }),
+      item("Accueil", () => { S.sview = "home"; setPhase(1); }),
+      item("Options", () => { S.sview = "options"; setPhase(1); }),
+      S.phase === 4 ? null : item("Repères politiques", () => setPhase(4)),
+      item("Sauvegarder / restaurer", () => { S.sview = "home"; setPhase(1); openSave(); }),
+      !allJudged() && !S.finished && judgedCount() >= 20 ? finish : null,
+      item("Mettre à jour l'application", () => updateApp()),
+    ].filter(Boolean));
+    const btn = h("button.abtn.txt", { type: "button", "aria-haspopup": "true", "aria-expanded": "false", onclick: (e) => { e.stopPropagation(); pop.hidden = !pop.hidden; btn.setAttribute("aria-expanded", String(!pop.hidden)); } }, "Menu ☰");
+    document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) pop.hidden = true; });
+    wrap.append(btn, pop); return wrap;
   }
 
   /* ---------- Phase 1 : accueil des thèmes et page de thème ---------- */
@@ -903,25 +985,30 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const scopeLabel = S.scope.type === "theme" && themeById(S.scope.theme) ? "Thème : " + themeById(S.scope.theme).name : "Panaché";
     const pc = Math.round(100 * jc / TOTAL_ITEMS);
     const canStart = unjudged(scopeFilter()).length > 0;
-    app.replaceChildren(h("div.swipe-home",
-      isApp() ? h("div.appbar", h("div.abtitle.big", "Boussole 2027"), h("div.abacts",
-        canPre() || canFinal() ? h("button.abtn.txt", { onclick: () => setPhase(canFinal() ? 3 : 2) }, canFinal() ? "Résultats" : "Pré-orientation") : null,
-        h("button.abtn.txt", { onclick: () => setSwipeView("options") }, "Options"),
-        h("button.abtn.txt", { onclick: () => setPhase(4) }, "Repères"),
-        h("button.abtn.txt", { onclick: () => { document.getElementById("toolbar").querySelector("button:last-child").click(); window.scrollTo({ top: 0 }); } }, "Sauvegarde"))) : null,
+    const final = allJudged() || S.finished, batch = S.batch || 10;
+    const cap = (label, fn) => h("button.cap", { type: "button", onclick: fn }, label);
+    const preTile = final
+      ? h("button.tile.pre.final", { type: "button", onclick: () => setPhase(3) }, h("b", "Voir mes résultats →"), h("span.small", "Classement complet, spectre et carte d'identité politique"))
+      : canPre()
+        ? h("button.tile.pre", { type: "button", onclick: () => setPhase(2) }, h("b", "Pré-orientation →"), h("span.small", "Tendance provisoire sur " + plural(jc, "idée jugée", "idées jugées") + (e.needReliable ? " · fiable vers le " + fmtDate(addDays(e.daysReliable)) : " · fiable")))
+        : h("div.tile.pre.off", h("b", "Pré-orientation"), h("span.small", "Disponible après 20 idées jugées · encore " + plural(20 - jc, "idée")));
+    app.replaceChildren(h("div.swipe-home.home",
+      isApp() ? h("div.home-top", h("div.abtitle.big", "Boussole 2027"), h("div.caps",
+        cap("Options", () => setSwipeView("options")), cap("Repères", () => setPhase(4)), cap("Sauvegarde", () => openSave()))) : null,
       h("div.install-box"),
       h("div.recap-mini",
         h("div.row", h("span", h("b.num", n + " / " + q), " aujourd'hui"), h("span", h("b.num", jc), " jugées sur " + TOTAL_ITEMS), h("span.muted", scopeLabel)),
-        h("div.pbar", h("i", { style: "width:" + pc + "%" })),
-        h("div.small.muted", e.needReliable ? "Pré-orientation fiable vers le " + fmtDate(addDays(e.daysReliable)) : "Pré-orientation fiable atteinte")),
-      pending >= (S.batch || 10) ? h("button.btn.big.warn", { onclick: () => setSwipeView("rate-intro") }, "Pondérer " + pending + " idées →") : null,
+        h("div.pbar", h("i", { style: "width:" + pc + "%" }))),
+      pending >= batch ? h("button.btn.big.warn", { onclick: () => setSwipeView("rate-intro") }, "Pondérer " + pending + " idées →") : null,
       h("button.btn.primary.big", { onclick: () => setSwipeView("card"), disabled: !canStart }, !canStart ? "Périmètre terminé : changez les options" : n >= q ? "Continuer au-delà de l'objectif →" : (jc ? "Continuer →" : "Commencer →")),
-      pending && pending < (S.batch || 10) ? h("button.btn", { onclick: () => setSwipeView("rate-intro") }, "Pondérer " + plural(pending, "idée") + " maintenant") : null,
-      h("div.panel-foot",
-        h("div", jc >= 20 && !allJudged() && !S.finished ? h("button.btn", { onclick: () => setPhase(2) }, "Pré-orientation →") : null, " ",
-          (allJudged() || S.finished) ? h("button.btn.primary", { onclick: () => setPhase(3) }, "Voir mes résultats →") : null, " ",
-          jc >= 20 && !allJudged() && !S.finished ? finishNowControl() : null),
-        h("span.small.muted", "→ d'accord · ← pas d'accord · ↑ pas sûr"))));
+      h("div.tiles", preTile,
+        pending && pending < batch ? h("button.tile.rate", { type: "button", onclick: () => setSwipeView("rate-intro") }, h("b", "Pondérer " + plural(pending, "idée")), h("span.small", "Sans attendre la prochaine pause")) : null,
+        h("div.tile", h("b", scopeLabel), h("span.small", q + " idées par jour · pondération toutes les " + batch)),
+        h("div.tile", h("b", e.remAll ? plural(e.remAll, "idée restante", "idées restantes") : "Toutes les idées jugées"), h("span.small", e.remAll ? "Fin estimée le " + fmtDate(addDays(e.daysAll)) : "La boussole est complète"))),
+      h("div.home-foot",
+        jc >= 20 && !final ? finishNowControl() : null,
+        h("button.btn.ghost.small", { type: "button", onclick: (ev) => updateApp(ev.currentTarget) }, "Mettre à jour l'application"),
+        h("span", "v" + APP_VERSION + " · données iFRAP du " + D.extractedAt))));
     renderSteps(); renderInstall();
   }
   const allJudged = () => unjudged(null).length === 0;
@@ -1153,17 +1240,18 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     if (!R.judged) { app.replaceChildren(h("p.empty", "Aucune idée jugée pour l'instant."), h("p", h("button.btn.primary", { onclick: () => setPhase(1) }, "Commencer"))); return; }
     const top = R.ranking.filter(r => r.net > 0).slice(0, 5), rest = R.ranking.filter(r => !top.includes(r));
     const weak = R.themes.filter(t => t.reliability !== "consolidé" && t.reliability !== "terminé");
+    const allJ = [...R.ids, ...R.nos, ...R.nul], prof = profileOf(R);
+    const rankInfo = infoBubble("Chaque idée a un poids de −100 à +100 selon votre geste et votre pondération (+ oui mais 60, ++ d'accord 80, +++ essentiel 100 ; en miroir pour les désaccords ; « pas sûr » pèse ±30 selon la tendance, 0 sans avis). Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues. L'orientation affichée à côté du parti est la position indicative de la personnalité sur l'axe gauche-droite.");
 
-    const banner = partial ? h("div.banner",
-      h("div", h("b", "Pré-orientation"), swipe
-        ? " fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + " sur " + TOTAL_ITEMS + " (" + plural(R.ids.length, "aimée") + ", " + plural(R.nos.length, "rejetée") + ", " + R.nul.length + " sans avis)."
-        : " après " + done.length + " thèmes terminés sur " + D.themes.length + ", fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + "."),
-      h("div.small", swipe
-        ? (weak.length ? "Encore fragile sur : " + weak.map(t => t.theme.name + " (" + t.reliability + ")").join(", ") + ". " : "") + "Les thèmes sans aucune idée jugée n'apparaissent pas encore."
-        : "Elle peut encore beaucoup changer : il reste " + plural(remaining.length, "thème") + " (" + remaining.map(t => t.name).join(", ") + ")."),
-      h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" },
-        swipe ? h("button.btn.primary", { onclick: () => { S.sview = "card"; setPhase(1); } }, "Continuer à swiper →") : nextButton(true),
-        swipe ? finishNowControl() : skipControl(remaining))) : null;
+    const preText = swipe
+      ? "Pré-orientation fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + " sur " + TOTAL_ITEMS + ". " + (weak.length ? "Encore fragile sur : " + weak.map(t => t.theme.name + " (" + t.reliability + ")").join(", ") + ". " : "") + "Les thèmes sans aucune idée jugée n'apparaissent pas encore ; seuls les thèmes abordés comptent."
+      : "Pré-orientation après " + done.length + " thèmes terminés sur " + D.themes.length + ", fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + ". Elle peut encore beaucoup changer : il reste " + plural(remaining.length, "thème") + " (" + remaining.map(t => t.name).join(", ") + ").";
+    const preInfo = partial ? infoBubble(preText) : null;
+    const banner = partial ? (swipe
+      ? h("div", isApp() ? null : h("div.top-row", h("h2", "Pré-orientation"), preInfo.btn, menuButton()), preInfo.box)
+      : h("div.banner", h("div", h("b", "Pré-orientation"), preInfo.btn), preInfo.box,
+        h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" }, nextButton(true), skipControl(remaining)))) : null;
+    if (partial && swipe && isApp()) appInfo = preInfo;
 
     const candIdeas = (c) => {
       const all = judgedIds().filter(id => ITEMS[id].cands.includes(c.id) && (!R.themes.length || true));
@@ -1178,7 +1266,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       return h("div.rank-row", { class: (i === 0 && !far ? "first " : "") + (far ? "far" : "") },
         h("div.pos.num", far ? "−" : i + 1), avatar(r.cand),
         h("div", { style: "min-width:0" },
-          h("div.who", h("span.name", candName(r.cand)), r.cand.party ? h("span.party", r.cand.party) : null),
+          h("div.who", h("span.name", candName(r.cand)), h("span.party", party(r.cand)), orientChip(r.cand)),
           far ? null : h("div.bar", h("i", { style: "width:" + (r.share / top[0].share * 100) + "%" })),
           h("div.meta", far ? h("span", h("b.num", r.net), " points nets") : h("span", h("b.num", pct(r.share)), " de vos points"),
             h("span", h("b.num", pct(r.accord)), " d'accord sur " + plural(r.seen, "idée vue", "idées vues")),
@@ -1186,11 +1274,12 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           h("div", { style: "margin-top:6px" }, btn), detail));
     };
     const rank = h("div.rank", top.map((r, i) => candRow(r, i, false)));
-    const farthest = R.ranking.filter(r => r.net < 0).slice(-3).reverse();
-    const far = farthest.length ? h("div", h("h3", { style: "margin:18px 0 10px" }, "Les plus éloignés de vos choix"), h("div.rank", farthest.map((r, i) => candRow(r, i, true)))) : null;
+    const farthest = R.ranking.filter(r => !top.includes(r)).slice(-5).reverse();
+    const farInfo = infoBubble("Les personnalités dont les idées que vous avez vues ont recueilli le plus de désaccords (points nets les plus bas). Les comparer aux plus proches aide à voir ce qui vous sépare vraiment.");
+    const far = farthest.length ? h("div", h("h3", { style: "margin:22px 0 10px" }, "Les cinq personnalités les plus éloignées de vos choix", farInfo.btn), farInfo.box, h("div.rank", farthest.map((r, i) => candRow(r, i, true)))) : null;
 
     const others = rest.length ? h("details.others", h("summary", "Les " + rest.length + " autres personnalités jugées"),
-      h("ul", rest.map(r => h("li", h("span", candName(r.cand), r.cand.party ? h("span.muted.small", " · " + r.cand.party) : null),
+      h("ul", rest.map(r => h("li", h("span", candName(r.cand), h("span.muted.small", " · " + party(r.cand) + " · " + posLabel(r.cand.pos))),
         h("span.num.small", (r.net > 0 ? pct(r.share) + " · " : "") + pct(r.accord) + " d'accord · " + r.n + "/" + r.of))))) : null;
 
     const spectrum = h("div.spectrum",
@@ -1204,13 +1293,18 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
     app.replaceChildren(h("div.results",
       banner,
-      h("div.stat-row",
-        h("div.stat", h("div.v.num", R.ids.length + " / " + R.nos.length), h("div.k", "idées aimées / rejetées, sur " + TOTAL_ITEMS + " jugeables")),
-        h("div.stat", h("div.v.num", R.themes.length), h("div.k", "thèmes concernés sur " + D.themes.length)),
-        h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités représentées")),
-        h("div.stat", h("div.v", posLabel(R.overall.pos)), h("div.k", (partial ? "pré-orientation" : "position d'ensemble") + " (" + fmtPos(R.overall.pos) + ")"))),
-      h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix"),
-        h("p", "Chaque idée a un poids de −100 à +100 selon votre geste et votre pondération (+ oui mais 60, ++ d'accord 80, +++ essentiel 100 ; en miroir pour les désaccords ; « pas sûr » pèse ±30 selon la tendance, 0 sans avis). Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues.")),
+      h("div.stat-row.compact",
+        h("div.stat.mini-stats",
+          h("div.yes", h("div.v.num", allJ.filter(id => S.sel[id]).length), h("div.k", "aimées")),
+          h("div.unsure", h("div.v.num", allJ.filter(id => S.unsure[id]).length), h("div.k", "pas sûr")),
+          h("div.no", h("div.v.num", allJ.filter(id => S.no[id]).length), h("div.k", "rejetées"))),
+        h("div.stat.orient-tile",
+          h("div.k", (partial ? "Pré-orientation" : "Orientation") + " calculée · " + fmtPos(R.overall.pos) + " sur une échelle de −10 à +10"),
+          h("div.v", posLabel(R.overall.pos)),
+          h("div.track", h("span.dot", { class: R.overall.pos <= -2 ? "l" : R.overall.pos >= 2 ? "r" : "", style: "left:" + (50 + R.overall.pos * 5) + "%" })),
+          h("div.profile", prof.name),
+          h("div.k", plural(R.themes.length, "thème abordé", "thèmes abordés") + " sur " + D.themes.length + " · " + plural(R.ranking.length, "personnalité représentée", "personnalités représentées")))),
+      h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix", rankInfo.btn), rankInfo.box),
         rank, far, others),
       h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
         h("p", "Position de −10 (gauche) à +10 (droite) : les idées aimées vous rapprochent de leurs auteurs, les idées rejetées vous en éloignent. La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos idées aimées ; la mention sous chaque thème indique la solidité de la mesure.")),
@@ -1219,11 +1313,12 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       h("section", h("details.recap-wrap", h("summary", h("h2", { style: "display:inline" }, "Les thèmes et idées qui vous parlent"), h("span.small.muted", " · " + plural(R.judged, "idée jugée", "idées jugées") + " — cliquer pour déplier")),
         h("p.small.muted", { style: "margin:8px 0 12px" }, "Vos idées jugées avec leur pondération et leur auteur. Filtrez par thème et sujet."),
         recapFilter(R))),
-      partial ? null : h("section", h("div.sec-head", h("h2", "Votre carte d'identité politique"),
+      identitySection(R, prof, partial),
+      partial ? null : h("section", h("div.sec-head", h("h2", "Aller plus loin avec Claude"),
         h("p", "Claude rédige un portrait court et nuancé à partir de vos choix. La clé API reste dans votre navigateur et n'est envoyée qu'à l'API Anthropic.")),
         aiCard(R)),
       h("div.panel-foot",
-        h("div", partial ? (swipe ? h("button.btn", { onclick: () => setPhase(1) }, "← Retour") : nextButton(false)) : h("button.btn", { onclick: () => { if (!swipe) goHome(); else setPhase(1); } }, "← Revoir mes réponses")),
+        h("div", partial ? (swipe ? h("button.btn", { onclick: () => { S.sview = "home"; setPhase(1); } }, "← Accueil") : nextButton(false)) : h("button.btn", { onclick: () => { if (!swipe) goHome(); else { S.sview = "home"; setPhase(1); } } }, "← Revoir mes réponses")),
         resetControl())));
   }
 
@@ -1265,10 +1360,92 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     return box;
   }
 
+  /* ---------- Profil politique (calcul local) ---------- */
+  const AXES = { eco: ["636", "1128", "506"], reg: ["634", "493", "479"], soc: ["623", "1129", "627", "481"] };
+  const AXIS_LABEL = { eco: ["Économie", "finances, travail, retraites, État"], reg: ["Régalien", "sécurité, justice, défense, Europe"], soc: ["Société", "social, éducation, écologie, droits"] };
+  const FAMILIES = [["gr", "Gauche radicale", "l"], ["g", "Gauche", "l"], ["c", "Centre", ""], ["d", "Droite", "r"], ["dn", "Droite nationale", "r"]];
+  const famOf = (p) => p <= -6 ? "gr" : p <= -2 ? "g" : p < 2 ? "c" : p < 6 ? "d" : "dn";
+  const PROFILES = {
+    LL: ["Gauche sociale et solidaire", "Vous privilégiez la redistribution, les services publics et l'intervention de l'État en économie, et des positions protectrices ou progressistes sur la société et le régalien. Vos proximités vont naturellement vers la gauche ; vos tensions apparaissent quand une mesure d'ordre ou de rigueur budgétaire vous séduit malgré tout."],
+    LC: ["Gauche économique, modéré ailleurs", "C'est l'économie qui vous situe à gauche : salaires, protection sociale, fiscalité des plus aisés. Sur les questions de société et de sécurité, vous êtes plus mesuré. Ce profil se rapproche de la gauche de gouvernement et peut croiser le centre sur l'ordre public."],
+    LR: ["Gauche populaire et souverainiste", "Vous attendez de l'État qu'il protège économiquement (emploi, pouvoir d'achat, services publics) tout en défendant l'ordre, la sécurité ou la nation. Vous piochez à gauche sur le social et à droite sur le régalien : aucune personnalité ne couvre entièrement cette combinaison, d'où des proximités partielles de chaque côté."],
+    CL: ["Progressiste modéré", "Prudent en économie, ni libéral ni interventionniste, vous penchez à gauche sur la société, les libertés ou l'écologie. Vos proximités vont du centre gauche aux écologistes ; vos tensions portent sur le financement des mesures que vous approuvez."],
+    CC: ["Centriste pragmatique", "Vous jugez les idées une à une sans logique de camp, avec une préférence pour les réformes mesurées. Vos proximités sont partagées entre centre, centre gauche et centre droit ; votre ambiguïté est de pouvoir approuver des mesures qui se contredisent."],
+    CR: ["Centre attaché à l'ordre", "Modéré en économie, vous êtes plus ferme sur la sécurité, l'immigration ou la défense. Vos proximités vont du centre droit à la droite ; vos tensions apparaissent sur les mesures économiques les plus libérales ou les plus coûteuses."],
+    RL: ["Libéral progressiste", "Libéral en économie (moins d'impôts, moins de normes, réforme de l'État) mais ouvert ou protecteur sur la société, les libertés et l'écologie. Vos proximités vont vers le centre droit libéral ; vos tensions surgissent sur l'immigration ou la sécurité, où vous êtes plus modéré que vos proches économiques."],
+    RC: ["Libéral économique", "L'économie vous situe à droite : baisse de la dépense publique, compétitivité, réformes du travail et des retraites. Sur le reste, vous restez modéré. Vos proximités vont du centre droit à la droite classique."],
+    RR: ["Droite conservatrice et libérale", "Vous souhaitez un État plus économe en économie et plus ferme sur la sécurité, l'immigration et l'autorité. Vos proximités vont vers la droite et la droite nationale ; vos tensions portent sur les questions où la droite se divise, comme l'Europe ou le rôle de l'État dans l'industrie."],
+    GG: ["Gauche de rupture", "Vous approuvez les mesures les plus transformatrices : partage des richesses, extension des services publics, planification écologique, démocratie directe. Vos proximités vont vers la gauche radicale ; vos tensions apparaissent quand une proposition de la gauche de gouvernement vous semble trop timide."],
+    DD: ["Droite nationale et identitaire", "Vous placez la nation, l'ordre et l'identité au cœur de vos choix, avec une économie protectrice ou libérale selon les sujets. Vos proximités vont vers la droite nationale ; vos tensions portent sur l'économie, où ses personnalités divergent entre protection et libéralisme."],
+    TT: ["Transversal, hors des camps", "Vous approuvez une large part des idées venant de la gauche comme de la droite : vous jugez la mesure plutôt que son camp. Vos proximités sont dispersées sur tout l'échiquier ; votre ambiguïté est de ne pas vous reconnaître entièrement dans une personnalité, mais c'est aussi le profil le moins prévisible."],
+    NN: ["Profil en construction", "Il faut encore quelques idées jugées pour dégager une tendance solide. Les premiers chiffres ci-dessous sont indicatifs."],
+    UU: ["En exploration", "Vous avez souvent répondu « pas sûr » : votre position se construit encore. Les idées déjà tranchées donnent la tendance ci-dessous, à confirmer en revenant sur les idées sans avis."],
+  };
+  function profileOf(R) {
+    const all = [...R.ids, ...R.nos, ...R.nul];
+    const acc = {}; FAMILIES.forEach(f => { acc[f[0]] = { p: 0, t: 0, n: 0 }; });
+    all.forEach(id => { const it = ITEMS[id], w = weight(id); if (!w) return;
+      it.cands.forEach(c => { const f = acc[famOf(CAND[c].pos)]; f.t += Math.abs(w) / it.cands.length; if (w > 0) f.p += w / it.cands.length; f.n++; }); });
+    const families = FAMILIES.map(([k, label, side]) => ({ key: k, label, side, rate: acc[k].t ? acc[k].p / acc[k].t : null, n: acc[k].n }));
+    const bloc = (ks) => { const p = ks.reduce((a, k) => a + acc[k].p, 0), t = ks.reduce((a, k) => a + acc[k].t, 0), n = ks.reduce((a, k) => a + acc[k].n, 0); return { rate: t ? p / t : null, n }; };
+    const left = bloc(["gr", "g"]), right = bloc(["d", "dn"]);
+    const axisPos = (ids) => { const ts = R.themes.filter(t => ids.includes(String(t.theme.id)) && t.sp && !t.sp.flat); if (!ts.length) return null;
+      const n = ts.reduce((a, t) => a + t.judged, 0); return { pos: ts.reduce((a, t) => a + t.sp.pos * t.judged, 0) / n, n, themes: ts.map(t => t.theme.name) }; };
+    const axes = { eco: axisPos(AXES.eco), reg: axisPos(AXES.reg), soc: axisPos(AXES.soc) };
+    const sn = (axes.reg ? axes.reg.n : 0) + (axes.soc ? axes.soc.n : 0);
+    const socAll = sn ? ((axes.reg ? axes.reg.pos * axes.reg.n : 0) + (axes.soc ? axes.soc.pos * axes.soc.n : 0)) / sn : null;
+    const side = (p) => p <= -1.5 ? "L" : p >= 1.5 ? "R" : "C";
+    const ecoP = axes.eco ? axes.eco.pos : R.overall.pos, socP = socAll == null ? R.overall.pos : socAll;
+    const yes = all.filter(id => weight(id) > 0).length, no = all.filter(id => weight(id) < 0).length, unsure = all.filter(id => S.unsure[id]).length;
+    let key;
+    if (all.length < 10) key = "NN";
+    else if (unsure / all.length > 0.5) key = "UU";
+    else if (left.n >= 4 && right.n >= 4 && left.rate >= 0.5 && right.rate >= 0.5) key = "TT";
+    else if (ecoP <= -4 && socP <= -4) key = "GG";
+    else if (ecoP >= 4 && socP >= 4) key = "DD";
+    else key = side(ecoP) + side(socP);
+    const [name, desc] = PROFILES[key];
+    const accord = yes + no ? yes / (yes + no) : 0;
+    const nuance = key === "NN" || key === "UU" ? "" : accord < 0.35 ? "Vous rejetez plus d'idées que vous n'en approuvez : un profil exigeant, difficile à convaincre." : accord > 0.7 ? "Vous approuvez la plupart des idées rencontrées : un profil consensuel, qui gagne à pondérer finement." : "";
+    const ov = side(R.overall.pos);
+    const solid = R.themes.filter(t => t.judged >= 5 && t.sp && !t.sp.flat);
+    const moreLeft = solid.filter(t => side(t.sp.pos) === "L" && ov !== "L").map(t => t.theme.name);
+    const moreRight = solid.filter(t => side(t.sp.pos) === "R" && ov !== "R").map(t => t.theme.name);
+    const ambig = [];
+    if (moreLeft.length) ambig.push("plus à gauche que votre ensemble sur " + moreLeft.join(", "));
+    if (moreRight.length) ambig.push("plus à droite que votre ensemble sur " + moreRight.join(", "));
+    return { key, name, desc, nuance, ambig, axes, families, left, right, accord, yes, no, unsure, n: all.length };
+  }
+  function identitySection(R, prof, partial) {
+    const top = R.ranking.filter(r => r.net > 0).slice(0, 5), far = R.ranking.filter(r => !top.includes(r)).slice(-5).reverse();
+    const x = (p) => (50 + p * 5) + "%";
+    const axisRow = (k) => { const a = prof.axes[k], [lab, sub] = AXIS_LABEL[k];
+      return h("div.id-axis", h("div.lab", lab, h("span.small", a ? a.themes.join(", ") : sub)),
+        a ? h("div.track", h("span.dot", { class: a.pos <= -2 ? "l" : a.pos >= 2 ? "r" : "", style: "left:" + x(a.pos) }), h("span.val.num", { style: a.pos > 2 ? "right:" + (50 - a.pos * 5 + 2.5) + "%" : "left:" + (50 + a.pos * 5 + 2.5) + "%" }, posLabel(a.pos) + " · " + plural(a.n, "idée")))
+          : h("span.small.muted", "Non abordé pour l'instant")); };
+    const famRow = (f) => h("div.fam", { class: f.side }, h("span", f.label, h("span.muted.small", f.n ? " · " + plural(f.n, "idée vue", "idées vues") : "")),
+      h("div.bar", h("i", { style: "width:" + (f.rate == null ? 0 : Math.round(f.rate * 100)) + "%" })), h("span.num.small", f.rate == null ? "—" : Math.round(f.rate * 100) + " %"));
+    const card = h("div.card-ai.idcard",
+      h("div", h("span.t", prof.name), h("div.small.muted", (partial ? "Pré-orientation" : "Orientation") + " : " + posLabel(R.overall.pos) + " (" + fmtPos(R.overall.pos) + ") · " + plural(prof.n, "idée jugée", "idées jugées") + " dans " + plural(R.themes.length, "thème") + " sur " + D.themes.length)),
+      h("p", prof.desc), prof.nuance ? h("p", prof.nuance) : null,
+      prof.ambig.length ? h("p", h("b", "Vos ambiguïtés : "), prof.ambig.join(" ; ") + ".") : null,
+      h("div", h("h3", { style: "margin-bottom:8px" }, "Vos trois axes"), h("div.id-axes", axisRow("eco"), axisRow("reg"), axisRow("soc"))),
+      h("div", h("h3", { style: "margin-bottom:6px" }, "Votre taux d'accord par famille politique"), prof.families.map(famRow)),
+      h("div.id-list", top.length ? h("div", h("b", "Plus proches : "), top.map(r => candName(r.cand) + " (" + party(r.cand) + ")").join(", ")) : null,
+        far.length ? h("div", h("b", "Plus éloignés : "), far.map(r => candName(r.cand) + " (" + party(r.cand) + ")").join(", ")) : null),
+      h("p.small.muted", "Carte calculée localement à partir de vos seules idées jugées ; les thèmes non abordés ne comptent pas. Elle évolue à chaque idée."));
+    card.hidden = !S.idcard;
+    const btn = h("button.btn.primary", { onclick: () => { S.idcard = !S.idcard; save(); card.hidden = !S.idcard; btn.textContent = S.idcard ? "Masquer la carte" : "Créer ma carte d'identité politique"; } }, S.idcard ? "Masquer la carte" : "Créer ma carte d'identité politique");
+    const info = infoBubble("La carte rassemble votre profil (calculé à partir de vos positions par axe et de vos accords avec chaque famille politique), votre orientation, vos personnalités les plus proches et les plus éloignées. Elle ne prend en compte que les thèmes que vous avez abordés.");
+    return h("section", h("div.sec-head", h("h2", "Votre carte d'identité politique", info.btn), info.box), h("div", { style: "margin-bottom:12px" }, btn), card);
+  }
+
   /* ---------- Carte d'identité politique via l'API Claude ---------- */
   function buildPrompt(R) {
     const lines = [];
+    const prof = profileOf(R);
     lines.push("Nombre d'idées retenues : " + R.ids.length + " sur " + ALL_IDEAS + " propositions (comparateur iFRAP, présidentielle 2027).");
+    lines.push("Profil calculé par l'outil (indicatif) : " + prof.name + (prof.ambig.length ? " ; ambiguïtés : " + prof.ambig.join(" ; ") : "") + ".");
     lines.push("", "Personnalités les plus représentées (part des points pondérés ; part de leur programme retenue) :");
     R.ranking.slice(0, 8).forEach((r, i) => lines.push((i + 1) + ". " + candName(r.cand) + (r.cand.party ? " (" + r.cand.party + ")" : "") + " : " + pct(r.share) + " ; " + r.n + "/" + r.of + " propositions"));
     lines.push("", "Position sur l'axe gauche (−10) / droite (+10), moyenne pondérée des auteurs des idées retenues :");
@@ -1380,6 +1557,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     S = next; save();
     return { n: o.sel.length - unknown, unknown, date: o.d };
   }
+  var openSave = () => {};
   function renderToolbar() {
     const area = document.getElementById("save-area");
     const close = () => area.replaceChildren();
@@ -1409,6 +1587,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           h("div.acts", h("button.btn.ghost", { onclick: close }, "Fermer")))));
       area.scrollIntoView({ behavior: "smooth", block: "start" });
     };
+    openSave = () => { openPanel(); window.scrollTo({ top: 0 }); };
     document.getElementById("toolbar").replaceChildren(
       h("button.btn", { id: "mode-btn", onclick: () => { S.mode = modeIs() === "swipe" ? "pages" : "swipe"; S.phase = 1; save(); render(); toTop(); } }, modeIs() === "swipe" ? "Passer en mode pages" : "Passer en mode swipe"),
       h("button.btn", { onclick: () => setPhase(4) }, "Repères politiques"),
@@ -1434,6 +1613,14 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   }
   function renderInstall() {
     document.querySelectorAll(".install-box").forEach(box => { const c = installContent(); c ? box.replaceChildren(c) : box.replaceChildren(); });
+  }
+  async function updateApp(btn) {
+    if (btn) { btn.disabled = true; btn.textContent = "Mise à jour…"; }
+    try {
+      if (navigator.serviceWorker) { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); }
+      if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }
+    } catch (e) { /* ignoré */ }
+    location.replace(location.pathname + "?maj=" + Date.now());
   }
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });

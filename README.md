@@ -96,6 +96,12 @@ nouvelles personnalités à positionner). Hors routine : `node
 extraire-donnees.mjs` puis relecture de `POSITIONS` si une personnalité est
 apparue. La page signale elle-même des données de plus de 45 jours.
 
+### Profil politique et carte d'identité (calcul local)
+
+À partir des idées jugées, l'application calcule un profil (par exemple « Libéral progressiste », « Gauche populaire et souverainiste », « Transversal, hors des camps ») en croisant trois axes (économie, régalien, société) et le taux d'accord avec chaque famille politique. Le profil s'affiche dans la pré-orientation et les résultats ; le bouton « Créer ma carte d'identité politique » rassemble profil, axes, familles, personnalités les plus proches et les plus éloignées. Seuls les thèmes abordés comptent. La carte rédigée par Claude (clé API) reste disponible dans les résultats finaux.
+
+Le bouton « Mettre à jour l'application » (accueil et menu) vide le cache hors connexion et recharge la dernière version publiée.
+
 ## Fichiers
 
 - `index.html` : l'application.
