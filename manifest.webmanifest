@@ -1,0 +1,17 @@
+{
+  "name": "Boussole 2027",
+  "short_name": "Boussole",
+  "description": "Comparateur de programmes pour la présidentielle 2027 : jugez des propositions à l'aveugle et découvrez votre orientation.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f4f7",
+  "theme_color": "#1f3fbf",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

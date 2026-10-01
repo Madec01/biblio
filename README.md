@@ -8,7 +8,12 @@ serveur. Les propositions viennent du
 [comparateur de la Fondation iFRAP](https://www.ifrap.org/comparateurs/presidentielles-2027)
 (1 164 propositions, 32 sujets regroupés en 10 thèmes, 20 personnalités).
 
-Ouvrez `index.html` dans un navigateur, sur ordinateur comme sur téléphone.
+**En ligne : https://madec01.github.io/biblio/** (publié automatiquement depuis
+`main` par GitHub Pages). Sur téléphone, l'application s'installe sur l'écran
+d'accueil : bouton « Installer l'application » sur Android/Chrome, ou Partager →
+« Sur l'écran d'accueil » sur iPhone. Elle fonctionne ensuite hors connexion.
+
+Ouvrez sinon `index.html` dans un navigateur, sur ordinateur comme sur téléphone.
 Les choix restent dans le navigateur (stockage local) ; le bouton
 **Sauvegarder / restaurer** donne un code (ou un fichier) à coller sur un autre
 appareil ou navigateur pour reprendre là où vous en étiez.
@@ -86,6 +91,11 @@ apparue. La page signale elle-même des données de plus de 45 jours.
 ## Fichiers
 
 - `index.html` : l'application.
+- `manifest.webmanifest`, `sw.js`, `icons/` : installation sur téléphone (PWA)
+  et fonctionnement hors connexion. Changer `CACHE` dans `sw.js` à chaque
+  version qui doit remplacer le cache des utilisateurs.
+- `.github/workflows/pages.yml` : publication sur GitHub Pages à chaque push sur
+  `main`.
 - `data.js` : les propositions, généré par le script ci-dessous.
 - `explications.js` : une explication par proposition, rédigée par Claude
   (neutre, sans auteur). À compléter pour les propositions ajoutées lors d'une
