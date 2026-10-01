@@ -35,6 +35,10 @@ auteur).
 
 ### Mode swipe (téléphone, par défaut sous 900 px)
 
+Au premier lancement, deux réglages (périmètre et rythme), modifiables ensuite
+dans « Options » ; l'accueil se réduit ensuite à un récapitulatif et un bouton
+Continuer.
+
 Une idée à l'écran à la fois : swipe à droite (ou ✓) = d'accord, à gauche
 (ou ✕) = pas d'accord, vers le haut (ou ?) = pas sûr. Flèches du clavier
 sur ordinateur, bouton « Annuler » pour le dernier swipe, explication en
@@ -46,8 +50,9 @@ langage courant sur la carte.
   choix, on arrête quand on veut).
 - **Rythme** : objectif quotidien de 10 à 50 idées, avec dates estimées de fin
   (pré-orientation fiable à 15 idées par thème ; toutes les idées).
-- **Pondération** : toutes les N idées jugées (5 à 20, réglable), une touche
-  par idée pour affiner, avec l'explication ouverte. D'accord : **+** oui mais,
+- **Pondération** : toutes les N idées jugées (5 à 20, réglable), un écran
+  « Pause pondération » annonce le lot, puis une touche par idée pour affiner,
+  cartes regroupées par type, avec l'explication ouverte. D'accord : **+** oui mais,
   **++** d'accord, **+++** essentiel ; pas d'accord : **−** non mais, **−−** pas
   d'accord, **−−−** hors de mes valeurs ; pas sûr : plutôt non / je ne sais
   pas du tout / plutôt oui, avec « remettre dans la pile » pour y revenir plus
@@ -67,7 +72,10 @@ positifs rapprochent de leurs auteurs, les négatifs en éloignent ; chaque thè
 ### Pré-orientation et résultats
 
 - **Pré-orientation** : dès 20 idées jugées ou deux thèmes terminés ; bilan
-  provisoire avec les thèmes encore fragiles. On peut « terminer maintenant ».
+  provisoire avec les thèmes encore fragiles. Chaque personnalité du classement
+  (et des « plus éloignés ») déplie la liste de ses idées que vous avez jugées,
+  avec leur marque. Le récapitulatif par thème se replie et se filtre par thème
+  et sujet. On peut « terminer maintenant ».
 - **Résultats** : cinq personnalités les plus proches, spectre par thème (plus
   vue tableau), récapitulatif des idées aimées et rejetées avec auteurs, et
   **carte d'identité politique** rédigée par Claude (clé API Anthropic à

@@ -171,6 +171,13 @@ select, input[type="text"], input[type="password"] {
 .mark { display: inline-block; font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); white-space: nowrap; letter-spacing: .5px; }
 .mark.yes { color: var(--good); } .mark.no { color: var(--left); } .mark.unsure { color: var(--ink-2); }
 .linkbtn { background: transparent; border: 0; padding: 0; color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; font-size: 0.85rem; }
+.intro { display: grid; gap: 14px; padding: 18px; text-align: center; justify-items: center; }
+.intro-ic { width: 72px; height: 72px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 2rem; }
+.intro p { color: var(--ink-2); max-width: 40ch; }
+.intro-list { display: grid; gap: 8px; width: 100%; }
+.intro-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); text-align: left; }
+.intro-row .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; }
+.intro-row.yes .ic { background: var(--good); } .intro-row.no .ic { background: var(--left); } .intro-row.unsure .ic { background: var(--muted); }
 .rate-band { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 14px; border-radius: 14px; color: #fff; }
 .rate-band .ic { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.22); display: grid; place-items: center; font-size: 1.5rem; font-weight: 800; }
 .rate-band .small { opacity: .92; }
@@ -205,6 +212,13 @@ select, input[type="text"], input[type="password"] {
   padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 .rank-row .pos { font-family: var(--font-display); font-size: 1.4rem; font-weight: 600; color: var(--muted); }
 .rank-row.first .pos { color: var(--accent); }
+.rank-row.far .pos { color: var(--left); }
+.cand-detail { display: grid; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.cand-sec h4 { margin: 0 0 6px; font-size: 0.85rem; color: var(--ink-2); }
+.cand-idea { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; padding: 5px 0; font-size: 0.9rem; border-top: 1px solid var(--line); align-items: start; }
+.cand-idea .mark { align-self: start; }
+.rank-row { align-items: start; }
+.rank-row .pos, .rank-row .avatar { margin-top: 4px; }
 .avatar { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; background: var(--surface-2); display: grid; place-items: center;
   font-weight: 700; color: var(--ink-2); font-size: 1rem; flex: none; }
 .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -221,7 +235,7 @@ select, input[type="text"], input[type="password"] {
 .others li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
 
 /* Spectre */
-.spectrum { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.spectrum { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow: hidden; }
 .sp-axis, .sp-row { display: grid; grid-template-columns: minmax(90px, 32%) minmax(0, 1fr); gap: 12px; align-items: center; }
 .sp-axis { color: var(--muted); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 6px; }
 .sp-axis .ticks { display: flex; justify-content: space-between; }
@@ -248,6 +262,10 @@ select, input[type="text"], input[type="password"] {
 .note { font-size: 0.85rem; color: var(--muted); margin-top: 10px; max-width: 72ch; }
 
 /* Récapitulatif */
+.recap-wrap > summary { cursor: pointer; list-style: none; padding: 8px 0; }
+.recap-wrap > summary::-webkit-details-marker { display: none; }
+.recap-wrap > summary::before { content: "▸ "; color: var(--accent); }
+.recap-wrap[open] > summary::before { content: "▾ "; }
 .recap-theme { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
 .recap-theme + .recap-theme { margin-top: 12px; }
 .recap-theme .head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
@@ -829,6 +847,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
   function renderSwipe() {
     if (S.sview === "card") return renderSwipeCard();
+    if (S.sview === "rate-intro") return renderRateIntro();
     if (S.sview === "rate") return renderSwipeRate();
     return renderSwipeHome();
   }
@@ -895,9 +914,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("div.row", h("span", h("b.num", n + " / " + q), " aujourd'hui"), h("span", h("b.num", jc), " jugées sur " + TOTAL_ITEMS), h("span.muted", scopeLabel)),
         h("div.pbar", h("i", { style: "width:" + pc + "%" })),
         h("div.small.muted", e.needReliable ? "Pré-orientation fiable vers le " + fmtDate(addDays(e.daysReliable)) : "Pré-orientation fiable atteinte")),
-      pending >= (S.batch || 10) ? h("button.btn.big.warn", { onclick: () => setSwipeView("rate") }, "Pondérer " + pending + " idées →") : null,
+      pending >= (S.batch || 10) ? h("button.btn.big.warn", { onclick: () => setSwipeView("rate-intro") }, "Pondérer " + pending + " idées →") : null,
       h("button.btn.primary.big", { onclick: () => setSwipeView("card"), disabled: !canStart }, !canStart ? "Périmètre terminé : changez les options" : n >= q ? "Continuer au-delà de l'objectif →" : (jc ? "Continuer →" : "Commencer →")),
-      pending && pending < (S.batch || 10) ? h("button.btn", { onclick: () => setSwipeView("rate") }, "Pondérer " + plural(pending, "idée") + " maintenant") : null,
+      pending && pending < (S.batch || 10) ? h("button.btn", { onclick: () => setSwipeView("rate-intro") }, "Pondérer " + plural(pending, "idée") + " maintenant") : null,
       h("div.panel-foot",
         h("div", jc >= 20 && !allJudged() && !S.finished ? h("button.btn", { onclick: () => setPhase(2) }, "Pré-orientation →") : null, " ",
           (allJudged() || S.finished) ? h("button.btn.primary", { onclick: () => setPhase(3) }, "Voir mes résultats →") : null, " ",
@@ -953,7 +972,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       judge(it, action);
       refreshCounter(); renderSteps();
       if (dailyN() === q) say("Objectif du jour atteint. Continuez si vous voulez.");
-      if (S.toRate.length >= (S.batch || 10)) { setSwipeView("rate"); return; }
+      if (S.toRate.length >= (S.batch || 10)) { setSwipeView("rate-intro"); return; }
       mount(pickNext());
     }
     function flyOut(action) {
@@ -994,11 +1013,33 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     mount(it);
     renderSteps();
   }
+  const STATE_ORDER = { yes: 0, no: 1, unsure: 2 };
+  const sortQueue = () => { S.toRate = S.toRate.filter(id => ITEMS[id] && stateOf(id)).sort((a, b) => STATE_ORDER[stateOf(a)] - STATE_ORDER[stateOf(b)]); };
+  function renderRateIntro() {
+    sortQueue();
+    const by = { yes: 0, no: 0, unsure: 0 }; S.toRate.forEach(id => { by[stateOf(id)]++; });
+    if (!S.toRate.length) { setSwipeView("card"); return; }
+    app.replaceChildren(h("div.swipe-wrap",
+      h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Plus tard" }, "←"), h("div.abtitle", "Pondération"), h("div.abacts")),
+      h("div.intro",
+        h("div.intro-ic", "⚖"),
+        h("h2", "Pause pondération"),
+        h("p", "Vous avez jugé " + plural(S.toRate.length, "idée") + ". Précisez maintenant, d'une touche, à quel point : les cartes arrivent par type."),
+        h("div.intro-list",
+          by.yes ? h("div.intro-row.yes", h("span.ic", "✓"), h("b", by.yes), " d'accord → + / ++ / +++") : null,
+          by.no ? h("div.intro-row.no", h("span.ic", "✕"), h("b", by.no), " pas d'accord → − / −− / −−−") : null,
+          by.unsure ? h("div.intro-row.unsure", h("span.ic", "?"), h("b", by.unsure), " pas sûr → plutôt non / sans avis / plutôt oui") : null),
+        h("button.btn.primary.big", { onclick: () => setSwipeView("rate") }, "Commencer la pondération →"),
+        h("button.btn", { style: "width:100%;justify-content:center", onclick: () => setSwipeView(unjudged(scopeFilter()).length ? "card" : "home") }, "Plus tard, continuer à swiper"))));
+    renderSteps();
+  }
   function renderSwipeRate() {
-    S.toRate = S.toRate.filter(id => ITEMS[id] && stateOf(id));
+    sortQueue();
     const id = S.toRate[0];
     if (!id) { S.rateHist = []; save(); setSwipeView(unjudged(scopeFilter()).length ? "card" : "home"); return; }
     const it = ITEMS[id], st = stateOf(id), total = S.toRate.length;
+    const groupTotal = S.toRate.filter(x => stateOf(x) === st).length;
+    const groupNames = { yes: "D'accord", no: "Pas d'accord", unsure: "Pas sûr" };
     const remember = (kind) => { S.rateHist = [...S.rateHist, { id, st, w: S.w[id], kind }].slice(-20); };
     const undoRate = () => {
       const last = S.rateHist.pop(); if (!last) return;
@@ -1010,7 +1051,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const titles = { yes: "Vous êtes d'accord : à quel point ?", no: "Vous n'êtes pas d'accord : à quel point ?", unsure: "Pas sûr : vers où penchez-vous ?" };
     const card = ideaCard(it, true);
     app.replaceChildren(h("div.swipe-wrap",
-      h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Plus tard" }, "←"), h("div.abtitle", total + " à pondérer"),
+      h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Plus tard" }, "←"), h("div.abtitle", groupNames[st] + " · " + (groupTotal) + " restante" + (groupTotal > 1 ? "s" : "") + " · " + total + " au total"),
         h("div.abacts", S.rateHist.length ? h("button.abtn", { onclick: undoRate, "aria-label": "Annuler la dernière pondération", title: "Annuler la dernière pondération", style: "color:var(--warn)" }, "↶") : null)),
       h("div.rate-band", { class: st }, h("span.ic", st === "yes" ? "✓" : st === "no" ? "✕" : "?"), h("div", h("b", st === "yes" ? "Vous avez dit D'ACCORD" : st === "no" ? "Vous avez dit PAS D'ACCORD" : "Vous avez dit PAS SÛR"), h("div.small", titles[st]))),
       h("div.swipe-stage", { class: "tint-" + st }, card),
@@ -1097,7 +1138,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const html = "<b>" + label + "</b><br>" + posLabel(sp.pos) + " · " + fmtPos(sp.pos) + " sur une échelle de −10 à +10<br>" + plural(sp.n, "idée retenue", "idées retenues") + " · auteurs situés entre " + fmtPos(sp.min) + " et " + fmtPos(sp.max);
     dot.addEventListener("mousemove", (e) => showTip(e, html)); dot.addEventListener("mouseleave", hideTip);
     dot.addEventListener("focus", (e) => { const r = dot.getBoundingClientRect(); showTip({ clientX: r.left, clientY: r.bottom }, html); }); dot.addEventListener("blur", hideTip);
-    const valLeft = sp.pos > 5;
+    const valLeft = sp.pos > 2;
     return h("div.sp-row", { class: isTotal ? "total" : "" },
       h("div.lab", label, sub ? h("span.small", sub) : null),
       h("div.track",
@@ -1124,14 +1165,29 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         swipe ? h("button.btn.primary", { onclick: () => { S.sview = "card"; setPhase(1); } }, "Continuer à swiper →") : nextButton(true),
         swipe ? finishNowControl() : skipControl(remaining))) : null;
 
-    const rank = h("div.rank", top.map((r, i) => h("div.rank-row", { class: i === 0 ? "first" : "" },
-      h("div.pos.num", i + 1), avatar(r.cand),
-      h("div", { style: "min-width:0" },
-        h("div.who", h("span.name", candName(r.cand)), r.cand.party ? h("span.party", r.cand.party) : null),
-        h("div.bar", h("i", { style: "width:" + (r.share / top[0].share * 100) + "%" })),
-        h("div.meta", h("span", h("b.num", pct(r.share)), " de vos points"),
-          h("span", h("b.num", pct(r.accord)), " d'accord sur " + plural(r.seen, "idée vue", "idées vues")),
-          h("span", h("b.num", r.n + "/" + r.of), " de son programme retenu"))))));
+    const candIdeas = (c) => {
+      const all = judgedIds().filter(id => ITEMS[id].cands.includes(c.id) && (!R.themes.length || true));
+      const grp = (f) => all.filter(f).sort((a, b) => weight(b) - weight(a));
+      const row = (id) => { const i = ITEMS[id], l = levelOf(id); return h("div.cand-idea", h("span.mark", { class: stateOf(id) }, l[1]), h("span", h("span.muted.small", i.sub.theme.name + " · " + i.sub.name + " — "), i.t)); };
+      const sec = (title, ids) => ids.length ? h("div.cand-sec", h("h4", title + " (" + ids.length + ")"), ids.map(row)) : null;
+      return h("div.cand-detail", sec("Vous êtes d'accord", grp(id => weight(id) > 0)), sec("Pas sûr, sans avis", grp(id => weight(id) === 0)), sec("Vous n'êtes pas d'accord", grp(id => weight(id) < 0)));
+    };
+    const candRow = (r, i, far) => {
+      const detail = candIdeas(r.cand); detail.hidden = true;
+      const btn = h("button.linkbtn", { onclick: () => { detail.hidden = !detail.hidden; btn.textContent = detail.hidden ? "Voir ses idées que vous avez jugées" : "Masquer"; } }, "Voir ses idées que vous avez jugées");
+      return h("div.rank-row", { class: (i === 0 && !far ? "first " : "") + (far ? "far" : "") },
+        h("div.pos.num", far ? "−" : i + 1), avatar(r.cand),
+        h("div", { style: "min-width:0" },
+          h("div.who", h("span.name", candName(r.cand)), r.cand.party ? h("span.party", r.cand.party) : null),
+          far ? null : h("div.bar", h("i", { style: "width:" + (r.share / top[0].share * 100) + "%" })),
+          h("div.meta", far ? h("span", h("b.num", r.net), " points nets") : h("span", h("b.num", pct(r.share)), " de vos points"),
+            h("span", h("b.num", pct(r.accord)), " d'accord sur " + plural(r.seen, "idée vue", "idées vues")),
+            h("span", h("b.num", r.n + "/" + r.of), " de son programme retenu")),
+          h("div", { style: "margin-top:6px" }, btn), detail));
+    };
+    const rank = h("div.rank", top.map((r, i) => candRow(r, i, false)));
+    const farthest = R.ranking.filter(r => r.net < 0).slice(-3).reverse();
+    const far = farthest.length ? h("div", h("h3", { style: "margin:18px 0 10px" }, "Les plus éloignés de vos choix"), h("div.rank", farthest.map((r, i) => candRow(r, i, true)))) : null;
 
     const others = rest.length ? h("details.others", h("summary", "Les " + rest.length + " autres personnalités jugées"),
       h("ul", rest.map(r => h("li", h("span", candName(r.cand), r.cand.party ? h("span.muted.small", " · " + r.cand.party) : null),
@@ -1155,14 +1211,14 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("div.stat", h("div.v", posLabel(R.overall.pos)), h("div.k", (partial ? "pré-orientation" : "position d'ensemble") + " (" + fmtPos(R.overall.pos) + ")"))),
       h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix"),
         h("p", "Chaque idée a un poids de −100 à +100 selon votre geste et votre pondération (+ oui mais 60, ++ d'accord 80, +++ essentiel 100 ; en miroir pour les désaccords ; « pas sûr » pèse ±30 selon la tendance, 0 sans avis). Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues.")),
-        rank, others),
+        rank, far, others),
       h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
         h("p", "Position de −10 (gauche) à +10 (droite) : les idées aimées vous rapprochent de leurs auteurs, les idées rejetées vous en éloignent. La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos idées aimées ; la mention sous chaque thème indique la solidité de la mesure.")),
         spectrum, table,
         h("p.note", "Échelle indicative propre à cet outil : chaque personnalité a reçu une position fixe sur l'axe gauche-droite (modifiable dans extraire-donnees.mjs). Elle ne provient pas de la Fondation iFRAP.")),
-      h("section", h("div.sec-head", h("h2", "Les thèmes et idées qui vous parlent"),
-        h("p", "Vos idées retenues, avec leur note d'importance et leur auteur.")),
-        R.themes.map(t => recapTheme(t, true))),
+      h("section", h("details.recap-wrap", h("summary", h("h2", { style: "display:inline" }, "Les thèmes et idées qui vous parlent"), h("span.small.muted", " · " + plural(R.judged, "idée jugée", "idées jugées") + " — cliquer pour déplier")),
+        h("p.small.muted", { style: "margin:8px 0 12px" }, "Vos idées jugées avec leur pondération et leur auteur. Filtrez par thème et sujet."),
+        recapFilter(R))),
       partial ? null : h("section", h("div.sec-head", h("h2", "Votre carte d'identité politique"),
         h("p", "Claude rédige un portrait court et nuancé à partir de vos choix. La clé API reste dans votre navigateur et n'est envoyée qu'à l'API Anthropic.")),
         aiCard(R)),
@@ -1171,6 +1227,24 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         resetControl())));
   }
 
+  function recapFilter(R) {
+    const box = h("div");
+    const themeSel = h("select", { "aria-label": "Thème" }, h("option", { value: "" }, "Tous les thèmes"), R.themes.map(t => h("option", { value: t.theme.id }, t.theme.name)));
+    const subSel = h("select", { "aria-label": "Sujet" }, h("option", { value: "" }, "Tous les sujets"));
+    const draw = () => {
+      const tid = themeSel.value, sid = subSel.value;
+      const ts = R.themes.filter(t => !tid || t.theme.id === tid).map(t => sid ? Object.assign({}, t, { subs: t.subs.filter(s => s.sub.id === sid), nul: t.subs.filter(s => s.sub.id === sid).flatMap(s => s.nul), nos: t.subs.filter(s => s.sub.id === sid).flatMap(s => s.nos) }) : t);
+      box.replaceChildren(...(ts.length ? ts.map(t => recapTheme(t, true)) : [h("p.empty", "Aucune idée jugée dans cette sélection.")]));
+    };
+    themeSel.addEventListener("change", () => {
+      const t = R.themes.find(x => x.theme.id === themeSel.value);
+      subSel.replaceChildren(h("option", { value: "" }, "Tous les sujets"), ...(t ? t.subs.map(s => h("option", { value: s.sub.id }, s.sub.name)) : []));
+      draw();
+    });
+    subSel.addEventListener("change", draw);
+    draw();
+    return h("div", h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" }, themeSel, subSel), box);
+  }
   function skipControl(remaining) {
     const box = h("span.confirm");
     const ask = () => box.replaceChildren(h("span.small", "Les " + remaining.length + " thèmes restants ne compteront pas."),
