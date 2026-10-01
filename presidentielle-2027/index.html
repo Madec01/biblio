@@ -97,6 +97,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .snav .cnt { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
 .snav.seen:not(.cur) .cnt::before { content: "✓ "; color: var(--good); }
 .snav .cnt.has { color: var(--accent); font-weight: 700; }
+.tname { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.tname .st { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.tname .st.done { color: var(--good); }
+.tname .st.cur { color: var(--accent); }
+.theme-result { display: grid; gap: 18px; }
+.theme-result .spectrum { padding-top: 8px; }
+.banner { display: grid; gap: 6px; padding: 14px 18px; border-radius: 12px; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--ink); }
+.banner b { color: var(--accent); }
+.banner .small { color: var(--ink-2); }
+.top3 { display: grid; gap: 8px; }
+.top3 .row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 8px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.top3 .avatar { width: 40px; height: 40px; font-size: 0.85rem; }
+.top3 .row b { font-size: 1rem; }
 .panel { min-width: 0; }
 .panel-head { display: grid; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
 .panel-head .row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
@@ -234,7 +247,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     <div>
       <div class="eyebrow">Présidentielle 2027 · comparateur de programmes</div>
       <h1>Boussole 2027</h1>
-      <p class="lede">Cochez les propositions qui vous conviennent, sans savoir qui les porte. Pondérez ensuite celles d'un même sujet, puis découvrez quelles personnalités vos choix rapprochent et où vous vous situez, thème par thème.</p>
+      <p class="lede">Thème par thème : cochez les propositions qui vous conviennent sans savoir qui les porte, pondérez-les, et découvrez aussitôt votre orientation sur ce thème. Dès deux thèmes terminés, une pré-orientation se dessine ; les résultats complets arrivent au bout des dix.</p>
     </div>
     <ol class="steps" id="steps"></ol>
   </header>
@@ -266,7 +279,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     ["claude-opus-5-5", "Claude Opus 5.5"],
     ["claude-sonnet-5-5", "Claude Sonnet 5.5"],
   ];
-  const fresh = () => ({ phase: 1, cur: 0, sel: {}, rate: {}, seen: {}, model: DEFAULT_MODEL, keepKey: false, key: "", card: "" });
+  const fresh = () => ({ phase: 1, cur: 0, tview: "ideas", sel: {}, rate: {}, seen: {}, stage: {}, skipped: {}, model: DEFAULT_MODEL, keepKey: false, key: "", card: "" });
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* stockage indisponible */ }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, S, { key: S.keepKey ? S.key : "" }))); } catch (e) { /* ignoré */ } };
@@ -301,8 +314,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const fmtPos = (p) => (p > 0 ? "+" : "") + p.toFixed(1).replace(".", ",");
 
   /* ---------- Calculs ---------- */
-  function compute() {
-    const ids = selectedIds();
+  function compute(themeIds) {
+    const keep = themeIds ? new Set(themeIds) : null;
+    const ids = selectedIds().filter(id => !keep || keep.has(IDEAS[id].sub.theme.id));
     const score = {}, count = {};
     let total = 0;
     ids.forEach(id => { const i = IDEAS[id], w = weight(id); score[i.c] = (score[i.c] || 0) + w; count[i.c] = (count[i.c] || 0) + 1; total += w; });
@@ -315,7 +329,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       subset.forEach(id => { const i = IDEAS[id], w = weight(id), p = CAND[i.c].pos; sw += w; sp += w * p; min = Math.min(min, p); max = Math.max(max, p); });
       return { pos: sp / sw, min, max, n: subset.length };
     };
-    const themes = D.themes.map(t => {
+    const themes = D.themes.filter(t => !keep || keep.has(t.id)).map(t => {
       const subs = t.subs.map(s => ({ sub: s, ids: s.ideas.filter(i => S.sel[i.id]).map(i => i.id) })).filter(s => s.ids.length);
       const ids = subs.flatMap(s => s.ids);
       return { theme: t, subs, ids, sp: spectrum(ids) };
@@ -325,36 +339,59 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
   /* ---------- Navigation ---------- */
   const app = document.getElementById("app");
-  function setPhase(p) { S.phase = p; save(); render(); window.scrollTo({ top: 0 }); }
+  const isDone = (t) => S.stage[t.id] === "done" || !!S.skipped[t.id];
+  const doneThemes = () => D.themes.filter(isDone);
+  const allDone = () => doneThemes().length === D.themes.length;
+  const firstSubIndex = (t) => SUBS.findIndex(s => s.theme.id === t.id);
+  const lastSubIndex = (t) => SUBS.length - 1 - SUBS.slice().reverse().findIndex(s => s.theme.id === t.id);
+  const nextTheme = () => D.themes.find(t => !isDone(t));
+  const toTop = () => window.scrollTo({ top: 0 });
+  function setPhase(p) { S.phase = p; save(); render(); toTop(); }
+  function goSub(idx, view) { S.cur = idx; S.tview = view || "ideas"; S.phase = 1; save(); renderSelect(); toTop(); }
   function renderSteps() {
-    const n = selectedIds().length;
-    const steps = [["Choisir", "Cochez les idées qui vous conviennent"], ["Pondérer", "Notez l'importance de vos choix"], ["Résultats", "Classement, thèmes et spectre"]];
-    document.getElementById("steps").replaceChildren(...steps.map(([label, title], i) =>
-      h("li", h("button", { class: S.phase === i + 1 ? "cur" : "", title, disabled: i > 0 && n === 0, onclick: () => setPhase(i + 1) },
+    const nd = doneThemes().length;
+    const steps = [
+      ["Parcourir", "Thème par thème : idées, pondération, orientation", false],
+      ["Pré-orientation", "Tendance provisoire, dès deux thèmes terminés", nd < 2],
+      ["Résultats", "Classement complet, spectre et carte d'identité, une fois les dix thèmes terminés", !allDone()],
+    ];
+    document.getElementById("steps").replaceChildren(...steps.map(([label, title, disabled], i) =>
+      h("li", h("button", { class: S.phase === i + 1 ? "cur" : "", title, disabled, onclick: () => setPhase(i + 1) },
         h("span.n", i + 1), label))));
   }
   function render() {
     renderSteps();
     if (S.phase === 1) renderSelect();
-    else if (S.phase === 2) renderRate();
-    else renderResults();
+    else if (S.phase === 2) renderResults(true);
+    else renderResults(false);
   }
 
-  /* ---------- Phase 1 : sélection ---------- */
+  /* ---------- Phase 1 : parcours par thème ---------- */
+  function themeNav(theme) {
+    return h("nav.themes", { "aria-label": "Thèmes" }, D.themes.map(t => {
+      const st = isDone(t) ? ["done", "terminé"] : t.id === theme.id ? ["cur", "en cours"] : t.subs.some(s => S.seen[s.id]) ? ["", "commencé"] : ["", ""];
+      return h("div.tgroup", h("div.tname", h("span", t.name), st[1] ? h("span.st", { class: st[0] }, st[1]) : null),
+        t.subs.map(s => {
+          const idx = SUBS.findIndex(x => x.id === s.id);
+          const n = selInSub(s).length;
+          return h("button.snav", { class: (S.tview === "ideas" && SUBS[S.cur].id === s.id ? "cur " : "") + (S.seen[s.id] ? "seen" : ""), onclick: () => goSub(idx) },
+            h("span", s.name), h("span.cnt.num", { id: "cnt-" + s.id, class: n ? "has" : "" }, n + " / " + s.ideas.length));
+        }));
+    }));
+  }
+  function finishTheme(theme) {
+    const n = theme.subs.reduce((a, s) => a + selInSub(s).length, 0);
+    if (n) { S.tview = "rate"; } else { S.stage[theme.id] = "done"; S.tview = "result"; }
+    save(); renderSelect(); toTop();
+  }
   function renderSelect() {
     S.cur = Math.max(0, Math.min(S.cur, SUBS.length - 1));
-    const sub = SUBS[S.cur];
+    const sub = SUBS[S.cur], theme = sub.theme;
+    if (S.tview === "rate") return renderThemeRate(theme);
+    if (S.tview === "result") return renderThemeResult(theme);
     S.seen[sub.id] = true; save();
 
-    const nav = h("nav.themes", { "aria-label": "Thèmes" }, D.themes.map(t => h("div.tgroup", h("div.tname", t.name),
-      t.subs.map(s => {
-        const idx = SUBS.indexOf(SUBS.find(x => x.id === s.id));
-        const n = selInSub(s).length;
-        return h("button.snav", { class: (s.id === sub.id ? "cur " : "") + (S.seen[s.id] ? "seen" : ""), onclick: () => { S.cur = idx; save(); renderSelect(); window.scrollTo({ top: 0 }); } },
-          h("span", s.name), h("span.cnt.num", { id: "cnt-" + s.id, class: n ? "has" : "" }, n + " / " + s.ideas.length));
-      }))));
-
-    const select = h("select", { id: "sujet-select", "aria-label": "Changer de sujet", onchange: (e) => { S.cur = +e.target.value; save(); renderSelect(); window.scrollTo({ top: 0 }); } },
+    const select = h("select", { id: "sujet-select", "aria-label": "Changer de sujet", onchange: (e) => goSub(+e.target.value) },
       D.themes.map(t => h("optgroup", { label: t.name }, t.subs.map(s => h("option", { value: SUBS.findIndex(x => x.id === s.id), selected: s.id === sub.id }, s.name)))));
 
     const ideas = h("div.ideas", shuffled(sub.ideas).map(i => {
@@ -373,32 +410,34 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       return card;
     }));
 
-    const seenCount = SUBS.filter(s => S.seen[s.id]).length;
+    const inTheme = theme.subs.findIndex(s => s.id === sub.id) + 1;
+    const lastOfTheme = S.cur === lastSubIndex(theme);
     const panel = h("section.panel", { "aria-live": "polite" },
       h("div.panel-head",
-        h("div.row", h("div.eyebrow", sub.theme.name + " · sujet " + (S.cur + 1) + " / " + SUBS.length), select),
+        h("div.row", h("div.eyebrow", theme.name + " · sujet " + inTheme + " / " + theme.subs.length + (isDone(theme) ? " · thème terminé" : "")), select),
         h("h2", sub.name),
         h("div.row", h("span.muted.small", plural(sub.ideas.length, "proposition") + " de " + plural(new Set(sub.ideas.map(i => i.c)).size, "personnalité") + ", dans un ordre mélangé, sans auteur."),
           h("span.small.tally", { id: "sub-tally" }, plural(selInSub(sub).length, "idée retenue", "idées retenues") + " sur ce sujet"))),
       ideas,
       h("div.panel-foot",
-        h("div", h("button.btn", { disabled: S.cur === 0, onclick: () => { S.cur--; save(); renderSelect(); window.scrollTo({ top: 0 }); } }, "← Sujet précédent"), " ",
-          h("button.btn", { disabled: S.cur === SUBS.length - 1, onclick: () => { S.cur++; save(); renderSelect(); window.scrollTo({ top: 0 }); } }, "Sujet suivant →")),
+        h("div", h("button.btn", { disabled: S.cur === 0, onclick: () => goSub(S.cur - 1) }, "← Sujet précédent"), " ",
+          lastOfTheme
+            ? h("button.btn.primary", { onclick: () => finishTheme(theme) }, isDone(theme) ? "Revoir la pondération du thème →" : "Terminer ce thème →")
+            : h("button.btn", { onclick: () => goSub(S.cur + 1) }, "Sujet suivant →")),
         h("div", h("span.tally.num", { id: "tally" }), " ",
-          h("button.btn.primary", { id: "to-rate", onclick: () => setPhase(2) }, "Passer à la pondération →"))),
-      h("p.note", seenCount + " / " + SUBS.length + " sujets parcourus. Vous pouvez passer aux étapes suivantes à tout moment ; seuls les sujets où vous avez coché quelque chose comptent."));
+          isDone(theme) ? h("button.btn", { onclick: () => goSub(S.cur, "result") }, "Orientation sur ce thème") : null)),
+      h("p.note", doneThemes().length + " / " + D.themes.length + " thèmes terminés. À la fin d'un thème, vous pondérez vos idées et découvrez votre orientation sur ce thème ; dès deux thèmes terminés, la pré-orientation devient accessible."));
 
-    app.replaceChildren(h("div.select-layout", nav, panel));
+    app.replaceChildren(h("div.select-layout", themeNav(theme), panel));
     updateTally();
   }
   function updateTally() {
     const n = selectedIds().length;
     const t = document.getElementById("tally"); if (t) t.textContent = plural(n, "idée retenue", "idées retenues") + " au total";
-    const b = document.getElementById("to-rate"); if (b) b.disabled = n === 0;
     renderSteps();
   }
 
-  /* ---------- Phase 2 : pondération ---------- */
+  /* ---------- Pondération d'un thème ---------- */
   function starControl(id) {
     const lbl = h("span.lbl");
     const names = ["", "Peu important", "Secondaire", "Important", "Très important", "Essentiel"];
@@ -411,24 +450,74 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     paint();
     return h("div.stars", { role: "group", "aria-label": "Importance sur 5" }, btns, lbl);
   }
-  function renderRate() {
-    const groups = SUBS.map(s => ({ sub: s, ids: selInSub(s) })).filter(g => g.ids.length);
+  function renderThemeRate(theme) {
+    const groups = theme.subs.map(s => ({ sub: s, ids: selInSub(s) })).filter(g => g.ids.length);
     const multi = groups.filter(g => g.ids.length > 1), singles = groups.filter(g => g.ids.length === 1);
     const item = (i) => h("div.rate-item", h("div.txt", i.t), starControl(i.id));
     const group = (g) => h("section.rate-group",
-      h("div.eyebrow", g.sub.theme.name), h("h3", g.sub.name),
+      h("h3", g.sub.name),
       h("p.small.muted", plural(g.ids.length, "idée retenue", "idées retenues") + " : quelle importance leur donnez-vous ?"),
       g.ids.map(item));
-    app.replaceChildren(
-      h("div.sec-head", h("h2", "Pondérer vos choix"),
-        h("p", "Pour chaque sujet où plusieurs idées vous ont plu, notez l'importance que vous accordez à chacune, de 1 (peu important) à 5 (essentiel). Une idée non notée compte 3. La note sert de poids dans le classement et le spectre.")),
-      h("div", multi.length ? multi.map(group) : h("p.empty", "Aucun sujet ne contient plusieurs idées retenues : rien à départager. Vous pouvez tout de même noter vos idées ci-dessous, ou passer aux résultats.")),
+    const panel = h("section.panel",
+      h("div.sec-head", h("div.eyebrow", theme.name + " · pondération"), h("h2", "Pondérer vos choix : " + theme.name),
+        h("p", "Pour chaque sujet où plusieurs idées vous ont plu, notez l'importance que vous accordez à chacune, de 1 (peu important) à 5 (essentiel). Une idée non notée compte 3. La note sert de poids dans l'orientation du thème et dans le classement.")),
+      h("div", multi.length ? multi.map(group) : h("p.empty", "Aucun sujet de ce thème ne contient plusieurs idées retenues : rien à départager. Vous pouvez tout de même noter vos idées ci-dessous.")),
       singles.length ? h("details.singles", { open: !multi.length },
         h("summary", plural(singles.length, "sujet") + " avec une seule idée retenue (note 3 par défaut, modifiable)"),
         singles.map(group)) : null,
       h("div.panel-foot",
-        h("button.btn", { onclick: () => setPhase(1) }, "← Revenir aux idées"),
-        h("button.btn.primary", { onclick: () => setPhase(3) }, "Voir mes résultats →")));
+        h("button.btn", { onclick: () => goSub(lastSubIndex(theme)) }, "← Revenir aux idées"),
+        h("button.btn.primary", { onclick: () => { S.stage[theme.id] = "done"; S.tview = "result"; save(); renderSelect(); toTop(); } }, "Voir mon orientation sur ce thème →")));
+    app.replaceChildren(h("div.select-layout", themeNav(theme), panel));
+    renderSteps();
+  }
+
+  /* ---------- Orientation d'un thème ---------- */
+  function recapTheme(t, withHead) {
+    return h("section.recap-theme",
+      withHead ? h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "idée"))) : null,
+      t.subs.map(s => h("div.recap-sub", h("h4", s.sub.name),
+        s.ids.map(id => { const i = IDEAS[id], c = CAND[i.c]; return h("div.recap-idea", h("div.txt", i.t),
+          h("div.by", miniStars(id), h("span.chip", candName(c) + (c.party ? " · " + c.party : "")))); }))));
+  }
+  function nextButton(primary) {
+    const nt = nextTheme();
+    if (nt) return h("button.btn", { class: primary ? "primary" : "", onclick: () => goSub(firstSubIndex(nt)) }, "Thème suivant : " + nt.name + " →");
+    return h("button.btn", { class: primary ? "primary" : "", onclick: () => setPhase(3) }, "Voir mes résultats complets →");
+  }
+  function renderThemeResult(theme) {
+    const R = compute([theme.id]);
+    const t = R.themes[0];
+    const nd = doneThemes().length;
+    const head = h("div.sec-head", h("div.eyebrow", "Thème terminé · " + nd + " / " + D.themes.length), h("h2", "Votre orientation : " + theme.name));
+    let body;
+    if (!t) {
+      body = h("p.empty", "Aucune idée retenue dans ce thème : il ne pèse pas dans votre orientation. Vous pouvez y revenir à tout moment depuis la liste des thèmes.");
+    } else {
+      const top = R.ranking.slice(0, 3);
+      body = h("div.theme-result",
+        h("div.stat-row",
+          h("div.stat", h("div.v", posLabel(t.sp.pos)), h("div.k", "orientation sur ce thème (" + fmtPos(t.sp.pos) + ")")),
+          h("div.stat", h("div.v.num", t.ids.length), h("div.k", "idées retenues dans " + plural(t.subs.length, "sujet"))),
+          h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités représentées"))),
+        h("div.spectrum",
+          h("div.sp-axis", h("div", "Thème"), h("div.ticks", h("span.l", "Gauche"), h("span", "Centre"), h("span.r", "Droite"))),
+          spectrumRow(theme.name, plural(t.ids.length, "idée"), t.sp, false)),
+        h("div", h("h3", { style: "margin-bottom:10px" }, "Les plus proches de vos choix sur ce thème"),
+          h("div.top3", top.map(r => h("div.row", avatar(r.cand),
+            h("div", { style: "min-width:0" }, h("b", candName(r.cand)), r.cand.party ? h("span.muted.small", " · " + r.cand.party) : null,
+              h("div.small.muted", r.n + "/" + r.of + " de ses propositions retenues")),
+            h("span.num", { style: "font-weight:700" }, pct(r.share)))))),
+        h("div", h("h3", { style: "margin-bottom:10px" }, "Vos idées sur ce thème, avec leur auteur"), recapTheme(t, false)));
+    }
+    const panel = h("section.panel", head, body,
+      nd >= 2 && !allDone() ? h("p.note", "Avec " + nd + " thèmes terminés, une pré-orientation est disponible. Elle peut encore beaucoup changer : il reste " + plural(D.themes.length - nd, "thème") + ".") : null,
+      h("div.panel-foot",
+        h("div", t ? h("button.btn", { onclick: () => { S.tview = "rate"; save(); renderSelect(); toTop(); } }, "← Modifier les notes") : h("button.btn", { onclick: () => goSub(firstSubIndex(theme)) }, "← Revoir les idées du thème"), " ",
+          nd >= 2 && !allDone() ? h("button.btn", { onclick: () => setPhase(2) }, "Pré-orientation") : null),
+        nextButton(true)));
+    app.replaceChildren(h("div.select-layout", themeNav(theme), panel));
+    renderSteps();
   }
 
   /* ---------- Phase 3 : résultats ---------- */
@@ -467,10 +556,17 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("span.val.num", { style: valLeft ? "right:" + (50 - sp.pos * 5 + 2.5) + "%" : "left:" + (50 + sp.pos * 5 + 2.5) + "%" }, posLabel(sp.pos))));
   }
 
-  function renderResults() {
-    const R = compute();
+  function renderResults(partial) {
+    const done = doneThemes(), remaining = D.themes.filter(t => !isDone(t));
+    const R = compute(partial ? done.map(t => t.id) : null);
     if (!R.ids.length) { app.replaceChildren(h("p.empty", "Aucune idée retenue pour l'instant."), h("p", h("button.btn.primary", { onclick: () => setPhase(1) }, "Choisir des idées"))); return; }
     const top = R.ranking.slice(0, 5), rest = R.ranking.slice(5);
+
+    const banner = partial ? h("div.banner",
+      h("div", h("b", "Pré-orientation"), " après " + done.length + " thèmes terminés sur " + D.themes.length + ", fondée sur " + plural(R.ids.length, "idée retenue", "idées retenues") + "."),
+      h("div.small", "Elle peut encore beaucoup changer : il reste " + plural(remaining.length, "thème") + " (" + remaining.map(t => t.name).join(", ") + ")."),
+      h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" },
+        nextButton(true), skipControl(remaining))) : null;
 
     const rank = h("div.rank", top.map((r, i) => h("div.rank-row", { class: i === 0 ? "first" : "" },
       h("div.pos.num", i + 1), avatar(r.cand),
@@ -487,25 +583,20 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const spectrum = h("div.spectrum",
       h("div.sp-axis", h("div", "Thème"), h("div.ticks", h("span.l", "Gauche"), h("span", "Centre"), h("span.r", "Droite"))),
       R.themes.map(t => spectrumRow(t.theme.name, plural(t.ids.length, "idée"), t.sp, false)),
-      spectrumRow("Ensemble de vos choix", plural(R.ids.length, "idée"), R.overall, true));
+      spectrumRow(partial ? "Pré-orientation" : "Ensemble de vos choix", plural(R.ids.length, "idée"), R.overall, true));
     const table = h("details", h("summary.small", { style: "cursor:pointer;color:var(--ink-2);font-weight:600;margin-top:10px" }, "Voir en tableau"),
       h("table.sp-table", h("thead", h("tr", h("th", "Thème"), h("th", "Position"), h("th", "Lecture"), h("th", "Idées"))),
         h("tbody", R.themes.map(t => h("tr", h("td", t.theme.name), h("td.num", fmtPos(t.sp.pos)), h("td", posLabel(t.sp.pos)), h("td.num", t.ids.length))),
           h("tr", h("td", h("b", "Ensemble")), h("td.num", fmtPos(R.overall.pos)), h("td", posLabel(R.overall.pos)), h("td.num", R.ids.length)))));
 
-    const recap = R.themes.map(t => h("section.recap-theme",
-      h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "idée"))),
-      t.subs.map(s => h("div.recap-sub", h("h4", s.sub.name),
-        s.ids.map(id => { const i = IDEAS[id], c = CAND[i.c]; return h("div.recap-idea", h("div.txt", i.t),
-          h("div.by", miniStars(id), h("span.chip", candName(c) + (c.party ? " · " + c.party : "")))); })))));
-
     app.replaceChildren(h("div.results",
+      banner,
       h("div.stat-row",
         h("div.stat", h("div.v.num", R.ids.length), h("div.k", "idées retenues sur " + ALL_IDEAS.toLocaleString("fr-FR"))),
         h("div.stat", h("div.v.num", R.themes.length), h("div.k", "thèmes concernés sur " + D.themes.length)),
         h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités représentées")),
-        h("div.stat", h("div.v", posLabel(R.overall.pos)), h("div.k", "position d'ensemble (" + fmtPos(R.overall.pos) + ")"))),
-      h("section", h("div.sec-head", h("h2", "Les cinq personnalités les plus proches de vos choix"),
+        h("div.stat", h("div.v", posLabel(R.overall.pos)), h("div.k", (partial ? "pré-orientation" : "position d'ensemble") + " (" + fmtPos(R.overall.pos) + ")"))),
+      h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix"),
         h("p", "Chaque idée retenue crédite son auteur de sa note d'importance. Le pourcentage est la part de l'auteur dans le total de vos points ; le second chiffre dit quelle part de son programme vous avez retenue.")),
         rank, others),
       h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
@@ -513,14 +604,24 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         spectrum, table,
         h("p.note", "Échelle indicative propre à cet outil : chaque personnalité a reçu une position fixe sur l'axe gauche-droite (modifiable dans extraire-donnees.mjs). Elle ne provient pas de la Fondation iFRAP.")),
       h("section", h("div.sec-head", h("h2", "Les thèmes et idées qui vous parlent"),
-        h("p", "Vos idées retenues, avec leur note d'importance et, maintenant, leur auteur.")),
-        recap),
-      h("section", h("div.sec-head", h("h2", "Votre carte d'identité politique"),
+        h("p", "Vos idées retenues, avec leur note d'importance et leur auteur.")),
+        R.themes.map(t => recapTheme(t, true))),
+      partial ? null : h("section", h("div.sec-head", h("h2", "Votre carte d'identité politique"),
         h("p", "Claude rédige un portrait court et nuancé à partir de vos choix. La clé API reste dans votre navigateur et n'est envoyée qu'à l'API Anthropic.")),
         aiCard(R)),
       h("div.panel-foot",
-        h("div", h("button.btn", { onclick: () => setPhase(1) }, "← Modifier mes idées"), " ", h("button.btn", { onclick: () => setPhase(2) }, "← Revoir les notes")),
+        h("div", partial ? nextButton(false) : h("button.btn", { onclick: () => goSub(0) }, "← Revoir mes réponses")),
         resetControl())));
+  }
+
+  function skipControl(remaining) {
+    const box = h("span.confirm");
+    const ask = () => box.replaceChildren(h("span.small", "Les " + remaining.length + " thèmes restants ne compteront pas."),
+      h("button.btn", { onclick: () => { remaining.forEach(t => { S.skipped[t.id] = true; }); save(); setPhase(3); } }, "Confirmer"),
+      h("button.btn.ghost", { onclick: init }, "Annuler"));
+    const init = () => box.replaceChildren(h("button.btn.ghost", { onclick: ask }, "Terminer sans les thèmes restants"));
+    init();
+    return box;
   }
 
   function resetControl() {

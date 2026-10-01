@@ -10,11 +10,21 @@ Ouvrez `index.html` dans un navigateur. Les choix restent dans le navigateur
 
 ## Parcours
 
+Le parcours se fait **thème par thème** (10 thèmes, 32 sujets).
+
 1. **Choisir** : sujet par sujet, cochez les propositions qui vous conviennent.
    Les auteurs sont cachés et l'ordre est mélangé, pour choisir sur le fond.
-2. **Pondérer** : pour chaque sujet où plusieurs idées ont été retenues, notez
-   l'importance de chacune de 1 à 5 (une idée non notée compte 3).
-3. **Résultats** :
+2. **Terminer le thème** : pour chaque sujet où plusieurs idées ont été
+   retenues, notez l'importance de chacune de 1 à 5 (une idée non notée
+   compte 3). Vous obtenez aussitôt **votre orientation sur ce thème** :
+   position gauche–droite, les trois personnalités les plus proches et vos
+   idées avec leur auteur.
+3. **Pré-orientation** : accessible dès deux thèmes terminés, c'est le bilan
+   provisoire (classement, spectre, récapitulatif) calculé sur les seuls thèmes
+   terminés. Un bandeau rappelle les thèmes restants, car la tendance peut
+   encore beaucoup changer. On peut y choisir de terminer sans parcourir les
+   thèmes restants.
+4. **Résultats** (une fois les dix thèmes terminés ou écartés) :
    - les cinq personnalités les plus représentées, avec leur part de vos choix
      pondérés et la part de leur programme que vous avez retenue ;
    - votre position thème par thème sur l'axe gauche–droite (moyenne pondérée
