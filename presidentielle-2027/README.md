@@ -16,10 +16,13 @@ Le parcours se fait **thème par thème** (10 thèmes, 32 sujets).
 
 1. **Choisir** : sujet par sujet, cochez les propositions qui vous conviennent.
    Les auteurs sont cachés et l'ordre est mélangé, pour choisir sur le fond.
-   Le lien **Expliquer** sous chaque proposition demande à Claude une
-   explication en langage courant (termes techniques, qui est concerné, ce qui
-   changerait), sans jamais révéler l'auteur. Il faut une clé API Anthropic ;
-   les explications sont rédigées avec `claude-sonnet-5-5` et mémorisées.
+   Le lien **Expliquer** sous chaque proposition affiche une explication en
+   langage courant (termes techniques, sigles, qui est concerné, ce qui
+   changerait par rapport à aujourd'hui), sans jamais révéler l'auteur. Les
+   1 164 explications sont intégrées (`explications.js`), donc instantanées et
+   sans clé ; elles se retrouvent aussi dans les récapitulatifs. Si une
+   proposition nouvelle n'a pas encore d'explication, le lien la demande à
+   Claude (clé API nécessaire).
 2. **Terminer le thème** : pour chaque sujet où plusieurs idées ont été
    retenues, notez l'importance de chacune de 1 à 5 (une idée non notée
    compte 3). Vous obtenez aussitôt **votre orientation sur ce thème** :
@@ -57,6 +60,9 @@ apparue. La page signale elle-même des données de plus de 45 jours.
 
 - `index.html` : l'application.
 - `data.js` : les propositions, généré par le script ci-dessous.
+- `explications.js` : une explication par proposition, rédigée par Claude
+  (neutre, sans auteur). À compléter pour les propositions ajoutées lors d'une
+  mise à jour.
 - `extraire-donnees.mjs` : extraction depuis la page iFRAP (Node 18+) :
 
   ```sh

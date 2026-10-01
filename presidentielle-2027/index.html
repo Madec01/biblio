@@ -222,6 +222,9 @@ select, input[type="text"], input[type="password"] {
 .recap-idea { display: grid; gap: 6px 14px; padding: 8px 0; border-top: 1px solid var(--line); align-items: start; }
 @media (min-width: 700px) { .recap-idea { grid-template-columns: minmax(0, 1fr) auto; } }
 .recap-idea .txt { white-space: pre-line; }
+.expl-inline { margin-top: 4px; white-space: normal; }
+.expl-inline summary { cursor: pointer; color: var(--accent); font-size: 0.82rem; font-weight: 600; }
+.expl-inline div { font-size: 0.88rem; color: var(--ink-2); padding: 6px 10px; margin-top: 4px; border-left: 3px solid var(--accent); background: var(--paper); border-radius: 0 8px 8px 0; }
 .recap-idea .by { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 @media (min-width: 700px) { .recap-idea .by { justify-content: flex-end; } }
 .chip { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
@@ -274,6 +277,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   <footer id="foot"></footer>
 </div>
 <script src="data.js"></script>
+<script src="explications.js"></script>
 <script>
 (() => {
   "use strict";
@@ -294,6 +298,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const KEY = "boussole2027";
   const DEFAULT_MODEL = "claude-fable-5-1";
   const EXPLAIN_MODEL = "claude-sonnet-5-5";
+  const EXPL = window.EXPLICATIONS || {};
+  const getExpl = (id) => EXPL[id] || S.expl[id] || "";
   const MODELS = [
     ["claude-fable-5-1", "Claude Fable 5.1 (recommandé)"],
     ["claude-opus-5-5", "Claude Opus 5.5"],
@@ -419,7 +425,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       const expl = h("div.expl", { hidden: true });
       const explBtn = h("button.explain", { type: "button", onclick: (e) => { e.preventDefault(); explain(IDEAS[i.id], card, expl, explBtn); } }, "Expliquer");
       const card = h("label.idea", { class: S.sel[i.id] ? "on" : "", for: "i-" + i.id }, box, h("span.txt", i.t), h("div.tools", explBtn), expl);
-      if (S.expl[i.id]) { expl.textContent = S.expl[i.id]; expl.hidden = false; explBtn.textContent = "Masquer l'explication"; }
+      if (!EXPL[i.id] && !S.expl[i.id]) explBtn.title = "Explication rédigée à la demande par Claude (clé API nécessaire)";
       box.addEventListener("change", () => {
         if (box.checked) S.sel[i.id] = true; else delete S.sel[i.id];
         delete S.card; save();
@@ -456,7 +462,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   }
   async function explain(idea, card, expl, btn) {
     if (!expl.hidden) { expl.hidden = true; btn.textContent = "Expliquer"; return; }
-    if (S.expl[idea.id]) { expl.textContent = S.expl[idea.id]; expl.hidden = false; btn.textContent = "Masquer l'explication"; return; }
+    const ready = getExpl(idea.id);
+    if (ready) { expl.textContent = ready; expl.hidden = false; btn.textContent = "Masquer l'explication"; return; }
     if (!S.key.trim()) {
       if (card.querySelector(".keyform")) return;
       const inp = h("input", { type: "password", placeholder: "Clé API Anthropic (sk-ant-…)", "aria-label": "Clé API Anthropic", autocomplete: "off" });
@@ -519,7 +526,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     return h("section.recap-theme",
       withHead ? h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "idée"))) : null,
       t.subs.map(s => h("div.recap-sub", h("h4", s.sub.name),
-        s.ids.map(id => { const i = IDEAS[id], c = CAND[i.c]; return h("div.recap-idea", h("div.txt", i.t),
+        s.ids.map(id => { const i = IDEAS[id], c = CAND[i.c], e = getExpl(id);
+          return h("div.recap-idea", h("div.txt", i.t, e ? h("details.expl-inline", h("summary", "Expliquer"), h("div", e)) : null),
           h("div.by", miniStars(id), h("span.chip", candName(c) + (c.party ? " · " + c.party : "")))); }))));
   }
   function nextButton(primary) {
