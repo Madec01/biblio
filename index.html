@@ -126,7 +126,16 @@ select, input[type="text"], input[type="password"] {
 .idea input { width: 18px; height: 18px; margin: 3px 0 0 2px; accent-color: var(--accent); }
 .idea .txt { white-space: pre-line; }
 .idea .tools { grid-column: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.idea .explain { background: transparent; border: 0; padding: 0; color: var(--accent); font-size: 0.85rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.scard .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.scard .explain:disabled { color: var(--muted); }
+@media (max-width: 899px) {
+  body.compact .lede, body.compact .toolbar, body.compact .progress { display: none; }
+  body.compact .top { padding-block: 14px 10px; margin-bottom: 14px; }
+  body.compact h1 { font-size: 1.5rem; }
+  .toolbar { justify-content: flex-start; }
+  .toolbar .btn { padding: 5px 10px; font-size: 0.82rem; }
+}
+.idea .explain, .scard .explain { background: transparent; border: 0; padding: 0; color: var(--accent); font-size: 0.85rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .idea .explain:disabled { color: var(--muted); text-decoration: none; cursor: progress; }
 .idea .expl { grid-column: 2; font-size: 0.9rem; color: var(--ink-2); line-height: 1.5; padding: 8px 12px; border-left: 3px solid var(--accent); background: var(--paper); border-radius: 0 8px 8px 0; white-space: pre-line; }
 .idea .keyform { grid-column: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.85rem; color: var(--ink-2); }
@@ -244,6 +253,44 @@ select, input[type="text"], input[type="password"] {
 .ai-busy { color: var(--muted); font-size: 0.9rem; }
 
 .confirm { display: inline-flex; gap: 8px; align-items: center; }
+/* Mode swipe */
+.swipe-home { display: grid; gap: 18px; }
+.scope-opts { display: grid; gap: 8px; margin-top: 8px; }
+.scope-opt { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.scope-opt.on { border-color: var(--accent); background: var(--accent-soft); }
+.scope-opt input { margin-top: 3px; accent-color: var(--accent); }
+.subs-pick { display: grid; gap: 4px; margin-top: 8px; }
+.swipe-wrap { display: grid; gap: 12px; max-width: 560px; margin: 0 auto; }
+.swipe-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.swipe-stage { position: relative; min-height: min(62vh, 560px); }
+.scard { position: relative; display: grid; gap: 12px; align-content: start; min-height: min(62vh, 560px); max-height: 75vh; overflow-y: auto; padding: 22px 20px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,.08); touch-action: none; user-select: none; cursor: grab; }
+.scard-text { font-family: var(--font-display); font-size: clamp(1.25rem, 2.6vw, 1.6rem); line-height: 1.3; white-space: pre-line; }
+.card-expl { font-size: 0.95rem; line-height: 1.55; color: var(--ink-2); padding: 10px 12px; border-left: 3px solid var(--accent); background: var(--paper); border-radius: 0 8px 8px 0; user-select: text; cursor: auto; }
+.stamp { position: absolute; top: 18px; padding: 6px 12px; border: 3px solid; border-radius: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: 0; transform: rotate(-12deg); pointer-events: none; transition: opacity .1s; }
+.stamp.yes { right: 18px; color: var(--good); border-color: var(--good); transform: rotate(12deg); }
+.stamp.no { left: 18px; color: var(--left); border-color: var(--left); }
+.stamp.skip { left: 50%; transform: translateX(-50%); color: var(--muted); border-color: var(--muted); }
+.scard.lean-yes .stamp.yes, .scard.lean-no .stamp.no, .scard.lean-skip .stamp.skip { opacity: 1; }
+.swipe-acts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sbtn { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+.sbtn .ic { font-size: 1.6rem; line-height: 1; font-weight: 700; }
+.sbtn .lb { font-size: 0.78rem; font-weight: 600; color: var(--ink-2); }
+.sbtn.yes .ic { color: var(--good); } .sbtn.no .ic { color: var(--left); } .sbtn.skip .ic { color: var(--muted); }
+.sbtn:hover { border-color: var(--accent); }
+.toast { text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--accent); }
+.rate-big { display: grid; gap: 8px; }
+.rate-big .btn { justify-content: flex-start; }
+.stars-inline { color: var(--accent); letter-spacing: 1px; min-width: 5.5ch; }
+.recap-idea.rejected .txt { color: var(--muted); }
+.chip.no { background: var(--surface-2); color: var(--left); }
+/* Repères */
+.fam-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.fam { padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; border-top: 4px solid var(--mid); display: grid; gap: 8px; align-content: start; }
+.fam.l { border-top-color: var(--left); } .fam.r { border-top-color: var(--right); }
+.fam p { color: var(--ink-2); }
+.lex { display: grid; gap: 0; margin: 0; }
+.lex dt { font-weight: 700; padding-top: 10px; border-top: 1px solid var(--line); }
+.lex dd { margin: 2px 0 10px; color: var(--ink-2); }
 .toolbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .toolbar .btn { padding: 6px 12px; font-size: 0.88rem; }
 .save-panel { display: grid; gap: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 24px; }
@@ -264,7 +311,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     <div>
       <div class="eyebrow">Présidentielle 2027 · comparateur de programmes</div>
       <h1>Boussole 2027</h1>
-      <p class="lede">Thème par thème : cochez les propositions qui vous conviennent sans savoir qui les porte, pondérez-les, et découvrez aussitôt votre orientation sur ce thème. Dès deux thèmes terminés, une pré-orientation se dessine ; les résultats complets arrivent au bout des dix.</p>
+      <p class="lede">Jugez des propositions sans savoir qui les porte : par pages de thème sur ordinateur, en swipant une idée à la fois sur téléphone. Pondérez vos idées aimées, puis découvrez quelles personnalités vos choix rapprochent et où vous vous situez, thème par thème.</p>
     </div>
     <div style="display:grid;gap:10px;justify-items:end">
       <ol class="steps" id="steps"></ol>
@@ -322,10 +369,14 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     ["claude-opus-5-5", "Claude Opus 5.5"],
     ["claude-sonnet-5-5", "Claude Sonnet 5.5"],
   ];
-  const fresh = () => ({ phase: 1, theme: null, tview: "ideas", sel: {}, rate: {}, seen: {}, stage: {}, skipped: {}, model: DEFAULT_MODEL, keepKey: false, key: "", card: "", expl: {}, open: {} });
+  const fresh = () => ({ phase: 1, theme: null, tview: "ideas", sel: {}, no: {}, skip: {}, rate: {}, seen: {}, stage: {}, skipped: {}, model: DEFAULT_MODEL, keepKey: false, key: "", card: "", expl: {}, open: {},
+    mode: "auto", sview: "home", toRate: [], quota: 10, daily: { d: "", n: 0 }, scope: { type: "mix", theme: null, subs: [] }, hist: [], lastPos: [], finished: false });
+  const NO_WEIGHT = 3;
   let S = fresh();
   try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* stockage indisponible */ }
   if (S.theme === undefined && typeof S.cur === "number" && SUBS[S.cur]) S.theme = SUBS[S.cur].theme.id;
+  S.no = S.no || {}; S.skip = S.skip || {}; S.toRate = S.toRate || []; S.hist = S.hist || []; S.lastPos = S.lastPos || []; S.daily = S.daily || { d: "", n: 0 };
+  S.scope = S.scope || { type: "mix", theme: null, subs: [] }; S.quota = S.quota || 10; S.mode = S.mode || "auto"; S.sview = S.sview || "home";
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, S, { key: S.keepKey ? S.key : "" }))); } catch (e) { /* ignoré */ } };
 
   /* ---------- Utilitaires ---------- */
@@ -361,29 +412,44 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   /* ---------- Calculs ---------- */
   function compute(themeIds) {
     const keep = themeIds ? new Set(themeIds) : null;
-    const ids = selectedIds().filter(id => !keep || keep.has(ITEMS[id].sub.theme.id));
-    const score = {}, count = {};
-    let total = 0;
+    const inScope = (id) => !keep || keep.has(ITEMS[id].sub.theme.id);
+    const ids = selectedIds().filter(inScope);
+    const nos = Object.keys(S.no).filter(id => S.no[id] && ITEMS[id] && !S.sel[id]).filter(inScope);
+    const pos = {}, neg = {}, count = {}, seen = {};
     ids.forEach(id => {
       const it = ITEMS[id], w = weight(id);
-      it.cands.forEach(c => { score[c] = (score[c] || 0) + w; total += w; });
-      (it.members || [id]).forEach(m => { const c = IDEAS[m].c; count[c] = (count[c] || 0) + 1; });
+      it.cands.forEach(c => { pos[c] = (pos[c] || 0) + w; });
+      (it.members || [id]).forEach(m => { const c = IDEAS[m].c; count[c] = (count[c] || 0) + 1; seen[c] = (seen[c] || 0) + 1; });
     });
-    const ranking = Object.keys(score).map(c => ({
-      cand: CAND[c], share: score[c] / total, n: count[c], of: TOTAL_BY_CAND[c], adhesion: count[c] / TOTAL_BY_CAND[c],
-    })).sort((a, b) => b.share - a.share || b.adhesion - a.adhesion);
-    const spectrum = (subset) => {
-      if (!subset.length) return null;
+    nos.forEach(id => {
+      const it = ITEMS[id], w = NO_WEIGHT;
+      it.cands.forEach(c => { neg[c] = (neg[c] || 0) + w; });
+      (it.members || [id]).forEach(m => { const c = IDEAS[m].c; seen[c] = (seen[c] || 0) + 1; });
+    });
+    const cands = [...new Set([...Object.keys(pos), ...Object.keys(neg)])];
+    const nets = cands.map(c => (pos[c] || 0) - (neg[c] || 0));
+    const totalPos = nets.filter(x => x > 0).reduce((a, b) => a + b, 0);
+    const ranking = cands.map((c, i) => ({
+      cand: CAND[c], net: nets[i], share: nets[i] > 0 && totalPos ? nets[i] / totalPos : 0,
+      accord: (pos[c] || 0) / ((pos[c] || 0) + (neg[c] || 0)), seen: seen[c] || 0,
+      n: count[c] || 0, of: TOTAL_BY_CAND[c], adhesion: (count[c] || 0) / TOTAL_BY_CAND[c],
+    })).sort((a, b) => b.net - a.net || b.accord - a.accord || b.adhesion - a.adhesion);
+    const spectrum = (liked, rejected) => {
+      if (!liked.length && !rejected.length) return null;
       let sw = 0, sp = 0, min = Infinity, max = -Infinity;
-      subset.forEach(id => { const it = ITEMS[id], w = weight(id) / it.cands.length; it.cands.forEach(c => { const p = CAND[c].pos; sw += w; sp += w * p; min = Math.min(min, p); max = Math.max(max, p); }); });
-      return { pos: sp / sw, min, max, n: subset.length };
+      liked.forEach(id => { const it = ITEMS[id], w = weight(id) / it.cands.length; it.cands.forEach(c => { const p = CAND[c].pos; sw += w; sp += w * p; min = Math.min(min, p); max = Math.max(max, p); }); });
+      rejected.forEach(id => { const it = ITEMS[id], w = NO_WEIGHT / it.cands.length; it.cands.forEach(c => { sw += w; sp -= w * CAND[c].pos; }); });
+      if (min === Infinity) { min = max = sp / sw; }
+      return { pos: Math.max(-10, Math.min(10, sp / sw)), min, max, n: liked.length + rejected.length };
     };
     const themes = D.themes.filter(t => !keep || keep.has(t.id)).map(t => {
-      const subs = t.subs.map(s => ({ sub: s, ids: s.items.filter(i => S.sel[i.id]).map(i => i.id) })).filter(s => s.ids.length);
-      const ids = subs.flatMap(s => s.ids);
-      return { theme: t, subs, ids, sp: spectrum(ids) };
-    }).filter(t => t.ids.length);
-    return { ids, ranking, themes, overall: spectrum(ids), total };
+      const subs = t.subs.map(s => ({ sub: s, ids: s.items.filter(i => S.sel[i.id]).map(i => i.id), nos: s.items.filter(i => S.no[i.id] && !S.sel[i.id]).map(i => i.id) })).filter(s => s.ids.length || s.nos.length);
+      const tids = subs.flatMap(s => s.ids), tnos = subs.flatMap(s => s.nos);
+      const judged = tids.length + tnos.length;
+      return { theme: t, subs, ids: tids, nos: tnos, judged, total: themeItems(t), sp: spectrum(tids, tnos),
+        reliability: isDone(t) ? "terminé" : judged < 5 ? "très peu d'idées" : judged < 15 ? "en cours" : "consolidé" };
+    }).filter(t => t.judged);
+    return { ids, nos, judged: ids.length + nos.length, ranking, themes, overall: spectrum(ids, nos) };
   }
 
   /* ---------- Navigation ---------- */
@@ -395,28 +461,34 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const toTop = () => window.scrollTo({ top: 0 });
   function setPhase(p) { S.phase = p; save(); render(); toTop(); }
   function progress() {
+    if (modeIs() === "swipe") return Math.round(100 * judgedCount() / TOTAL_ITEMS);
     const per = D.themes.map(t => isDone(t) ? 1 : themeSel(t) ? 0.6 : t.subs.some(s => S.seen[s.id]) ? 0.3 : 0);
     return Math.round(100 * per.reduce((a, b) => a + b, 0) / D.themes.length);
   }
+  const canPre = () => doneThemes().length >= 2 || judgedCount() >= 20;
+  const canFinal = () => allDone() || allJudged() || S.finished;
   function renderSteps() {
-    const nd = doneThemes().length;
+    const nd = doneThemes().length, swipe = modeIs() === "swipe";
     const pc = progress();
     document.getElementById("progress").replaceChildren(
       h("div.pbar", { role: "progressbar", "aria-valuenow": pc, "aria-valuemin": 0, "aria-valuemax": 100, "aria-label": "Avancement de la boussole" }, h("i", { style: "width:" + pc + "%" })),
-      h("span.num", "Boussole complétée à " + pc + " % · " + nd + "/" + D.themes.length + " thèmes terminés"));
+      h("span.num", swipe ? judgedCount() + " / " + TOTAL_ITEMS + " idées jugées (" + pc + " %)" : "Boussole complétée à " + pc + " % · " + nd + "/" + D.themes.length + " thèmes terminés"));
     const steps = [
-      ["Parcourir", "Thème par thème : idées, pondération, orientation", false],
-      ["Pré-orientation", "Tendance provisoire, dès deux thèmes terminés", nd < 2],
-      ["Résultats", "Classement complet, spectre et carte d'identité, une fois les dix thèmes terminés", !allDone()],
+      [swipe ? "Swiper" : "Parcourir", swipe ? "Une idée à la fois : d'accord, pas d'accord, je ne sais pas" : "Thème par thème : idées, pondération, orientation", false],
+      ["Pré-orientation", "Tendance provisoire, dès 20 idées jugées ou deux thèmes terminés", !canPre()],
+      ["Résultats", "Classement complet, spectre et carte d'identité", !canFinal()],
     ];
     document.getElementById("steps").replaceChildren(...steps.map(([label, title, disabled], i) =>
       h("li", h("button", { class: S.phase === i + 1 ? "cur" : "", title, disabled, onclick: () => setPhase(i + 1) },
         h("span.n", i + 1), label))));
+    const tb = document.getElementById("mode-btn"); if (tb) tb.textContent = swipe ? "Passer en mode pages" : "Passer en mode swipe";
   }
   function render() {
+    document.body.classList.toggle("compact", S.phase === 1 && modeIs() === "swipe" && (S.sview === "card" || S.sview === "rate"));
     renderSteps();
-    if (S.phase === 1) renderSelect();
+    if (S.phase === 1) { if (modeIs() === "swipe") renderSwipe(); else renderSelect(); }
     else if (S.phase === 2) renderResults(true);
+    else if (S.phase === 4) renderReperes();
     else renderResults(false);
   }
 
@@ -478,7 +550,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           h("div.tools", explBtn, i.group ? h("span.chip", "idée commune à " + plural(i.cands.length, "personnalité")) : null), expl);
         if (!EXPL[i.id] && !S.expl[i.id]) explBtn.title = "Explication rédigée à la demande par Claude (clé API nécessaire)";
         box.addEventListener("change", () => {
-          if (box.checked) S.sel[i.id] = true; else delete S.sel[i.id];
+          if (box.checked) { S.sel[i.id] = true; delete S.no[i.id]; } else { delete S.sel[i.id]; S.toRate = S.toRate.filter(x => x !== i.id); }
           delete S.card; save();
           card.classList.toggle("on", box.checked);
           const n = selInSub(sub).length;
@@ -541,7 +613,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   function starControl(id) {
     const lbl = h("span.lbl");
     const names = ["", "Peu important", "Secondaire", "Important", "Très important", "Essentiel"];
-    const btns = [1, 2, 3, 4, 5].map(v => h("button.star", { type: "button", "aria-label": v + " sur 5 : " + names[v], "aria-pressed": "false", onclick: () => { S.rate[id] = v; delete S.card; save(); paint(); } }, "★"));
+    const btns = [1, 2, 3, 4, 5].map(v => h("button.star", { type: "button", "aria-label": v + " sur 5 : " + names[v], "aria-pressed": "false", onclick: () => { S.rate[id] = v; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); paint(); } }, "★"));
     function paint() {
       const r = S.rate[id] || 0;
       btns.forEach((b, i) => { b.classList.toggle("on", i < r); b.setAttribute("aria-pressed", String(i + 1 === r)); });
@@ -574,12 +646,14 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
   /* ---------- Orientation d'un thème ---------- */
   function recapTheme(t, withHead) {
+    const line = (id, rejected) => { const i = ITEMS[id], e = getExpl(id);
+      return h("div.recap-idea", { class: rejected ? "rejected" : "" }, h("div.txt", i.t, e ? h("details.expl-inline", h("summary", "Expliquer"), h("div", e)) : null),
+        h("div.by", rejected ? h("span.chip.no", "rejetée") : miniStars(id), authors(i).map(c => h("span.chip", candName(c) + (c.party ? " · " + c.party : ""))))); };
     return h("section.recap-theme",
-      withHead ? h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "idée"))) : null,
-      t.subs.map(s => h("div.recap-sub", h("h4", s.sub.name),
-        s.ids.map(id => { const i = ITEMS[id], e = getExpl(id);
-          return h("div.recap-idea", h("div.txt", i.t, e ? h("details.expl-inline", h("summary", "Expliquer"), h("div", e)) : null),
-          h("div.by", miniStars(id), authors(i).map(c => h("span.chip", candName(c) + (c.party ? " · " + c.party : ""))))); }))));
+      withHead ? h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "aimée") + ", " + plural(t.nos.length, "rejetée"))) : null,
+      t.subs.filter(s => s.ids.length).map(s => h("div.recap-sub", h("h4", s.sub.name), s.ids.map(id => line(id, false)))),
+      t.nos.length ? h("details.others", h("summary", plural(t.nos.length, "idée rejetée", "idées rejetées") + " dans ce thème"),
+        t.subs.filter(s => s.nos.length).map(s => h("div.recap-sub", h("h4", s.sub.name), s.nos.map(id => line(id, true))))) : null);
   }
   function nextButton(primary) {
     const nt = nextTheme();
@@ -622,6 +696,267 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     renderSteps();
   }
 
+  /* ---------- Mode swipe ---------- */
+  const ITEM_LIST = SUBS.flatMap(s => s.items);
+  const TOTAL_ITEMS = ITEM_LIST.length;
+  const today = () => new Date().toISOString().slice(0, 10);
+  const judgedIds = () => ITEM_LIST.filter(it => S.sel[it.id] || S.no[it.id]).map(it => it.id);
+  const judgedCount = () => judgedIds().length;
+  const unjudged = (filter) => ITEM_LIST.filter(it => !S.sel[it.id] && !S.no[it.id] && (!filter || filter(it)));
+  const itemPos = (it) => it.cands.reduce((a, c) => a + CAND[c].pos, 0) / it.cands.length;
+  const modeIs = () => S.mode === "auto" ? (window.innerWidth < 900 ? "swipe" : "pages") : S.mode;
+  function dailyN() { if (S.daily.d !== today()) S.daily = { d: today(), n: 0 }; return S.daily.n; }
+  function scopeFilter() {
+    const sc = S.scope; if (sc.type !== "theme" || !sc.theme || !themeById(sc.theme)) return null;
+    const subs = new Set(sc.subs && sc.subs.length ? sc.subs : themeById(sc.theme).subs.map(s => s.id));
+    return (it) => subs.has(it.sub.id);
+  }
+  function pickNext() {
+    const f = scopeFilter();
+    let pool = unjudged(f).filter(it => !S.skip[it.id]);
+    if (!pool.length) { pool = unjudged(f); if (!pool.length) return null; }
+    if (S.scope.type === "theme") return pool[Math.floor(Math.random() * pool.length)];
+    // Panaché : tirage aléatoire corrigé pour garder la moyenne gauche-droite des dernières cartes près du centre
+    // et servir tous les thèmes, sans ordre prévisible.
+    const last = S.lastPos.slice(-10), mean = last.length ? last.reduce((a, b) => a + b, 0) / last.length : 0;
+    const perTheme = {}; judgedIds().forEach(id => { const t = ITEMS[id].sub.theme.id; perTheme[t] = (perTheme[t] || 0) + 1; });
+    const totalJ = judgedCount() || 1;
+    const sample = []; for (let i = 0; i < Math.min(15, pool.length); i++) sample.push(pool[Math.floor(Math.random() * pool.length)]);
+    const scored = sample.map(it => {
+      const p = itemPos(it), newMean = (mean * last.length + p) / (last.length + 1);
+      const tshare = (perTheme[it.sub.theme.id] || 0) / totalJ;
+      return { it, s: Math.abs(newMean) + 4 * Math.max(0, tshare - 1 / D.themes.length) + Math.random() * 0.8 };
+    }).sort((a, b) => a.s - b.s);
+    return scored[0].it;
+  }
+  function judge(it, action) {
+    if (action === "yes") { S.sel[it.id] = true; delete S.no[it.id]; delete S.skip[it.id]; if (!S.toRate.includes(it.id)) S.toRate.push(it.id); }
+    else if (action === "no") { S.no[it.id] = true; delete S.sel[it.id]; delete S.skip[it.id]; S.toRate = S.toRate.filter(x => x !== it.id); }
+    else { S.skip[it.id] = true; }
+    if (action !== "skip") { dailyN(); S.daily.n++; S.lastPos = [...S.lastPos, itemPos(it)].slice(-10); }
+    S.hist = [...S.hist, { id: it.id, action }].slice(-30);
+    delete S.card; save();
+  }
+  function undo() {
+    const last = S.hist.pop(); if (!last) return null;
+    delete S.sel[last.id]; delete S.no[last.id]; delete S.skip[last.id]; S.toRate = S.toRate.filter(x => x !== last.id);
+    if (last.action !== "skip") { dailyN(); S.daily.n = Math.max(0, S.daily.n - 1); S.lastPos = S.lastPos.slice(0, -1); }
+    save(); return ITEMS[last.id];
+  }
+  const fmtDate = (d) => d.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const addDays = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
+  function estimates() {
+    const q = S.quota || 10;
+    const remAll = unjudged(null).length;
+    const f = scopeFilter(); const remScope = f ? unjudged(f).length : remAll;
+    const perTheme = {}; judgedIds().forEach(id => { const t = ITEMS[id].sub.theme.id; perTheme[t] = (perTheme[t] || 0) + 1; });
+    const needReliable = D.themes.reduce((a, t) => a + Math.max(0, 15 - (perTheme[t.id] || 0)), 0);
+    return { q, remAll, remScope, daysAll: Math.ceil(remAll / q), daysScope: Math.ceil(remScope / q), daysReliable: Math.ceil(needReliable / q), needReliable };
+  }
+  function setSwipeView(v) { S.sview = v; save(); document.body.classList.toggle("compact", modeIs() === "swipe" && (v === "card" || v === "rate")); renderSwipe(); toTop(); }
+
+  function renderSwipe() {
+    if (S.sview === "card") return renderSwipeCard();
+    if (S.sview === "rate") return renderSwipeRate();
+    return renderSwipeHome();
+  }
+  function renderSwipeHome() {
+    const n = dailyN(), q = S.quota || 10, e = estimates(), jc = judgedCount();
+    const themeSelect = h("select", { id: "scope-theme", onchange: (ev) => { S.scope.theme = ev.target.value; S.scope.subs = []; save(); renderSwipeHome(); } },
+      D.themes.map(t => h("option", { value: t.id, selected: S.scope.theme === t.id }, t.name)));
+    const scopeTheme = S.scope.type === "theme" ? themeById(S.scope.theme) || D.themes[0] : null;
+    if (S.scope.type === "theme" && !S.scope.theme) { S.scope.theme = D.themes[0].id; }
+    const subsBox = scopeTheme ? h("div.subs-pick", scopeTheme.subs.map(s => {
+      const on = !S.scope.subs.length || S.scope.subs.includes(s.id);
+      const left = unjudged(it => it.sub.id === s.id).length;
+      return h("label.check", h("input", { type: "checkbox", checked: on, onchange: (ev) => {
+        let subs = S.scope.subs.length ? S.scope.subs.slice() : scopeTheme.subs.map(x => x.id);
+        subs = ev.target.checked ? [...new Set([...subs, s.id])] : subs.filter(x => x !== s.id);
+        S.scope.subs = subs.length === scopeTheme.subs.length ? [] : subs; save(); renderSwipeHome(); } }),
+        s.name, h("span.muted.small", " · " + plural(left, "idée restante", "idées restantes")));
+    })) : null;
+    const scopeRadio = (type, label, desc) => h("label.scope-opt", { class: S.scope.type === type ? "on" : "" },
+      h("input", { type: "radio", name: "scope", checked: S.scope.type === type, onchange: () => { S.scope.type = type; if (type === "theme" && !S.scope.theme) S.scope.theme = D.themes[0].id; save(); renderSwipeHome(); } }),
+      h("div", h("b", label), h("div.small.muted", desc)));
+    const quotaSel = h("select", { id: "quota", onchange: (ev) => { S.quota = +ev.target.value; save(); renderSwipeHome(); } },
+      [10, 20, 30, 50].map(v => h("option", { value: v, selected: q === v }, v + " idées par jour")));
+    const pending = S.toRate.length;
+    app.replaceChildren(h("div.swipe-home",
+      h("div.stat-row",
+        h("div.stat", h("div.v.num", n + " / " + q), h("div.k", "idées jugées aujourd'hui")),
+        h("div.stat", h("div.v.num", jc), h("div.k", "idées jugées sur " + TOTAL_ITEMS)),
+        h("div.stat", h("div.v.num", selectedIds().length), h("div.k", "idées aimées")),
+        h("div.stat", h("div.v.num", pending), h("div.k", "idées aimées à noter"))),
+      pending >= 10 ? h("div.banner", h("div", h("b", pending + " idées aimées attendent une note"), " : toutes les 10 idées aimées, vous les notez de 1 à 5."),
+        h("div", { style: "margin-top:6px" }, h("button.btn.primary", { onclick: () => setSwipeView("rate") }, "Noter maintenant"))) : null,
+      h("section.card-ai", { style: "gap:16px" },
+        h("div", h("h3", "Que voulez-vous swiper ?"),
+          h("div.scope-opts",
+            scopeRadio("mix", "Panaché", "Des idées au hasard dans tous les thèmes, équilibrées entre gauche et droite, sans ordre prévisible."),
+            scopeRadio("theme", "Par thème", "Vous choisissez un thème et ses sujets ; vous arrêtez quand vous voulez.")),
+          scopeTheme ? h("div.field", { style: "margin-top:10px" }, h("label", { for: "scope-theme" }, "Thème"), themeSelect, subsBox) : null),
+        h("div", h("h3", "Votre rythme"),
+          h("div.field", h("label", { for: "quota" }, "Objectif quotidien"), quotaSel),
+          h("p.small.muted", { style: "margin-top:8px" },
+            "À ce rythme : pré-orientation fiable (15 idées jugées par thème) " + (e.needReliable ? "vers le " + fmtDate(addDays(e.daysReliable)) : "déjà atteinte") +
+            " · toutes les idées " + (e.remAll ? "vers le " + fmtDate(addDays(e.daysAll)) + " (" + e.remAll + " restantes)" : "jugées") +
+            (scopeTheme ? " · ce périmètre : " + (e.remScope ? plural(e.remScope, "idée restante", "idées restantes") + ", " + plural(e.daysScope, "jour") : "terminé") : "") + ".")),
+        h("div", { style: "display:flex;flex-wrap:wrap;gap:8px" },
+          h("button.btn.primary", { onclick: () => setSwipeView("card"), disabled: !unjudged(scopeFilter()).length }, n >= q ? "Continuer au-delà de l'objectif →" : (n ? "Reprendre la série du jour →" : "Commencer la série du jour →")),
+          pending ? h("button.btn", { onclick: () => setSwipeView("rate") }, "Noter " + plural(pending, "idée aimée", "idées aimées")) : null)),
+      h("div.panel-foot",
+        h("div", jc >= 20 && !allJudged() && !S.finished ? h("button.btn", { onclick: () => setPhase(2) }, "Pré-orientation →") : null, " ",
+          (allJudged() || S.finished) ? h("button.btn.primary", { onclick: () => setPhase(3) }, "Voir mes résultats →") : null, " ",
+          jc >= 20 && !allJudged() && !S.finished ? finishNowControl() : null),
+        h("span.small.muted", "Swipez à droite si vous êtes d'accord, à gauche sinon, vers le haut si vous ne savez pas."))));
+    renderSteps();
+  }
+  const allJudged = () => unjudged(null).length === 0;
+  function finishNowControl() {
+    const box = h("span.confirm");
+    const ask = () => box.replaceChildren(h("span.small", "Les idées non jugées ne compteront pas."),
+      h("button.btn", { onclick: () => { S.finished = true; save(); setPhase(3); } }, "Confirmer"), h("button.btn.ghost", { onclick: init }, "Annuler"));
+    const init = () => box.replaceChildren(h("button.btn.ghost", { onclick: ask }, "Terminer maintenant"));
+    init(); return box;
+  }
+
+  function ideaCard(it, withExpl) {
+    const e = getExpl(it.id);
+    const expl = h("div.card-expl", { hidden: !withExpl }, e || "Pas encore d'explication pour cette idée.");
+    const btn = h("button.explain", { type: "button", onclick: (ev) => { ev.stopPropagation(); expl.hidden = !expl.hidden; btn.textContent = expl.hidden ? "Expliquer" : "Masquer l'explication"; } }, withExpl ? "Masquer l'explication" : "Expliquer");
+    return h("article.scard",
+      h("div.eyebrow", it.sub.theme.name + " · " + it.sub.name),
+      h("div.scard-text", it.t),
+      h("div.tools", btn, it.group ? h("span.chip", "idée commune à " + plural(it.cands.length, "personnalité")) : null),
+      expl,
+      h("div.stamp.yes", "D'accord"), h("div.stamp.no", "Pas d'accord"), h("div.stamp.skip", "Je ne sais pas"));
+  }
+  function renderSwipeCard() {
+    const n = dailyN(), q = S.quota || 10;
+    let it = pickNext();
+    const stage = h("div.swipe-stage");
+    const counter = h("span.num", { style: "font-weight:700" });
+    const refreshCounter = () => { counter.textContent = dailyN() + " / " + q + " aujourd'hui"; };
+    refreshCounter();
+    const toast = h("div.toast", { hidden: true });
+    const say = (msg) => { toast.textContent = msg; toast.hidden = false; setTimeout(() => { toast.hidden = true; }, 1800); };
+    let card = null, busy = false;
+    function mount(item) {
+      it = item; stage.replaceChildren();
+      if (!it) { stage.append(h("p.empty", "Toutes les idées de ce périmètre sont jugées. Changez de thème ou passez au panaché depuis l'accueil.")); return; }
+      card = ideaCard(it, false); stage.append(card); attachGesture(card);
+    }
+    function after(action) {
+      if (!it) return;
+      judge(it, action);
+      refreshCounter(); renderSteps();
+      if (action !== "skip" && dailyN() === q) say("Objectif du jour atteint. Continuez si vous voulez.");
+      if (action === "yes" && S.toRate.length >= 10 && S.toRate.length % 10 === 0) { setSwipeView("rate"); return; }
+      mount(pickNext());
+    }
+    function flyOut(action) {
+      if (!card || busy) return; busy = true;
+      card.style.transition = "transform .25s ease, opacity .25s ease";
+      card.style.transform = action === "yes" ? "translate(120%, -10%) rotate(18deg)" : action === "no" ? "translate(-120%, -10%) rotate(-18deg)" : "translate(0, -120%)";
+      card.style.opacity = "0";
+      setTimeout(() => { busy = false; after(action); }, 230);
+    }
+    function attachGesture(el) {
+      let sx = 0, sy = 0, dx = 0, dy = 0, dragging = false, pid = null;
+      el.addEventListener("pointerdown", (ev) => { if (ev.target.closest("button, .card-expl")) return; dragging = true; pid = ev.pointerId; sx = ev.clientX; sy = ev.clientY; dx = dy = 0; el.setPointerCapture(pid); el.style.transition = "none"; });
+      el.addEventListener("pointermove", (ev) => {
+        if (!dragging) return; dx = ev.clientX - sx; dy = ev.clientY - sy;
+        el.style.transform = "translate(" + dx + "px," + dy + "px) rotate(" + (dx / 18) + "deg)";
+        el.classList.toggle("lean-yes", dx > 40); el.classList.toggle("lean-no", dx < -40); el.classList.toggle("lean-skip", dy < -60 && Math.abs(dx) < 60);
+      });
+      const end = () => {
+        if (!dragging) return; dragging = false;
+        el.classList.remove("lean-yes", "lean-no", "lean-skip");
+        if (dx > 90) flyOut("yes"); else if (dx < -90) flyOut("no"); else if (dy < -110 && Math.abs(dx) < 80) flyOut("skip");
+        else { el.style.transition = "transform .2s ease"; el.style.transform = ""; }
+      };
+      el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
+    }
+    const onKey = (ev) => { if (S.phase !== 1 || S.sview !== "card") { document.removeEventListener("keydown", onKey); return; }
+      if (ev.key === "ArrowRight") flyOut("yes"); else if (ev.key === "ArrowLeft") flyOut("no"); else if (ev.key === "ArrowUp") { ev.preventDefault(); flyOut("skip"); } };
+    document.addEventListener("keydown", onKey);
+    app.replaceChildren(h("div.swipe-wrap",
+      h("div.swipe-top",
+        h("button.btn.ghost", { onclick: () => setSwipeView("home") }, "← Terminer"),
+        counter,
+        h("button.btn.ghost", { onclick: () => { const prev = undo(); if (prev) { refreshCounter(); renderSteps(); mount(prev); say("Dernier swipe annulé"); } } }, "↶ Annuler")),
+      stage, toast,
+      h("div.swipe-acts",
+        h("button.sbtn.no", { onclick: () => flyOut("no"), "aria-label": "Pas d'accord" }, h("span.ic", "✕"), h("span.lb", "Pas d'accord")),
+        h("button.sbtn.skip", { onclick: () => flyOut("skip"), "aria-label": "Je ne sais pas" }, h("span.ic", "?"), h("span.lb", "Je ne sais pas")),
+        h("button.sbtn.yes", { onclick: () => flyOut("yes"), "aria-label": "D'accord" }, h("span.ic", "✓"), h("span.lb", "D'accord")))));
+    mount(it);
+    renderSteps();
+  }
+  function renderSwipeRate() {
+    S.toRate = S.toRate.filter(id => ITEMS[id] && S.sel[id]);
+    const id = S.toRate[0];
+    if (!id) { app.replaceChildren(h("p.empty", "Toutes vos idées aimées sont notées."), h("p", h("button.btn.primary", { onclick: () => setSwipeView("home") }, "← Retour"))); renderSteps(); return; }
+    const it = ITEMS[id];
+    const names = ["", "Peu important", "Secondaire", "Important", "Très important", "Essentiel"];
+    const total = S.toRate.length;
+    app.replaceChildren(h("div.swipe-wrap",
+      h("div.swipe-top", h("button.btn.ghost", { onclick: () => setSwipeView("home") }, "← Plus tard"), h("span.num", { style: "font-weight:700" }, "À noter : " + total), h("span")),
+      h("div.sec-head", h("h2", "Quelle importance a cette idée pour vous ?")),
+      ideaCard(it, true),
+      h("div.rate-big", [1, 2, 3, 4, 5].map(v => h("button.btn", { class: v === 3 ? "" : "", onclick: () => { S.rate[id] = v; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); renderSwipeRate(); } },
+        h("span.stars-inline", "★".repeat(v)), " ", names[v])))));
+    renderSteps();
+  }
+
+  /* ---------- Repères politiques ---------- */
+  const FAMILLES = [
+    ["Gauche radicale", "Rupture avec le capitalisme de marché, planification écologique et sociale, redistribution forte.",
+      "Hausse des salaires et du SMIC, retour de la retraite à 60 ans, impôt sur la fortune renforcé, nationalisations, prix bloqués, sortie des traités jugés contraignants."],
+    ["Gauche sociale-démocrate", "Réformer le marché plutôt que le remplacer : État protecteur, services publics, redistribution par l'impôt, dialogue social.",
+      "Fiscalité plus progressive, investissement dans l'école et la santé, encadrement des loyers, taxation des hauts patrimoines, Europe plus sociale."],
+    ["Écologie politique", "La contrainte climatique et le vivant organisent les choix économiques ; sobriété, transition et justice sociale vont ensemble.",
+      "Sortie progressive des énergies fossiles, rénovation des logements, transports publics, agriculture sans pesticides, fiscalité carbone avec compensation."],
+    ["Centre et libéralisme réformateur", "Équilibre entre marché et État, compétitivité, Europe intégrée, réformes graduelles pour réduire dette et chômage.",
+      "Baisse des charges sur le travail, simplification administrative, retraite par capitalisation en complément, défense européenne, soutien à l'innovation."],
+    ["Droite conservatrice et libérale", "Autorité de l'État, ordre, valeur travail, réduction de la dépense publique et des impôts, nation et transmission.",
+      "Baisse des impôts et du nombre de fonctionnaires, durcissement pénal, immigration réduite, dégressivité du chômage, soutien aux entreprises et à l'héritage."],
+    ["Droite nationale et souverainiste", "Priorité nationale, souveraineté face à l'Union européenne et aux flux migratoires, protection de l'identité et des classes populaires.",
+      "Immigration très limitée, préférence nationale pour les aides, référendums, baisse de la TVA sur l'énergie, sortie ou renégociation des règles européennes, sécurité renforcée."],
+  ];
+  const LEXIQUE = [
+    ["Déficit public", "Différence, sur un an, entre ce que l'État et les administrations dépensent et ce qu'ils encaissent. En France, autour de 5 à 6 % du PIB récemment ; la règle européenne vise 3 %."],
+    ["Dette publique", "Cumul des déficits passés, environ 3 300 milliards d'euros, soit plus de 110 % du PIB. Son remboursement et ses intérêts pèsent chaque année sur le budget."],
+    ["PIB", "Produit intérieur brut : la valeur de tout ce qui est produit dans le pays en un an. Sert d'étalon pour comparer dépenses, dette ou impôts."],
+    ["Cotisations sociales (« charges »)", "Prélèvements sur les salaires, payés par l'employeur et le salarié, qui financent retraite, maladie, chômage et famille."],
+    ["CSG", "Contribution sociale généralisée : impôt prélevé sur presque tous les revenus (salaires, retraites, capital) pour financer la protection sociale."],
+    ["ISF / IFI", "L'impôt de solidarité sur la fortune taxait tout le patrimoine des plus aisés ; remplacé en 2018 par l'IFI, limité à l'immobilier."],
+    ["Flat tax (PFU)", "Prélèvement forfaitaire unique de 30 % sur les revenus du capital (dividendes, intérêts), au lieu du barème progressif de l'impôt sur le revenu."],
+    ["TVA", "Taxe sur la valeur ajoutée, payée à chaque achat (20 % en général, 5,5 % sur l'alimentation). Premier impôt par son rendement."],
+    ["SMIC", "Salaire minimum légal, revalorisé au moins chaque année selon l'inflation."],
+    ["Retraite par répartition / capitalisation", "Répartition : les cotisations d'aujourd'hui paient les pensions d'aujourd'hui. Capitalisation : chacun épargne pour sa propre retraite."],
+    ["AME", "Aide médicale d'État : prise en charge des soins des étrangers en situation irrégulière sous conditions de ressources."],
+    ["ZFE", "Zones à faibles émissions : zones urbaines où les véhicules les plus polluants sont progressivement interdits de circuler."],
+    ["Loi de programmation", "Loi qui fixe sur plusieurs années les objectifs et les moyens d'une politique (défense, justice, recherche…)."],
+    ["Référendum d'initiative citoyenne (RIC)", "Possibilité pour les citoyens de déclencher eux-mêmes un référendum à partir d'un certain nombre de signatures."],
+    ["Proportionnelle", "Mode de scrutin où les sièges sont répartis selon le pourcentage de voix de chaque liste, à l'inverse du scrutin majoritaire actuel pour les députés."],
+    ["Décentralisation", "Transfert de compétences et de moyens de l'État vers les régions, départements et communes."],
+  ];
+  function renderReperes() {
+    app.replaceChildren(h("div.results",
+      h("div.sec-head", h("h2", "Repères : les grandes familles politiques"),
+        h("p", "Des fiches courtes et neutres pour situer les idées que vous croisez. Elles décrivent des tendances générales : chaque personnalité a ses nuances et ses exceptions. Aucun candidat n'est nommé ici pour ne pas fausser le test à l'aveugle.")),
+      h("div.sp-axis", { style: "max-width:520px" }, h("div", "Axe utilisé"), h("div.ticks", h("span.l", "Gauche"), h("span", "Centre"), h("span.r", "Droite"))),
+      h("div.fam-grid", FAMILLES.map(([n, p, m], i) => h("article.fam", { class: i < 3 ? "l" : "r" },
+        h("h3", n), h("p", p), h("p.small", h("b", "Mesures typiques : "), m)))),
+      h("section", h("div.sec-head", h("h2", "Lexique"), h("p", "Les termes qui reviennent le plus souvent dans les propositions.")),
+        h("dl.lex", LEXIQUE.map(([t, d]) => [h("dt", t), h("dd", d)]))),
+      h("details.others", h("summary", "La grille indicative de cet outil (à ouvrir plutôt après vos résultats)"),
+        h("p.small.muted", "Chaque personnalité a reçu une position fixe de −10 (gauche) à +10 (droite), choisie pour cet outil et modifiable dans extraire-donnees.mjs. Elle ne vient pas de la Fondation iFRAP."),
+        h("ul", D.candidates.slice().sort((a, b) => a.pos - b.pos).map(c => h("li", h("span", candName(c), c.party ? h("span.muted.small", " · " + c.party) : null), h("span.num.small", fmtPos(c.pos) + " · " + posLabel(c.pos)))))),
+      h("div.panel-foot", h("button.btn", { onclick: () => setPhase(1) }, "← Retour"))));
+  }
+
   /* ---------- Phase 3 : résultats ---------- */
   function avatar(c) {
     const initials = (c.first[0] || "") + (c.last[0] || "");
@@ -659,50 +994,57 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   }
 
   function renderResults(partial) {
-    const done = doneThemes(), remaining = D.themes.filter(t => !isDone(t));
-    const R = compute(partial ? done.map(t => t.id) : null);
-    if (!R.ids.length) { app.replaceChildren(h("p.empty", "Aucune idée retenue pour l'instant."), h("p", h("button.btn.primary", { onclick: () => setPhase(1) }, "Choisir des idées"))); return; }
-    const top = R.ranking.slice(0, 5), rest = R.ranking.slice(5);
+    const done = doneThemes(), remaining = D.themes.filter(t => !isDone(t)), swipe = modeIs() === "swipe";
+    const R = compute(partial && !swipe && done.length ? done.map(t => t.id) : null);
+    if (!R.judged) { app.replaceChildren(h("p.empty", "Aucune idée jugée pour l'instant."), h("p", h("button.btn.primary", { onclick: () => setPhase(1) }, "Commencer"))); return; }
+    const top = R.ranking.filter(r => r.net > 0).slice(0, 5), rest = R.ranking.filter(r => !top.includes(r));
+    const weak = R.themes.filter(t => t.reliability !== "consolidé" && t.reliability !== "terminé");
 
     const banner = partial ? h("div.banner",
-      h("div", h("b", "Pré-orientation"), " après " + done.length + " thèmes terminés sur " + D.themes.length + ", fondée sur " + plural(R.ids.length, "idée retenue", "idées retenues") + "."),
-      h("div.small", "Elle peut encore beaucoup changer : il reste " + plural(remaining.length, "thème") + " (" + remaining.map(t => t.name).join(", ") + ")."),
+      h("div", h("b", "Pré-orientation"), swipe
+        ? " fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + " sur " + TOTAL_ITEMS + " (" + plural(R.ids.length, "aimée") + ", " + plural(R.nos.length, "rejetée") + ")."
+        : " après " + done.length + " thèmes terminés sur " + D.themes.length + ", fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + "."),
+      h("div.small", swipe
+        ? (weak.length ? "Encore fragile sur : " + weak.map(t => t.theme.name + " (" + t.reliability + ")").join(", ") + ". " : "") + "Les thèmes sans aucune idée jugée n'apparaissent pas encore."
+        : "Elle peut encore beaucoup changer : il reste " + plural(remaining.length, "thème") + " (" + remaining.map(t => t.name).join(", ") + ")."),
       h("div", { style: "display:flex;flex-wrap:wrap;gap:8px;margin-top:6px" },
-        nextButton(true), skipControl(remaining))) : null;
+        swipe ? h("button.btn.primary", { onclick: () => { S.sview = "card"; setPhase(1); } }, "Continuer à swiper →") : nextButton(true),
+        swipe ? finishNowControl() : skipControl(remaining))) : null;
 
     const rank = h("div.rank", top.map((r, i) => h("div.rank-row", { class: i === 0 ? "first" : "" },
       h("div.pos.num", i + 1), avatar(r.cand),
       h("div", { style: "min-width:0" },
         h("div.who", h("span.name", candName(r.cand)), r.cand.party ? h("span.party", r.cand.party) : null),
         h("div.bar", h("i", { style: "width:" + (r.share / top[0].share * 100) + "%" })),
-        h("div.meta", h("span", h("b.num", pct(r.share)), " de vos choix pondérés"),
-          h("span", h("b.num", r.n + "/" + r.of), " de ses propositions retenues (" + pct(r.adhesion) + ")"))))));
+        h("div.meta", h("span", h("b.num", pct(r.share)), " de vos points"),
+          h("span", h("b.num", pct(r.accord)), " d'accord sur " + plural(r.seen, "idée vue", "idées vues")),
+          h("span", h("b.num", r.n + "/" + r.of), " de son programme retenu"))))));
 
-    const others = rest.length ? h("details.others", h("summary", "Les " + rest.length + " autres personnalités représentées"),
+    const others = rest.length ? h("details.others", h("summary", "Les " + rest.length + " autres personnalités jugées"),
       h("ul", rest.map(r => h("li", h("span", candName(r.cand), r.cand.party ? h("span.muted.small", " · " + r.cand.party) : null),
-        h("span.num.small", pct(r.share) + " · " + r.n + "/" + r.of))))) : null;
+        h("span.num.small", (r.net > 0 ? pct(r.share) + " · " : "") + pct(r.accord) + " d'accord · " + r.n + "/" + r.of))))) : null;
 
     const spectrum = h("div.spectrum",
       h("div.sp-axis", h("div", "Thème"), h("div.ticks", h("span.l", "Gauche"), h("span", "Centre"), h("span.r", "Droite"))),
-      R.themes.map(t => spectrumRow(t.theme.name, plural(t.ids.length, "idée"), t.sp, false)),
-      spectrumRow(partial ? "Pré-orientation" : "Ensemble de vos choix", plural(R.ids.length, "idée"), R.overall, true));
+      R.themes.map(t => spectrumRow(t.theme.name, plural(t.judged, "idée jugée", "idées jugées") + " · " + t.reliability, t.sp, false)),
+      spectrumRow(partial ? "Pré-orientation" : "Ensemble de vos choix", plural(R.judged, "idée jugée", "idées jugées"), R.overall, true));
     const table = h("details", h("summary.small", { style: "cursor:pointer;color:var(--ink-2);font-weight:600;margin-top:10px" }, "Voir en tableau"),
       h("table.sp-table", h("thead", h("tr", h("th", "Thème"), h("th", "Position"), h("th", "Lecture"), h("th", "Idées"))),
-        h("tbody", R.themes.map(t => h("tr", h("td", t.theme.name), h("td.num", fmtPos(t.sp.pos)), h("td", posLabel(t.sp.pos)), h("td.num", t.ids.length))),
-          h("tr", h("td", h("b", "Ensemble")), h("td.num", fmtPos(R.overall.pos)), h("td", posLabel(R.overall.pos)), h("td.num", R.ids.length)))));
+        h("tbody", R.themes.map(t => h("tr", h("td", t.theme.name), h("td.num", fmtPos(t.sp.pos)), h("td", posLabel(t.sp.pos)), h("td.num", t.judged))),
+          h("tr", h("td", h("b", "Ensemble")), h("td.num", fmtPos(R.overall.pos)), h("td", posLabel(R.overall.pos)), h("td.num", R.judged)))));
 
     app.replaceChildren(h("div.results",
       banner,
       h("div.stat-row",
-        h("div.stat", h("div.v.num", R.ids.length), h("div.k", "idées retenues sur " + ALL_IDEAS.toLocaleString("fr-FR"))),
+        h("div.stat", h("div.v.num", R.ids.length + " / " + R.nos.length), h("div.k", "idées aimées / rejetées, sur " + TOTAL_ITEMS + " jugeables")),
         h("div.stat", h("div.v.num", R.themes.length), h("div.k", "thèmes concernés sur " + D.themes.length)),
         h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités représentées")),
         h("div.stat", h("div.v", posLabel(R.overall.pos)), h("div.k", (partial ? "pré-orientation" : "position d'ensemble") + " (" + fmtPos(R.overall.pos) + ")"))),
       h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix"),
-        h("p", "Chaque idée retenue crédite son auteur de sa note d'importance. Le pourcentage est la part de l'auteur dans le total de vos points ; le second chiffre dit quelle part de son programme vous avez retenue.")),
+        h("p", "Chaque idée aimée crédite ses auteurs de sa note d'importance (1 à 5) ; chaque idée rejetée leur retire 3 points. « Je ne sais pas » ne compte pas. Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues.")),
         rank, others),
       h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
-        h("p", "Position moyenne pondérée des auteurs de vos idées, de −10 (gauche) à +10 (droite). La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos choix.")),
+        h("p", "Position de −10 (gauche) à +10 (droite) : les idées aimées vous rapprochent de leurs auteurs, les idées rejetées vous en éloignent. La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos idées aimées ; la mention sous chaque thème indique la solidité de la mesure.")),
         spectrum, table,
         h("p.note", "Échelle indicative propre à cet outil : chaque personnalité a reçu une position fixe sur l'axe gauche-droite (modifiable dans extraire-donnees.mjs). Elle ne provient pas de la Fondation iFRAP.")),
       h("section", h("div.sec-head", h("h2", "Les thèmes et idées qui vous parlent"),
@@ -712,7 +1054,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("p", "Claude rédige un portrait court et nuancé à partir de vos choix. La clé API reste dans votre navigateur et n'est envoyée qu'à l'API Anthropic.")),
         aiCard(R)),
       h("div.panel-foot",
-        h("div", partial ? nextButton(false) : h("button.btn", { onclick: goHome }, "← Revoir mes réponses")),
+        h("div", partial ? (swipe ? h("button.btn", { onclick: () => setPhase(1) }, "← Retour") : nextButton(false)) : h("button.btn", { onclick: () => { if (!swipe) goHome(); else setPhase(1); } }, "← Revoir mes réponses")),
         resetControl())));
   }
 
@@ -745,13 +1087,15 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     lines.push("", "Position sur l'axe gauche (−10) / droite (+10), moyenne pondérée des auteurs des idées retenues :");
     R.themes.forEach(t => lines.push("- " + t.theme.name + " : " + fmtPos(t.sp.pos) + " (" + posLabel(t.sp.pos) + "), " + t.ids.length + " idées"));
     lines.push("- Ensemble : " + fmtPos(R.overall.pos) + " (" + posLabel(R.overall.pos) + ")");
-    lines.push("", "Idées retenues, avec l'importance donnée (1 à 5) et leur auteur :");
-    R.themes.forEach(t => { lines.push("", "## " + t.theme.name); t.subs.forEach(s => { lines.push("### " + s.sub.name);
+    lines.push("", "Idées aimées, avec l'importance donnée (1 à 5) et leur auteur :");
+    R.themes.forEach(t => { lines.push("", "## " + t.theme.name); t.subs.forEach(s => { if (!s.ids.length) return; lines.push("### " + s.sub.name);
       s.ids.forEach(id => { const i = ITEMS[id]; lines.push("- [" + weight(id) + "/5] " + i.t.replace(/\n/g, " ") + " (" + authors(i).map(candName).join(", ") + ")"); }); }); });
+    if (R.nos.length) { lines.push("", "Idées rejetées (en désaccord), avec leur auteur :");
+      R.themes.forEach(t => t.nos.forEach(id => { const i = ITEMS[id]; lines.push("- [" + t.theme.name + "] " + i.t.replace(/\n/g, " ") + " (" + authors(i).map(candName).join(", ") + ")"); })); }
     return lines.join("\n");
   }
   const SYSTEM = [
-    "Tu es un analyste politique neutre, précis et bienveillant. Un citoyen français a utilisé un comparateur de programmes pour la présidentielle 2027 : il a coché, à l'aveugle, les propositions qui lui conviennent, puis les a notées de 1 à 5 selon leur importance.",
+    "Tu es un analyste politique neutre, précis et bienveillant. Un citoyen français a utilisé un comparateur de programmes pour la présidentielle 2027 : il a jugé, à l'aveugle, des propositions (d'accord / pas d'accord / je ne sais pas), puis a noté de 1 à 5 l'importance de celles qu'il aime.",
     "Rédige sa « carte d'identité politique » en français, en le vouvoyant, en 250 à 400 mots. Reste descriptif : aucune étiquette partisane qu'il n'a pas choisie lui-même, aucun jugement de valeur, aucune consigne de vote.",
     "Structure imposée, en texte simple sans Markdown (pas de #, pas de **, pas de listes à puces) :",
     "Ligne 1 : un titre de 3 à 6 mots qui résume sa sensibilité.",
@@ -818,8 +1162,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   /* ---------- Sauvegarde et restauration ---------- */
   function exportState() {
     return btoa(unescape(encodeURIComponent(JSON.stringify({
-      v: 1, d: D.extractedAt, sel: selectedIds(), rate: S.rate, done: D.themes.filter(t => S.stage[t.id] === "done").map(t => t.id),
+      v: 1, d: D.extractedAt, sel: selectedIds(), no: Object.keys(S.no).filter(k => S.no[k]), rate: S.rate, done: D.themes.filter(t => S.stage[t.id] === "done").map(t => t.id),
       skipped: Object.keys(S.skipped), seen: Object.keys(S.seen).filter(k => S.seen[k]), card: S.card || "",
+      toRate: S.toRate, quota: S.quota, daily: S.daily, scope: S.scope, finished: !!S.finished, mode: S.mode,
     }))));
   }
   function importState(code) {
@@ -837,6 +1182,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     (o.skipped || []).forEach(id => { if (D.themes.some(t => t.id === id)) next.skipped[id] = true; });
     (o.seen || []).forEach(id => { next.seen[id] = true; });
     next.card = o.card || "";
+    (o.no || []).forEach(id => { if (ITEMS[id] && !next.sel[id]) next.no[id] = true; });
+    next.toRate = (o.toRate || []).filter(id => ITEMS[id] && next.sel[id]);
+    if (o.quota) next.quota = o.quota; if (o.daily) next.daily = o.daily; if (o.scope) next.scope = o.scope; next.finished = !!o.finished; if (o.mode) next.mode = o.mode;
     S = next; save();
     return { n: o.sel.length - unknown, unknown, date: o.d };
   }
@@ -870,6 +1218,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       area.scrollIntoView({ behavior: "smooth", block: "start" });
     };
     document.getElementById("toolbar").replaceChildren(
+      h("button.btn", { id: "mode-btn", onclick: () => { S.mode = modeIs() === "swipe" ? "pages" : "swipe"; S.phase = 1; save(); render(); toTop(); } }, modeIs() === "swipe" ? "Passer en mode pages" : "Passer en mode swipe"),
+      h("button.btn", { onclick: () => setPhase(4) }, "Repères politiques"),
       h("button.btn", { onclick: () => area.children.length ? close() : openPanel() }, "Sauvegarder / restaurer"));
   }
   renderToolbar();

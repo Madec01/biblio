@@ -13,47 +13,60 @@ Les choix restent dans le navigateur (stockage local) ; le bouton
 **Sauvegarder / restaurer** donne un code (ou un fichier) à coller sur un autre
 appareil ou navigateur pour reprendre là où vous en étiez.
 
-## Parcours
+## Deux façons de répondre
 
-Le parcours se fait **thème par thème** (10 thèmes, 32 sujets), dans l'ordre
-de votre choix depuis la page d'accueil, qui présente une carte par thème
-avec ses sujets et son état d'avancement.
+Les deux modes alimentent les mêmes choix et les mêmes résultats ; on passe de
+l'un à l'autre avec le bouton « Passer en mode swipe / pages ».
 
-1. **Choisir** : chaque thème a sa page avec tous ses sujets ; cochez les
-   propositions qui vous conviennent. Les auteurs sont cachés et l'ordre est
-   mélangé, pour choisir sur le fond. Les propositions quasi identiques
-   portées par plusieurs personnalités sont regroupées en une « idée commune »
-   (`groupes.js`) : la cocher crédite chacun de ses auteurs.
-   Le lien **Expliquer** sous chaque proposition affiche une explication en
-   langage courant (termes techniques, sigles, qui est concerné, ce qui
-   changerait par rapport à aujourd'hui), sans jamais révéler l'auteur. Les
-   1 164 explications sont intégrées (`explications.js`), donc instantanées et
-   sans clé ; elles se retrouvent aussi dans les récapitulatifs. Si une
-   proposition nouvelle n'a pas encore d'explication, le lien la demande à
-   Claude (clé API nécessaire).
-2. **Terminer le thème** : pour chaque sujet où plusieurs idées ont été
-   retenues, notez l'importance de chacune de 1 à 5 (une idée non notée
-   compte 3). Vous obtenez aussitôt **votre orientation sur ce thème** :
-   position gauche–droite, les trois personnalités les plus proches et vos
-   idées avec leur auteur.
-3. **Pré-orientation** : accessible dès deux thèmes terminés, c'est le bilan
-   provisoire (classement, spectre, récapitulatif) calculé sur les seuls thèmes
-   terminés. Un bandeau rappelle les thèmes restants, car la tendance peut
-   encore beaucoup changer. On peut y choisir de terminer sans parcourir les
-   thèmes restants.
-4. **Résultats** (une fois les dix thèmes terminés ou écartés) :
-   - les cinq personnalités les plus représentées, avec leur part de vos choix
-     pondérés et la part de leur programme que vous avez retenue ;
-   - votre position thème par thème sur l'axe gauche–droite (moyenne pondérée
-     des positions des auteurs de vos idées, avec l'écart entre l'auteur le plus
-     à gauche et le plus à droite), plus une vue tableau ;
-   - le récapitulatif des thèmes, sujets et idées retenus, avec leur note et
-     leur auteur ;
-   - **votre carte d'identité politique**, rédigée par Claude à partir de vos
-     choix (clé API Anthropic à saisir ; modèle par défaut `claude-fable-5-1`).
-     Cette dernière étape appelle directement `api.anthropic.com` depuis le
-     navigateur : elle fonctionne quand la page est ouverte en local ou servie
-     depuis un hébergement qui autorise les appels sortants.
+### Mode pages (ordinateur)
+
+Une page d'accueil présente une carte par thème (10 thèmes, 32 sujets) avec
+son état d'avancement. La page d'un thème empile tous ses sujets : on coche les
+propositions qui conviennent (auteurs cachés, ordre mélangé, doublons regroupés
+en « idées communes » créditant chacun de leurs auteurs), puis « Terminer ce
+thème » : notation de 1 à 5 des idées retenues, et orientation du thème
+(position gauche–droite, trois personnalités les plus proches, idées avec
+auteur).
+
+### Mode swipe (téléphone, par défaut sous 900 px)
+
+Une idée à l'écran à la fois : swipe à droite (ou ✓) = d'accord, à gauche
+(ou ✕) = pas d'accord, vers le haut (ou ?) = je ne sais pas. Flèches du clavier
+sur ordinateur, bouton « Annuler » pour le dernier swipe, explication en
+langage courant sur la carte.
+
+- **Périmètre** : *panaché* (idées au hasard dans tous les thèmes, tirage
+  corrigé pour garder l'équilibre gauche–droite des dernières cartes et servir
+  tous les thèmes, sans ordre prévisible) ou *par thème* (thème et sujets au
+  choix, on arrête quand on veut).
+- **Rythme** : objectif quotidien de 10 à 50 idées, avec dates estimées de fin
+  (pré-orientation fiable à 15 idées par thème ; toutes les idées).
+- **Pondération** : toutes les 10 idées aimées, notation de 1 à 5, une idée à
+  la fois avec son explication (reportable).
+
+### Calcul
+
+Une idée aimée crédite ses auteurs de sa note (1 à 5, 3 par défaut) ; une idée
+rejetée leur retire 3 points ; « je ne sais pas » ne compte pas. Le classement
+va par points nets, avec le taux d'accord sur les idées vues de chaque
+personnalité. Sur le spectre, les idées aimées rapprochent de leurs auteurs,
+les idées rejetées en éloignent ; chaque thème porte un indicateur de solidité
+(très peu d'idées / en cours / consolidé / terminé).
+
+### Pré-orientation et résultats
+
+- **Pré-orientation** : dès 20 idées jugées ou deux thèmes terminés ; bilan
+  provisoire avec les thèmes encore fragiles. On peut « terminer maintenant ».
+- **Résultats** : cinq personnalités les plus proches, spectre par thème (plus
+  vue tableau), récapitulatif des idées aimées et rejetées avec auteurs, et
+  **carte d'identité politique** rédigée par Claude (clé API Anthropic à
+  saisir ; modèle par défaut `claude-fable-5-1`). Cette dernière étape appelle
+  `api.anthropic.com` depuis le navigateur : elle fonctionne quand la page est
+  ouverte en local ou servie depuis un hébergement qui autorise les appels
+  sortants.
+- **Repères politiques** : six familles décrites de façon neutre (sans nommer
+  de candidat), un lexique des termes courants, et la grille indicative de
+  l'outil dans une section repliée.
 
 ## Mise à jour des données
 
