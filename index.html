@@ -897,7 +897,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     return buildOptions();
   }
   function renderSwipeHome() {
-    if (!S.setup) { app.replaceChildren(optionsForm(() => { S.setup = true; save(); setSwipeView("card"); }, "C'est parti →")); renderSteps(); return; }
+    if (!S.setup) { app.replaceChildren(optionsForm(() => { S.setup = true; save(); setSwipeView("card"); }, "C'est parti →"), h("div.install-box")); renderSteps(); renderInstall(); return; }
     if (S.sview === "options") { app.replaceChildren(optionsForm(() => setSwipeView("home"), "Enregistrer")); renderSteps(); return; }
     const n = dailyN(), q = S.quota || 10, jc = judgedCount(), pending = S.toRate.length, e = estimates();
     const scopeLabel = S.scope.type === "theme" && themeById(S.scope.theme) ? "Thème : " + themeById(S.scope.theme).name : "Panaché";
@@ -909,7 +909,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("button.abtn.txt", { onclick: () => setSwipeView("options") }, "Options"),
         h("button.abtn.txt", { onclick: () => setPhase(4) }, "Repères"),
         h("button.abtn.txt", { onclick: () => { document.getElementById("toolbar").querySelector("button:last-child").click(); window.scrollTo({ top: 0 }); } }, "Sauvegarde"))) : null,
-      h("div.install-box", { id: "install" }),
+      h("div.install-box"),
       h("div.recap-mini",
         h("div.row", h("span", h("b.num", n + " / " + q), " aujourd'hui"), h("span", h("b.num", jc), " jugées sur " + TOTAL_ITEMS), h("span.muted", scopeLabel)),
         h("div.pbar", h("i", { style: "width:" + pc + "%" })),
@@ -1413,7 +1413,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       h("button.btn", { id: "mode-btn", onclick: () => { S.mode = modeIs() === "swipe" ? "pages" : "swipe"; S.phase = 1; save(); render(); toTop(); } }, modeIs() === "swipe" ? "Passer en mode pages" : "Passer en mode swipe"),
       h("button.btn", { onclick: () => setPhase(4) }, "Repères politiques"),
       h("button.btn", { onclick: () => area.children.length ? close() : openPanel() }, "Sauvegarder / restaurer"),
-      h("span.install-box", { id: "install" }));
+      h("span.install-box"));
     renderInstall();
   }
   renderToolbar();
@@ -1424,14 +1424,16 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   function isIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream; }
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installPrompt = e; renderInstall(); });
   window.addEventListener("appinstalled", () => { installPrompt = null; renderInstall(); });
+  function isMobile() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth < 900; }
+  function installContent() {
+    if (standalone() || location.protocol === "file:") return null;
+    if (installPrompt) return h("button.btn.primary", { onclick: async () => { installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; renderInstall(); } }, "Installer l'application");
+    if (isIOS()) return h("span.small.muted", "Pour installer : bouton Partager ", h("b", "⎙"), " puis « Sur l'écran d'accueil ».");
+    if (isMobile()) return h("span.small.muted", "Pour installer : menu du navigateur ", h("b", "⋮"), " puis « Ajouter à l'écran d'accueil » ou « Installer l'application ».");
+    return null;
+  }
   function renderInstall() {
-    const box = document.getElementById("install"); if (!box) return;
-    if (standalone() || location.protocol === "file:") { box.replaceChildren(); return; }
-    if (installPrompt) {
-      box.replaceChildren(h("button.btn.primary", { onclick: async () => { installPrompt.prompt(); await installPrompt.userChoice; installPrompt = null; renderInstall(); } }, "Installer l'application"));
-    } else if (isIOS()) {
-      box.replaceChildren(h("span.small.muted", "Pour installer : bouton Partager ", h("b", "⎙"), " puis « Sur l'écran d'accueil »."));
-    } else box.replaceChildren();
+    document.querySelectorAll(".install-box").forEach(box => { const c = installContent(); c ? box.replaceChildren(c) : box.replaceChildren(); });
   }
   if ("serviceWorker" in navigator && location.protocol !== "file:") {
     window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); });
