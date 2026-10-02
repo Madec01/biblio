@@ -345,11 +345,18 @@ body.app .swipe-home.home { min-height: calc(100dvh - 36px); }
 .idcard p { color: var(--ink-2); }
 .id-axes { display: grid; gap: 6px; }
 .id-axis { display: grid; grid-template-columns: minmax(90px, 30%) minmax(0, 1fr); gap: 10px; align-items: center; font-size: .9rem; }
-.id-axis .lab { font-weight: 600; } .id-axis .lab .small { display: block; font-weight: 400; color: var(--muted); }
+.id-axis .lab { font-weight: 600; } .id-axis .lab .small { display: block; font-weight: 400; color: var(--muted); font-size: .72rem; line-height: 1.3; }
+@media (max-width: 599px) { .id-axis { grid-template-columns: 1fr; gap: 4px; padding: 6px 0; border-top: 1px solid var(--line); } .id-axis .lab .small { display: inline; margin-left: 6px; } }
 .fam { display: grid; grid-template-columns: minmax(110px, 32%) minmax(0, 1fr) 48px; gap: 10px; align-items: center; font-size: .88rem; padding: 4px 0; }
 .fam .bar { margin: 0; } .fam .bar > i { background: var(--good); }
 .fam.l .bar > i { background: var(--left); } .fam.r .bar > i { background: var(--right); }
 .id-list b { display: inline-block; min-width: 9ch; }
+.unknown-box { padding: 14px 16px; border-radius: 12px; background: var(--surface-2); border: 1px dashed var(--line); margin-top: 12px; }
+.unknown-box h3 { font-size: 1rem; margin-bottom: 6px; } .unknown-box ul { margin: 0; padding-left: 18px; font-size: .9rem; color: var(--ink-2); display: grid; gap: 4px; }
+.examples { display: grid; gap: 4px; margin-top: 8px; font-size: .85rem; color: var(--ink-2); }
+.examples .ex { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: start; } .examples .mark { padding: 1px 6px; }
+.bar.far > i { background: var(--left); }
+.results > section + section { border-top: 1px solid var(--line); padding-top: 24px; }
 .install-box:empty { display: none; }
 .install-box { display: flex; align-items: center; gap: 8px; }
 .recap-mini { display: grid; gap: 8px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
@@ -539,7 +546,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   if (S.theme === undefined && typeof S.cur === "number" && SUBS[S.cur]) S.theme = SUBS[S.cur].theme.id;
   S.no = S.no || {}; S.skip = S.skip || {}; S.toRate = S.toRate || []; S.hist = S.hist || []; S.lastPos = S.lastPos || []; S.daily = S.daily || { d: "", n: 0 };
   S.scope = S.scope || { type: "mix", theme: null, subs: [] }; S.quota = S.quota || 10; S.mode = S.mode || "auto"; S.sview = S.sview || "home";
-  S.unsure = S.unsure || {}; S.batch = S.batch || 10; S.rateHist = S.rateHist || [];
+  S.unsure = S.unsure || {}; if (typeof S.batch !== "number") S.batch = 10; S.rateHist = S.rateHist || [];
   if (S.setup === undefined) S.setup = Object.keys(S.sel).length + Object.keys(S.no).length > 0;
   if (!S.w) { S.w = {}; Object.entries(S.rate || {}).forEach(([id, r]) => { if (S.sel[id]) S.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; }); }
   var saveWarned = false;
@@ -577,7 +584,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const PARTY_FALLBACK = { "Bertrand": "Divers droite", "Cazeneuve": "La Convention", "Hollande": "PS", "Maurel": "GRS", "Mélenchon": "LFI", "Roussel": "PCF", "Ruffin": "Debout !" };
   const party = (c) => c.party || PARTY_FALLBACK[c.last] || "Sans étiquette";
   const orientChip = (c) => h("span.cand-orient", { class: c.pos <= -2 ? "l" : c.pos >= 2 ? "r" : "", title: "Position indicative " + fmtPos(c.pos) }, posLabel(c.pos));
-  const APP_VERSION = "2.0";
+  const APP_VERSION = "2.1";
   const stateOf = (id) => S.sel[id] ? "yes" : S.no[id] ? "no" : S.unsure[id] ? "unsure" : null;
   const weight = (id) => { const st = stateOf(id); if (!st) return 0; const w = S.w[id]; return typeof w === "number" ? w : DEFAULT_W[st]; };
   const levelOf = (id) => { const st = stateOf(id); if (!st) return null; const w = weight(id); return LEVELS[st].find(l => l[0] === w) || LEVELS[st][1]; };
@@ -1014,7 +1021,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       const quotaSel = h("select", { id: "quota", onchange: (ev) => { S.quota = +ev.target.value; save(); rerender(); } },
         [10, 20, 30, 50].map(v => h("option", { value: v, selected: q === v }, v + " idées par jour")));
       const batchSel = h("select", { id: "batch", onchange: (ev) => { S.batch = +ev.target.value; save(); rerender(); } },
-        [5, 10, 15, 20].map(v => h("option", { value: v, selected: (S.batch || 10) === v }, "toutes les " + v + " idées")));
+        [5, 10, 15, 20, 0].map(v => h("option", { value: v, selected: batchSize() === v }, v ? "toutes les " + v + " idées" : "jamais : accord standard, pondération à la demande")));
       return h("div.swipe-home",
         isApp() ? h("div.appbar", S.setup ? h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Retour" }, "←") : h("span"), h("div.abtitle", S.setup ? "Options" : "Bienvenue"), h("div.abacts")) : null,
         S.setup ? null : h("div.sec-head", h("h2", "Boussole 2027"), h("p", "Vous allez juger des propositions pour la présidentielle 2027 sans savoir qui les porte : d'accord, pas d'accord ou pas sûr, une idée à la fois. Deux réglages pour commencer, modifiables ensuite dans les options.")),
@@ -1043,7 +1050,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const scopeLabel = S.scope.type === "theme" && themeById(S.scope.theme) ? "Thème : " + themeById(S.scope.theme).name : "Panaché";
     const pc = Math.round(100 * jc / TOTAL_ITEMS);
     const canStart = unjudged(scopeFilter()).length > 0;
-    const final = allJudged() || S.finished, batch = S.batch || 10;
+    const final = allJudged() || S.finished, batch = batchSize();
     const cap = (label, fn) => h("button.cap", { type: "button", onclick: fn }, label);
     const preTile = final
       ? h("button.tile.pre.final", { type: "button", onclick: () => setPhase(3) }, h("b", "Voir mes résultats →"), h("span.small", "Classement complet, spectre et carte d'identité politique"))
@@ -1058,11 +1065,11 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       h("div.recap-mini",
         h("div.row", h("span", h("b.num", n + " / " + q), " aujourd'hui"), h("span", h("b.num", jc), " jugées sur " + TOTAL_ITEMS), h("span.muted", scopeLabel)),
         h("div.pbar", h("i", { style: "width:" + pc + "%" }))),
-      pending >= batch ? h("button.btn.big.warn", { onclick: () => setSwipeView("rate-intro") }, "Pondérer " + pending + " idées →") : null,
+      batch && pending >= batch ? h("button.btn.big.warn", { onclick: () => setSwipeView("rate-intro") }, "Pondérer " + pending + " idées →") : null,
       h("button.btn.primary.big", { onclick: () => setSwipeView("card"), disabled: !canStart }, !canStart ? "Périmètre terminé : changez les options" : n >= q ? "Continuer au-delà de l'objectif →" : (jc ? "Continuer →" : "Commencer →")),
       h("div.tiles", preTile,
-        pending && pending < batch ? h("button.tile.rate", { type: "button", onclick: () => setSwipeView("rate-intro") }, h("b", "Pondérer " + plural(pending, "idée")), h("span.small", "Sans attendre la prochaine pause")) : null,
-        h("div.tile", h("b", scopeLabel), h("span.small", q + " idées par jour · pondération toutes les " + batch)),
+        pending && (!batch || pending < batch) ? h("button.tile.rate", { type: "button", onclick: () => setSwipeView("rate-intro") }, h("b", "Pondérer " + plural(pending, "idée")), h("span.small", batch ? "Sans attendre la prochaine pause" : "Facultatif : accord standard sinon")) : null,
+        h("div.tile", h("b", scopeLabel), h("span.small", q + " idées par jour · " + (batch ? "pondération toutes les " + batch : "pondération à la demande"))),
         h("div.tile", h("b", e.remAll ? plural(e.remAll, "idée restante", "idées restantes") : "Toutes les idées jugées"), h("span.small", e.remAll ? "Fin estimée le " + fmtDate(addDays(e.daysAll)) : "La boussole est complète"))),
       h("div.home-foot",
         jc >= 20 && !final ? finishNowControl() : null,
@@ -1100,8 +1107,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   }
   var swipeKeyHandler = null;
   const detachSwipeKeys = () => { if (swipeKeyHandler) { document.removeEventListener("keydown", swipeKeyHandler); swipeKeyHandler = null; } };
+  const batchSize = () => typeof S.batch === "number" ? S.batch : 10;
   function renderSwipeCard() {
-    const q = S.quota || 10;
+    const q = S.quota || 10, batch = batchSize();
     let it = pickNext();
     const stage = h("div.swipe-stage");
     const counter = h("span.num.counter");
@@ -1120,7 +1128,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       judge(it, action);
       refreshCounter(); renderSteps();
       if (dailyN() === q) say("Objectif du jour atteint. Continuez si vous voulez.");
-      if (S.toRate.length >= Math.max(S.batch || 10, S.rateAt || 0)) { setSwipeView("rate-intro"); return; }
+      if (batch && S.toRate.length >= Math.max(batch, S.rateAt || 0)) { setSwipeView("rate-intro"); return; }
       mount(pickNext());
     }
     function flyOut(action) {
@@ -1169,7 +1177,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const by = { yes: 0, no: 0, unsure: 0 }; S.toRate.forEach(id => { by[stateOf(id)]++; });
     if (!S.toRate.length) { setSwipeView("card"); return; }
     app.replaceChildren(h("div.swipe-wrap",
-      h("div.appbar", h("button.abtn", { onclick: () => { S.rateAt = S.toRate.length + (S.batch || 10); save(); setSwipeView("home"); }, "aria-label": "Plus tard" }, "←"), h("div.abtitle", "Pondération"), h("div.abacts")),
+      h("div.appbar", h("button.abtn", { onclick: () => { S.rateAt = S.toRate.length + (batchSize() || 10); save(); setSwipeView("home"); }, "aria-label": "Plus tard" }, "←"), h("div.abtitle", "Pondération"), h("div.abacts")),
       h("div.intro",
         h("div.intro-ic", "⚖"),
         h("h2", "Pause pondération"),
@@ -1179,7 +1187,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           by.no ? h("div.intro-row.no", h("span.ic", "✕"), h("b", by.no), " pas d'accord → − / −− / −−−") : null,
           by.unsure ? h("div.intro-row.unsure", h("span.ic", "?"), h("b", by.unsure), " pas sûr → plutôt non / sans avis / plutôt oui") : null),
         h("button.btn.primary.big", { onclick: () => setSwipeView("rate") }, "Commencer la pondération →"),
-        h("button.btn", { style: "width:100%;justify-content:center", onclick: () => { S.rateAt = S.toRate.length + (S.batch || 10); save(); setSwipeView(unjudged(scopeFilter()).length ? "card" : "home"); } }, "Plus tard, continuer à swiper"))));
+        h("button.btn", { style: "width:100%;justify-content:center", onclick: () => { S.rateAt = S.toRate.length + (batchSize() || 10); save(); setSwipeView(unjudged(scopeFilter()).length ? "card" : "home"); } }, "Plus tard, continuer à swiper"))));
     renderSteps();
   }
   function renderSwipeRate() {
@@ -1326,6 +1334,16 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       const sec = (title, ids) => ids.length ? h("div.cand-sec", h("h4", title + " (" + ids.length + ")"), ids.map(row)) : null;
       return h("div.cand-detail", sec("Vous êtes d'accord", grp(id => weight(id) > 0)), sec("Pas sûr, sans avis", grp(id => weight(id) === 0)), sec("Vous n'êtes pas d'accord", grp(id => weight(id) < 0)));
     };
+    const examples = (r) => {
+      const mine = judgedIds().filter(id => ITEMS[id].cands.includes(r.cand.id));
+      const pick = (f) => mine.filter(f).sort((a, b) => Math.abs(weight(b)) - Math.abs(weight(a)))[0];
+      const yes = pick(id => weight(id) > 0), no = pick(id => weight(id) < 0);
+      const short = (id) => { const t = ITEMS[id].t.replace(/\s+/g, " "); return t.length > 110 ? t.slice(0, 107) + "…" : t; };
+      return h("div.examples",
+        yes ? h("div.ex.yes", h("span.mark.yes", "✓"), short(yes)) : null,
+        no ? h("div.ex.no", h("span.mark.no", "✕"), short(no)) : null,
+        h("div.ex.unk", h("span.mark.unsure", "?"), (r.of - r.seen) ? plural(r.of - r.seen, "idée de son programme non vue", "idées de son programme non vues") : "Tout son programme a été vu"));
+    };
     const candRow = (r, i, far) => {
       const detail = candIdeas(r.cand); detail.hidden = true;
       const btn = h("button.linkbtn", { onclick: () => { detail.hidden = !detail.hidden; btn.textContent = detail.hidden ? "Voir ses idées que vous avez jugées" : "Masquer"; } }, "Voir ses idées que vous avez jugées");
@@ -1337,7 +1355,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           h("div.meta", h("span", h("b.num", Math.round(r.accord * 100) + " %"), " d'accord"),
             h("span", h("b.num", r.comp), " idées comparées"),
             h("span", h("b.num", r.seen + "/" + r.of), " de son programme vu")),
-          h("div", { style: "margin-top:6px" }, btn), detail));
+          examples(r), h("div", { style: "margin-top:6px" }, btn), detail));
     };
     const rank = h("div.rank", top.map((r, i) => candRow(r, i, false)));
     const farthest = R.ranking.filter(r => !top.includes(r)).slice(-5).reverse();
@@ -1360,33 +1378,59 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("tbody", R.themes.map(t => h("tr", h("td", t.theme.name), h("td.num", fmtPos(t.sp.pos)), h("td", spLabel(t.sp)), h("td.num", t.decided + " / " + t.judged))),
           h("tr", h("td", h("b", "Ensemble")), h("td.num", fmtPos(R.overall.pos)), h("td", spLabel(R.overall)), h("td.num", R.decided + " / " + R.judged)))));
 
-    app.replaceChildren(h("div.results",
-      banner,
+    // Niveau 1 : tendances et zones inconnues
+    const axesBox = R.axes ? h("div.id-axes", AXIS_KEYS.map(k => { const a = R.axes[k], [lab, left, right] = AXIS_INFO[k], x = (p) => (50 + p * 5) + "%";
+      return h("div.id-axis", h("div.lab", lab, h("span.small", left + " ◂ ▸ " + right)),
+        a.pos != null ? h("div.track", h("span.dot", { class: a.pos <= -2 ? "l" : a.pos >= 2 ? "r" : "", style: "left:" + x(a.pos) }), h("span.val.num", { style: a.pos > 2 ? "right:" + (50 - a.pos * 5 + 2.5) + "%" : "left:" + (50 + a.pos * 5 + 2.5) + "%" }, fmtPos(a.pos) + " · " + plural(a.n, "idée")))
+          : h("span.small.muted", a.n ? "Indéterminé · " + plural(a.n, "idée tranchée", "idées tranchées") + " sur " + MIN_DECIDED : "Non abordé")); })) : null;
+    const notSeen = D.themes.filter(t => !R.themes.some(x => x.theme.id === t.id)).map(t => t.name);
+    const undetermined = R.themes.filter(t => t.reliability === "indéterminé").map(t => t.theme.name + " (" + plural(t.decided, "réponse tranchée", "réponses tranchées") + ")");
+    const inProgress = R.themes.filter(t => t.reliability === "en cours").map(t => t.theme.name);
+    const unknownBox = h("div.unknown-box",
+      h("h3", "Ce que vos réponses ne montrent pas encore"),
+      h("ul",
+        notSeen.length ? h("li", h("b", plural(notSeen.length, "thème non abordé", "thèmes non abordés") + " : "), notSeen.join(", ")) : null,
+        undetermined.length ? h("li", h("b", "Position indéterminée : "), undetermined.join(", ")) : null,
+        inProgress.length ? h("li", h("b", "Tendance encore fragile : "), inProgress.join(", ")) : null,
+        R.nul.length ? h("li", h("b", plural(R.nul.length, "idée sans avis", "idées sans avis") + " : "), "elles ne comptent pas ; vous pouvez les réexaminer dans le détail ci-dessous.") : null,
+        R.tooFew.length ? h("li", h("b", plural(R.tooFew.length, "personnalité pas encore comparable", "personnalités pas encore comparables") + " : "), "moins de " + R.minComp + " de leurs idées vues.") : null,
+        !notSeen.length && !undetermined.length && !inProgress.length && !R.nul.length && !R.tooFew.length ? h("li", "Rien de notable : tous les thèmes sont abordés et consolidés.") : null));
+    const levelInfo = infoBubble("Les positions viennent du contenu des mesures que vous avez approuvées ou rejetées (cinq axes codés de −2 à +2, voir la méthode en bas de page), pas de l'identité de leurs auteurs. Une position est indéterminée sous " + MIN_DECIDED + " réponses tranchées ; « pas sûr » sans tendance ne compte pas.");
+    const level1 = h("section",
+      h("div.sec-head", h("h2", partial ? "Vos tendances, pour l'instant" : "Vos tendances", levelInfo.btn), levelInfo.box),
       h("div.stat-row.compact",
         h("div.stat.mini-stats",
           h("div.yes", h("div.v.num", allJ.filter(id => S.sel[id]).length), h("div.k", "aimées")),
           h("div.unsure", h("div.v.num", allJ.filter(id => S.unsure[id]).length), h("div.k", "pas sûr")),
           h("div.no", h("div.v.num", allJ.filter(id => S.no[id]).length), h("div.k", "rejetées"))),
         h("div.stat.orient-tile",
-          h("div.k", (partial ? "Pré-orientation" : "Orientation") + (R.overall.pos == null ? " · " + plural(R.decided, "réponse tranchée", "réponses tranchées") + " sur " + MIN_DECIDED + " nécessaires" : " calculée · " + fmtPos(R.overall.pos) + " sur une échelle de −10 à +10")),
+          h("div.k", (partial ? "Pré-orientation" : "Orientation") + (R.overall.pos == null ? " · " + plural(R.decided, "réponse tranchée", "réponses tranchées") + " sur " + MIN_DECIDED + " nécessaires" : " · " + fmtPos(R.overall.pos) + " sur une échelle de −10 à +10")),
           h("div.v", orientName),
           R.overall.pos == null ? null : h("div.track", h("span.dot", { class: R.overall.pos <= -2 ? "l" : R.overall.pos >= 2 ? "r" : "", style: "left:" + (50 + R.overall.pos * 5) + "%" })),
-          bl.total ? h("div.small", h("span", { style: "color:var(--left);font-weight:700" }, Math.round(bl.l * 100) + " % gauche"), " · ", h("span", { style: "font-weight:700" }, Math.round(bl.c * 100) + " % centre"), " · ", h("span", { style: "color:var(--right);font-weight:700" }, Math.round(bl.r * 100) + " % droite"), h("span.muted", " de vos accords")) : null,
+          bl.total ? h("div.small", h("span", { style: "color:var(--left);font-weight:700" }, Math.round(bl.l * 100) + " % gauche"), " · ", h("span", { style: "font-weight:700" }, Math.round(bl.c * 100) + " % centre"), " · ", h("span", { style: "color:var(--right);font-weight:700" }, Math.round(bl.r * 100) + " % droite"), h("span.muted", " de vos accords, par famille des auteurs")) : null,
           bl.split && R.overall.pos != null && Math.abs(R.overall.pos) < 2 ? h("div.small.muted", "La moyenne tombe au centre parce que vos accords se partagent entre les deux bords, pas parce que vous choisissez des idées centristes.") : null,
           h("div.profile", prof.name),
-          h("div.k", plural(R.themes.length, "thème abordé", "thèmes abordés") + " sur " + D.themes.length + " · " + plural(R.ranking.length, "personnalité représentée", "personnalités représentées")))),
-      h("section", h("div.sec-head", h("h2", (nTop >= 5 ? "Les cinq personnalités" : nTop > 1 ? "Les " + nTop + " personnalités" : nTop ? "La personnalité" : "Aucune personnalité") + (partial ? " les plus proches, pour l'instant" : " les plus proches de vos choix"), rankInfo.btn), rankInfo.box),
-        nTop ? rank : h("p.empty", "Aucune personnalité n'a encore " + R.minComp + " idées comparées : continuez à juger des idées."), far, others, tooFew),
-      h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
-        h("p", "Position de −10 (gauche) à +10 (droite) : les idées aimées vous rapprochent de leurs auteurs, les idées rejetées vous en éloignent. La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos idées aimées ; la mention sous chaque thème indique la solidité de la mesure.")),
-        spectrum, table,
-        h("p.note", "Échelle indicative propre à cet outil : chaque personnalité a reçu une position fixe sur l'axe gauche-droite (modifiable dans extraire-donnees.mjs). Elle ne provient pas de la Fondation iFRAP.")),
-      h("section", h("details.recap-wrap", h("summary", h("h2", { style: "display:inline" }, "Les thèmes et idées qui vous parlent"), h("span.small.muted", " · " + plural(R.judged, "idée jugée", "idées jugées") + " — cliquer pour déplier")),
+          h("div.k", plural(R.decided, "réponse tranchée", "réponses tranchées") + " · " + plural(R.themes.length, "thème abordé", "thèmes abordés") + " sur " + D.themes.length)),
+        axesBox ? h("div.stat", h("div.k", { style: "margin:0 0 8px" }, "Vos positions par axe, d'après le contenu des mesures"), axesBox) : null),
+      unknownBox);
+    // Niveau 2 : proximités
+    const level2 = h("section", h("div.sec-head", h("h2", (nTop >= 5 ? "Les cinq personnalités" : nTop > 1 ? "Les " + nTop + " personnalités" : nTop ? "La personnalité" : "Aucune personnalité") + (partial ? " les plus proches, pour l'instant" : " les plus proches de vos choix"), rankInfo.btn), rankInfo.box),
+      nTop ? rank : h("p.empty", "Aucune personnalité n'a encore " + R.minComp + " idées comparées : continuez à juger des idées."), far, others, tooFew);
+    // Niveau 3 : détails et méthode
+    const methodInfo = h("div.info-box", { style: "margin-top:10px" },
+      "Poids : d'accord 60 / 80 / 100, pas d'accord en miroir, pas sûr ±30 selon la tendance, 0 sans avis. Position d'une carte : moyenne de ses axes de contenu non nuls (−10 à +10) ; position d'un thème : moyenne des cartes tranchées pondérée par les poids signés, indéterminée sous " + MIN_DECIDED + ". Proximité : taux d'accord pondéré sur les idées vues d'une personnalité, " + R.minComp + " comparaisons au minimum. Les familles affichées à côté des partis sont des repères indicatifs propres à cet outil, pas une donnée iFRAP. Détail complet dans le README du projet.");
+    const level3 = h("section",
+      h("details.recap-wrap", h("summary", h("h2", { style: "display:inline" }, "Thème par thème"), h("span.small.muted", " · spectre et tableau — cliquer pour déplier")),
+        h("div", { style: "margin-top:12px" }, spectrum, table)),
+      h("details.recap-wrap", h("summary", h("h2", { style: "display:inline" }, "Les thèmes et idées qui vous parlent"), h("span.small.muted", " · " + plural(R.judged, "idée jugée", "idées jugées") + " — cliquer pour déplier")),
         h("p.small.muted", { style: "margin:8px 0 12px" }, "Vos idées jugées avec leur pondération et leur auteur. Filtrez par thème et sujet."),
-        recapFilter(R))),
+        recapFilter(R)),
+      h("details.recap-wrap", h("summary", h("h2", { style: "display:inline" }, "Méthode de calcul"), h("span.small.muted", " — cliquer pour déplier")), methodInfo));
+    app.replaceChildren(h("div.results",
+      banner, level1, level2, level3,
       identitySection(R, prof, partial),
       partial ? null : h("section", h("div.sec-head", h("h2", "Aller plus loin avec Claude"),
-        h("p", "Claude rédige un portrait court et nuancé à partir de vos choix. La clé API reste dans votre navigateur et n'est envoyée qu'à l'API Anthropic.")),
+        h("p", "Facultatif : Claude rédige un portrait court et nuancé à partir de vos choix. Cette étape envoie vos réponses à l'API Anthropic ; tout le reste de l'application reste local.")),
         aiCard(R)),
       h("div.panel-foot",
         h("div", partial ? (swipe ? h("button.btn", { onclick: () => { S.sview = "home"; setPhase(1); } }, "← Accueil") : nextButton(false)) : h("button.btn", { onclick: () => { if (!swipe) goHome(); else { S.sview = "home"; setPhase(1); } } }, "← Revoir mes réponses")),
@@ -1598,7 +1642,11 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         out.replaceChildren(h("p.ai-err", err instanceof TypeError ? NET_MSG : "Échec de la génération : " + err.message));
       } finally { btn.disabled = false; }
     });
+    const sent = h("details.others", h("summary", "Ce qui est transmis à l'API Anthropic"),
+      h("p.small.muted", "Le texte ci-dessous est envoyé tel quel à api.anthropic.com avec votre clé, uniquement quand vous cliquez sur le bouton. Il contient vos idées jugées, leurs notes et vos positions, jamais votre clé ni d'autres données du navigateur. Le portrait renvoyé est stocké dans ce navigateur."),
+      h("pre.small", { style: "white-space:pre-wrap;max-height:260px;overflow:auto;background:var(--paper);padding:10px;border-radius:8px" }, buildPrompt(R)));
     return h("div.card-ai",
+      sent,
       h("div.form",
         h("div.field", h("label", { for: "api-key" }, "Clé API Anthropic"), keyInput),
         h("div.field", h("label", { for: "api-model" }, "Modèle"), modelSel)),
@@ -1640,7 +1688,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const ALLOWED_W = new Set(Object.values(LEVELS).flat().map(l => l[0]));
     next.w = {}; Object.entries(o.w || {}).forEach(([id, w]) => { if (ITEMS[id] && typeof w === "number" && ALLOWED_W.has(w)) next.w[id] = w; });
     if (!o.w) Object.entries(o.rate || {}).forEach(([id, r]) => { if (next.sel[id]) next.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; });
-    if (o.batch) next.batch = o.batch; next.setup = o.setup !== undefined ? !!o.setup : o.sel.length > 0;
+    if ([0, 5, 10, 15, 20].includes(o.batch)) next.batch = o.batch; next.setup = o.setup !== undefined ? !!o.setup : o.sel.length > 0;
     next.toRate = (o.toRate || []).filter(id => ITEMS[id] && (next.sel[id] || next.no[id] || next.unsure[id]));
     if ([10, 20, 30, 50].includes(o.quota)) next.quota = o.quota; if (o.daily && typeof o.daily.n === "number") next.daily = o.daily;
     if (o.scope && ["mix", "theme"].includes(o.scope.type)) next.scope = { type: o.scope.type, theme: o.scope.theme || null, subs: Array.isArray(o.scope.subs) ? o.scope.subs : [] };
@@ -1721,7 +1769,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   /* ---------- Pied de page ---------- */
   document.getElementById("foot").replaceChildren(...[
     "Propositions compilées par la Fondation iFRAP (", h("a", { href: D.source, target: "_blank", rel: "noopener" }, "comparateur Présidentielles 2027"),
-    "), extraites le " + D.extractedAt + " : " + ALL_IDEAS.toLocaleString("fr-FR") + " propositions, " + SUBS.length + " sujets, " + D.candidates.length + " personnalités. Vos choix restent dans ce navigateur ; utilisez « Sauvegarder / restaurer » pour les emporter ailleurs.",
+    "), extraites le " + D.extractedAt + " : " + ALL_IDEAS.toLocaleString("fr-FR") + " propositions, " + SUBS.length + " sujets, " + D.candidates.length + " personnalités. Vos choix restent dans ce navigateur (seule la carte rédigée par Claude, facultative, envoie vos réponses à l'API Anthropic) ; utilisez « Sauvegarder / restaurer » pour les emporter ailleurs.",
     (() => { const days = Math.floor((Date.now() - new Date(D.extractedAt)) / 864e5); return days > 45 ? h("span", { style: "display:block;margin-top:6px;color:var(--warn)" }, "Ces données ont " + days + " jours : les programmes ont pu évoluer, relancez extraire-donnees.mjs pour les actualiser.") : null; })()].filter(Boolean));
 
   render();
