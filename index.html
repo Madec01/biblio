@@ -504,8 +504,24 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     unsure: [[-30, "−", "Plutôt non"], [0, "?", "Je ne sais pas du tout"], [30, "+", "Plutôt oui"]],
   };
   const DEFAULT_W = { yes: 80, no: -80, unsure: 0 };
+  // Migration des identifiants : une réponse dont l'identifiant n'existe plus n'est jamais rattachée
+  // au hasard ; elle est conservée dans S.unresolved et signalée.
+  const LEGACY = D.legacy || {};
+  function migrateState(st) {
+    const unresolved = Array.isArray(st.unresolved) ? st.unresolved.slice() : [];
+    const mapKey = (id) => LEGACY[id] || id;
+    ["sel", "no", "unsure", "skip", "w", "rate", "expl", "open"].forEach(k => {
+      const src = st[k]; if (!src || typeof src !== "object") return; const out = {};
+      Object.entries(src).forEach(([id, v]) => { const n = mapKey(id); if (ITEMS[n]) out[n] = v; else if (["sel", "no", "unsure"].includes(k) && v) unresolved.push({ id, state: k, w: src === st.sel ? undefined : undefined }); });
+      st[k] = out;
+    });
+    ["toRate", "rateHist"].forEach(k => { if (Array.isArray(st[k])) st[k] = st[k].map(x => typeof x === "string" ? mapKey(x) : x).filter(x => typeof x !== "string" || ITEMS[x]); });
+    if (Array.isArray(st.hist)) st.hist = st.hist.map(e => Object.assign({}, e, { id: mapKey(e.id) })).filter(e => ITEMS[e.id]);
+    const seenU = new Set(); st.unresolved = unresolved.filter(u => u && u.id && !ITEMS[mapKey(u.id)] && !seenU.has(u.id) && seenU.add(u.id));
+    return st;
+  }
   let S = fresh();
-  try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) { /* stockage indisponible */ }
+  try { const raw = localStorage.getItem(KEY); if (raw) S = migrateState(Object.assign(fresh(), JSON.parse(raw))); } catch (e) { /* stockage indisponible */ }
   if (S.theme === undefined && typeof S.cur === "number" && SUBS[S.cur]) S.theme = SUBS[S.cur].theme.id;
   S.no = S.no || {}; S.skip = S.skip || {}; S.toRate = S.toRate || []; S.hist = S.hist || []; S.lastPos = S.lastPos || []; S.daily = S.daily || { d: "", n: 0 };
   S.scope = S.scope || { type: "mix", theme: null, subs: [] }; S.quota = S.quota || 10; S.mode = S.mode || "auto"; S.sview = S.sview || "home";
@@ -514,6 +530,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   if (!S.w) { S.w = {}; Object.entries(S.rate || {}).forEach(([id, r]) => { if (S.sel[id]) S.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; }); }
   var saveWarned = false;
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, S, { key: S.keepKey ? S.key : "" }))); } catch (e) { warnSave(); } };
+  save(); // persiste l'état migré (identifiants) dès le chargement
   function warnSave() {
     if (saveWarned) return; saveWarned = true;
     const box = h("div.save-warn", { role: "alert" }, h("b", "Vos réponses ne sont plus enregistrées dans ce navigateur"), " (stockage plein ou bloqué). Exportez-les maintenant pour ne rien perdre. ",
@@ -1005,6 +1022,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       isApp() ? h("div.home-top", h("div.abtitle.big", "Boussole 2027"), h("div.caps",
         cap("Options", () => setSwipeView("options")), cap("Repères", () => setPhase(4)), cap("Sauvegarde", () => openSave()))) : null,
       h("div.install-box"),
+      (S.unresolved || []).length ? h("div.info-box", plural(S.unresolved.length, "réponse non résolue", "réponses non résolues") + " : les propositions correspondantes ont disparu ou changé dans les données actuelles. Elles sont conservées dans vos sauvegardes mais ne comptent pas.") : null,
       h("div.recap-mini",
         h("div.row", h("span", h("b.num", n + " / " + q), " aujourd'hui"), h("span", h("b.num", jc), " jugées sur " + TOTAL_ITEMS), h("span.muted", scopeLabel)),
         h("div.pbar", h("i", { style: "width:" + pc + "%" }))),
@@ -1551,7 +1569,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       v: 1, d: D.extractedAt, sel: selectedIds(), no: Object.keys(S.no).filter(k => S.no[k]), rate: S.rate, done: D.themes.filter(t => S.stage[t.id] === "done").map(t => t.id),
       skipped: Object.keys(S.skipped), seen: Object.keys(S.seen).filter(k => S.seen[k]), card: S.card || "",
       toRate: S.toRate, quota: S.quota, daily: S.daily, scope: S.scope, finished: !!S.finished, mode: S.mode,
-      unsure: Object.keys(S.unsure).filter(k => S.unsure[k]), w: S.w, batch: S.batch, setup: !!S.setup,
+      unsure: Object.keys(S.unsure).filter(k => S.unsure[k]), w: S.w, batch: S.batch, setup: !!S.setup, unresolved: S.unresolved || [],
     }))));
   }
   function importState(code) {
@@ -1562,15 +1580,20 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     if (!o || o.v !== 1 || !Array.isArray(o.sel)) throw new Error("Ce n'est pas une sauvegarde Boussole 2027.");
     const next = fresh();
     next.model = S.model; next.keepKey = S.keepKey; next.key = S.key;
-    let unknown = 0;
-    o.sel.forEach(id => { if (ITEMS[id]) next.sel[id] = true; else unknown++; });
+    const mapId = (id) => LEGACY[id] || id;
+    ["sel", "no", "unsure", "toRate"].forEach(k => { if (Array.isArray(o[k])) o[k] = o[k].map(mapId); });
+    ["w", "rate"].forEach(k => { if (o[k] && typeof o[k] === "object") o[k] = Object.fromEntries(Object.entries(o[k]).map(([id, v]) => [mapId(id), v])); });
+    let unknown = 0; next.unresolved = [];
+    const unres = (id, state) => { unknown++; next.unresolved.push({ id, state }); };
+    o.sel.forEach(id => { if (ITEMS[id]) next.sel[id] = true; else unres(id, "sel"); });
     Object.entries(o.rate || {}).forEach(([id, r]) => { if (ITEMS[id] && r >= 1 && r <= 5) next.rate[id] = r; });
     (o.done || []).forEach(id => { if (D.themes.some(t => t.id === id)) next.stage[id] = "done"; });
     (o.skipped || []).forEach(id => { if (D.themes.some(t => t.id === id)) next.skipped[id] = true; });
     (o.seen || []).forEach(id => { next.seen[id] = true; });
+    (Array.isArray(o.unresolved) ? o.unresolved : []).forEach(u => { if (u && u.id && !ITEMS[mapId(u.id)]) next.unresolved.push({ id: u.id, state: u.state }); });
     next.card = o.card || "";
-    (o.no || []).forEach(id => { if (ITEMS[id] && !next.sel[id]) next.no[id] = true; });
-    (o.unsure || []).forEach(id => { if (ITEMS[id] && !next.sel[id] && !next.no[id]) next.unsure[id] = true; });
+    (o.no || []).forEach(id => { if (ITEMS[id]) { if (!next.sel[id]) next.no[id] = true; } else unres(id, "no"); });
+    (o.unsure || []).forEach(id => { if (ITEMS[id]) { if (!next.sel[id] && !next.no[id]) next.unsure[id] = true; } else unres(id, "unsure"); });
     const ALLOWED_W = new Set(Object.values(LEVELS).flat().map(l => l[0]));
     next.w = {}; Object.entries(o.w || {}).forEach(([id, w]) => { if (ITEMS[id] && typeof w === "number" && ALLOWED_W.has(w)) next.w[id] = w; });
     if (!o.w) Object.entries(o.rate || {}).forEach(([id, r]) => { if (next.sel[id]) next.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; });
@@ -1581,7 +1604,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     next.finished = !!o.finished; if (["auto", "swipe", "pages"].includes(o.mode)) next.mode = o.mode;
     try { localStorage.setItem(KEY + ".avant-restauration", JSON.stringify(S)); } catch (e) { /* point de restauration impossible */ }
     S = next; save();
-    return { n: o.sel.length - unknown, unknown, date: o.d };
+    return { n: Object.keys(next.sel).length + Object.keys(next.no).length + Object.keys(next.unsure).length, unknown, date: o.d };
   }
   var openSave = () => {};
   function renderToolbar() {
@@ -1601,7 +1624,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       const file = h("input", { type: "file", id: "restore-file", accept: ".json,.txt,application/json" });
       const doRestore = (text) => {
         try { const r = importState(text); close(); render(); toTop();
-          document.getElementById("toolbar").append(h("span.ok", { id: "restore-ok" }, "Sauvegarde restaurée : " + plural(r.n, "idée retenue", "idées retenues") + (r.unknown ? ", " + r.unknown + " ignorée(s) car absentes des données actuelles" : "") + "."));
+          document.getElementById("toolbar").append(h("span.ok", { id: "restore-ok" }, "Sauvegarde restaurée : " + plural(r.n, "réponse") + (r.unknown ? " ; " + plural(r.unknown, "réponse non résolue", "réponses non résolues") + " (propositions absentes ou modifiées dans les données actuelles), conservées sans être comptées" : "") + "."));
         } catch (e) { console.error(e); err.textContent = e.message; }
       };
       file.addEventListener("change", () => { const f = file.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => doRestore(String(rd.result)); rd.readAsText(f); });

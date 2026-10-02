@@ -8,6 +8,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import vm from "node:vm";
+import { existsSync } from "node:fs";
+import { idOf } from "./identifiants.mjs";
 
 const SOURCE = "https://www.ifrap.org/comparateurs/presidentielles-2027";
 const here = dirname(fileURLToPath(import.meta.url));
@@ -54,17 +56,36 @@ const candidates = state.candidates.map((c) => {
 });
 
 let n = 0;
+const ids = new Set();
 const themes = state.content.map((t) => ({
   id: t.id, name: t.name,
   subs: t.items.map((s) => ({
     id: s.id, name: s.name,
-    ideas: s.items.flatMap((c) => (c.content.proposals || []).map((p) => ({
-      id: `${s.id}-${++n}`, c: c.id, t: toText(p.text),
-    })).filter((i) => i.t)),
+    ideas: s.items.flatMap((c) => (c.content.proposals || []).map((p) => {
+      const text = toText(p.text); if (!text) return null;
+      let id = idOf(s.id, c.id, text), k = 1;
+      while (ids.has(id)) id = idOf(s.id, c.id, text) + "-" + (++k); // même texte répété chez le même auteur
+      ids.add(id); n++;
+      return { id, c: c.id, t: text };
+    }).filter(Boolean)),
   })).filter((s) => s.ideas.length),
 })).filter((t) => t.subs.length);
 
-const data = { source: SOURCE, extractedAt: new Date().toISOString().slice(0, 10), candidates, themes };
+// Table de correspondance des anciens identifiants (sauvegardes antérieures) : on conserve
+// celle du data.js précédent, limitée aux cibles encore présentes. Une proposition dont le
+// texte a changé obtient un nouvel identifiant sans correspondance : la réponse sera signalée
+// comme non résolue, jamais rattachée au hasard.
+let legacy = {};
+const prevPath = join(here, "data.js");
+if (existsSync(prevPath)) {
+  try { const w = {}; new Function("window", readFileSync(prevPath, "utf8"))(w);
+    Object.entries(w.PROGRAMMES.legacy || {}).forEach(([o, nw]) => { if (ids.has(nw)) legacy[o] = nw; });
+    const missing = []; w.PROGRAMMES.themes.forEach((t) => t.subs.forEach((s) => s.ideas.forEach((i) => { if (!ids.has(i.id)) missing.push(i.id); })));
+    if (missing.length) console.warn(`${missing.length} proposition(s) de l'extraction précédente n'existent plus ou ont changé de texte : ${missing.slice(0, 10).join(", ")}${missing.length > 10 ? "…" : ""}`);
+  } catch (e) { console.warn("data.js précédent illisible, correspondances non reprises"); }
+}
+
+const data = { source: SOURCE, extractedAt: new Date().toISOString().slice(0, 10), candidates, themes, legacy };
 writeFileSync(join(here, "data.js"),
   "// Généré par extraire-donnees.mjs — source : " + SOURCE + "\n" +
   "window.PROGRAMMES = " + JSON.stringify(data) + ";\n");
