@@ -58,16 +58,61 @@ langage courant sur la carte.
   pas du tout / plutôt oui, avec « remettre dans la pile » pour y revenir plus
   tard. Reportable à tout moment.
 
-### Calcul
+### Méthode
 
-Chaque idée jugée reçoit un poids signé de −100 à +100 : d'accord 60 / 80 /
-100 (80 par défaut), pas d'accord en miroir, pas sûr ±30 selon la tendance et 0
-sans avis (les idées « je ne sais pas du tout » sont listées dans les résultats
-et peuvent être réexaminées). Le classement
-va par points nets, avec le taux d'accord (points positifs sur points en valeur
-absolue) sur les idées vues de chaque personnalité. Sur le spectre, les poids
-positifs rapprochent de leurs auteurs, les négatifs en éloignent ; chaque thème porte un indicateur de solidité
-(très peu d'idées / en cours / consolidé / terminé).
+**Poids des réponses.** Chaque idée jugée reçoit un poids signé de −100 à +100 :
+d'accord 60 / 80 / 100 (80 par défaut), pas d'accord en miroir, pas sûr ±30
+selon la tendance et 0 sans avis (les idées « je ne sais pas du tout » sont
+listées dans les résultats et peuvent être réexaminées). Une réponse
+**tranchée** est un « d'accord » ou un « pas d'accord ».
+
+**Positions (M01).** Elles ne dépendent pas des auteurs : chaque carte est codée
+dans `codage.js` sur cinq axes, de −2 à +2, d'après le seul contenu de la mesure
+(grille ci-dessous). La position gauche-droite d'une carte est la moyenne de ses
+axes non nuls (×5, soit −10 à +10) ; celle d'un thème ou de l'ensemble est la
+moyenne de ces positions pondérée par les poids signés : approuver une mesure
+« de droite » tire vers la droite, la rejeter tire vers la gauche. Chaque axe se
+calcule de même, uniquement sur les cartes qui le concernent.
+
+| Axe | −2 | +2 |
+| --- | --- | --- |
+| `etat` Rôle de l'État | plus d'intervention, de dépense, de redistribution, d'impôts sur les plus aisés | moins d'État : baisse des dépenses et impôts, privatisation, concurrence, conditionnalité |
+| `ordre` Ordre et libertés | plus de libertés, moins de répression, accueil, régularisation | plus d'autorité, sanctions, immigration restreinte, durcissement pénal |
+| `societe` Société | progressisme : nouveaux droits, égalité, inclusion, participation | conservatisme : valeurs traditionnelles, famille, identité, mérite et discipline |
+| `europe` Europe et monde | plus d'intégration européenne, de coopération, d'ouverture | souveraineté nationale, protectionnisme, sortie ou renégociation des traités |
+| `ecologie` Écologie | priorité à la transition : normes, taxes, sobriété | assouplissement des contraintes environnementales au profit de la production |
+
+0 = la mesure ne porte pas sur l'axe ; ±1 = orientation nette mais modérée. Le
+codage a été rédigé par Claude pour cet outil ; `node verifier.mjs` contrôle
+qu'il couvre toutes les cartes et mesure sa cohérence avec les positions
+indicatives des auteurs (corrélation 0,85 à la première passe : les écarts
+viennent surtout des programmes qui mêlent économie protectrice et droite
+régalienne). Les positions indicatives par personnalité (`POSITIONS` dans
+`extraire-donnees.mjs`) ne servent plus qu'au repère « famille » affiché à côté
+du parti et au taux d'accord par famille.
+
+**Proximités (M02).** Une personnalité est classée par son **taux d'accord
+pondéré** sur ses idées que vous avez vues et tranchées (poids positifs sur
+poids en valeur absolue), jamais par une somme de points : publier beaucoup de
+propositions n'est pas un bonus. Il faut au moins 5 idées comparées (3 en
+pré-orientation) ; en dessous, la personnalité est listée à part comme « pas
+encore comparable ». Le nombre d'idées comparées et la part du programme vue
+sont affichés.
+
+**Incertitude (M03).** Une position (thème, ensemble, axe) est **indéterminée**
+sous 5 réponses tranchées : quinze « pas sûr » ne donnent ni « Centre » ni
+« consolidé ». Chaque thème porte un état fondé sur les réponses tranchées :
+indéterminé / en cours / consolidé (15 réponses tranchées, ou 60 % des cartes
+pour les thèmes plus petits) / exploré (toutes les cartes vues). L'estimation de
+date sur l'accueil utilise ces mêmes cibles. Le profil est « en construction »
+sous 10 réponses tranchées.
+
+**Identifiants (F02).** Chaque proposition est identifiée par sujet, auteur et
+empreinte de son texte (`identifiants.mjs`), un groupe par sujet et empreinte de
+son titre. Si l'iFRAP modifie une proposition, elle change d'identifiant : la
+réponse associée devient « non résolue », conservée dans la sauvegarde, signalée
+à l'accueil, jamais rattachée au hasard. `data.js` garde une table `legacy` pour
+migrer les sauvegardes antérieures à octobre 2026.
 
 ### Pré-orientation et résultats
 
@@ -98,7 +143,7 @@ apparue. La page signale elle-même des données de plus de 45 jours.
 
 ### Profil politique et carte d'identité (calcul local)
 
-À partir des idées jugées, l'application calcule un profil (par exemple « Libéral progressiste », « Gauche populaire et souverainiste », « Transversal, hors des camps ») en croisant trois axes (économie, régalien, société) et le taux d'accord avec chaque famille politique. Le profil s'affiche dans la pré-orientation et les résultats ; le bouton « Créer ma carte d'identité politique » rassemble profil, axes, familles, personnalités les plus proches et les plus éloignées. Seuls les thèmes abordés comptent. La carte rédigée par Claude (clé API) reste disponible dans les résultats finaux.
+À partir des idées jugées, l'application calcule un profil (par exemple « Libéral progressiste », « Gauche populaire et souverainiste », « Transversal, hors des camps ») en croisant les axes de contenu (rôle de l'État d'un côté ; ordre, société, Europe et écologie de l'autre) et le taux d'accord avec chaque famille politique. Le profil s'affiche dans la pré-orientation et les résultats ; le bouton « Créer ma carte d'identité politique » rassemble profil, axes, familles, personnalités les plus proches et les plus éloignées. Seuls les thèmes abordés comptent. La carte rédigée par Claude (clé API) reste disponible dans les résultats finaux.
 
 Le bouton « Mettre à jour l'application » (accueil et menu) vide le cache hors connexion et recharge la dernière version publiée.
 
@@ -110,7 +155,15 @@ Le bouton « Mettre à jour l'application » (accueil et menu) vide le cache hor
   version qui doit remplacer le cache des utilisateurs.
 - `.github/workflows/pages.yml` : publication sur GitHub Pages à chaque push sur
   `main`.
-- `data.js` : les propositions, généré par le script ci-dessous.
+- `data.js` : les propositions, généré par le script ci-dessous (avec la table
+  `legacy` des anciens identifiants).
+- `groupes.js` : idées communes à plusieurs personnalités (une carte pour
+  plusieurs propositions). `codage.js` : codage de contenu des 977 cartes sur
+  cinq axes (section Méthode).
+- `identifiants.mjs` : calcul des identifiants durables ; `migrer-ids.mjs` :
+  migration unique d'octobre 2026 ; `verifier.mjs` : contrôle avant publication
+  (identifiants, auteurs, explications, groupes, codage), exécuté par le
+  workflow Pages.
 - `explications.js` : une explication par proposition, rédigée par Claude
   (neutre, sans auteur). À compléter pour les propositions ajoutées lors d'une
   mise à jour.

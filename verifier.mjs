@@ -37,6 +37,15 @@ if (C) {
   cards.forEach(id => { const c = C[id]; if (!c) { errors.push("codage manquant : " + id); return; }
     AX.forEach(a => { const v = c[a]; if (!Number.isInteger(v) || v < -2 || v > 2) errors.push("codage hors bornes " + id + "." + a + " = " + v); }); });
   Object.keys(C).forEach(id => { if (!ideas.has(id) && !gids.has(id)) errors.push("codage orphelin : " + id); });
+  // Cohérence : la position de contenu moyenne des propositions de chaque auteur doit suivre grossièrement
+  // sa position indicative (corrélation attendue > 0,6). Un écart signale une grille mal appliquée.
+  const lr = (id) => { const c = C[id]; if (!c) return null; const v = AX.map(a => c[a]).filter(x => x); return v.length ? 5 * v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const per = {}; ideas.forEach((i, id) => { const p = lr(inGroup.get(id) || id); if (p == null) return; (per[i.c] = per[i.c] || []).push(p); });
+  const rows = D.candidates.filter(c => (per[c.id] || []).length >= 5).map(c => [c.pos, per[c.id].reduce((a, b) => a + b, 0) / per[c.id].length]);
+  if (rows.length >= 5) { const mx = rows.reduce((a, r) => a + r[0], 0) / rows.length, my = rows.reduce((a, r) => a + r[1], 0) / rows.length;
+    const cov = rows.reduce((a, r) => a + (r[0] - mx) * (r[1] - my), 0), sx = Math.sqrt(rows.reduce((a, r) => a + (r[0] - mx) ** 2, 0)), sy = Math.sqrt(rows.reduce((a, r) => a + (r[1] - my) ** 2, 0));
+    const corr = sx && sy ? cov / sx / sy : 0; console.log("cohérence codage / positions indicatives : corrélation " + corr.toFixed(2));
+    if (corr < 0.6) warns.push("corrélation faible entre le codage de contenu et les positions indicatives (" + corr.toFixed(2) + ")"); }
 }
 console.log(`${ideas.size} propositions, ${G.length} groupes, ${Object.keys(E).length} explications${C ? ", " + Object.keys(C).length + " codages" : ""}`);
 warns.slice(0, 20).forEach(w => console.warn("avertissement : " + w)); if (warns.length > 20) console.warn(`… ${warns.length - 20} autres avertissements`);

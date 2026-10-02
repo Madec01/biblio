@@ -452,6 +452,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 <script src="data.js"></script>
 <script src="explications.js"></script>
 <script src="groupes.js"></script>
+<script src="codage.js"></script>
 <script>
 (() => {
   "use strict";
@@ -483,6 +484,19 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const TOTAL_BY_CAND = {};
   Object.values(IDEAS).forEach(i => { TOTAL_BY_CAND[i.c] = (TOTAL_BY_CAND[i.c] || 0) + 1; });
   const ALL_IDEAS = Object.keys(IDEAS).length;
+  // Codage de contenu (codage.js, M01) : cinq axes de −2 à +2 par carte, indépendants de l'auteur.
+  const CODAGE = window.CODAGE || {};
+  const AXIS_KEYS = ["etat", "ordre", "societe", "europe", "ecologie"];
+  const AXIS_INFO = { etat: ["Rôle de l'État", "plus d'intervention et de redistribution", "moins d'État, baisse des dépenses et impôts"],
+    ordre: ["Ordre et libertés", "plus de libertés, accueil", "plus d'autorité, fermeté, immigration restreinte"],
+    societe: ["Société", "progressisme, nouveaux droits", "conservatisme, valeurs traditionnelles"],
+    europe: ["Europe et monde", "intégration, ouverture", "souveraineté, protectionnisme"],
+    ecologie: ["Écologie", "priorité à la transition", "priorité à la production"] };
+  const codeOf = (id) => CODAGE[id] || null;
+  // Position gauche-droite d'une carte d'après son contenu (moyenne des axes non nuls, ×5 → −10..+10) ;
+  // null si la carte n'est codée sur aucun axe ou pas codée du tout.
+  const contentPos = (id) => { const c = codeOf(id); if (!c) return null; const v = AXIS_KEYS.map(k => c[k] || 0).filter(x => x); return v.length ? 5 * v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const CODED = Object.keys(CODAGE).length > 0;
 
   /* ---------- État persistant ---------- */
   const KEY = "boussole2027";
@@ -563,7 +577,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const PARTY_FALLBACK = { "Bertrand": "Divers droite", "Cazeneuve": "La Convention", "Hollande": "PS", "Maurel": "GRS", "Mélenchon": "LFI", "Roussel": "PCF", "Ruffin": "Debout !" };
   const party = (c) => c.party || PARTY_FALLBACK[c.last] || "Sans étiquette";
   const orientChip = (c) => h("span.cand-orient", { class: c.pos <= -2 ? "l" : c.pos >= 2 ? "r" : "", title: "Position indicative " + fmtPos(c.pos) }, posLabel(c.pos));
-  const APP_VERSION = "1.5";
+  const APP_VERSION = "2.0";
   const stateOf = (id) => S.sel[id] ? "yes" : S.no[id] ? "no" : S.unsure[id] ? "unsure" : null;
   const weight = (id) => { const st = stateOf(id); if (!st) return 0; const w = S.w[id]; return typeof w === "number" ? w : DEFAULT_W[st]; };
   const levelOf = (id) => { const st = stateOf(id); if (!st) return null; const w = weight(id); return LEVELS[st].find(l => l[0] === w) || LEVELS[st][1]; };
@@ -573,12 +587,13 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const selectedIds = () => Object.keys(S.sel).filter(id => S.sel[id] && ITEMS[id]);
   const selInSub = (sub) => sub.items.filter(i => S.sel[i.id]);
   const authors = (it) => it.cands.map(c => CAND[c]);
-  const posLabel = (p) => p <= -6 ? "Gauche" : p <= -2 ? "Centre gauche" : p < 2 ? "Centre" : p < 6 ? "Centre droit" : "Droite";
-  const fmtPos = (p) => (p > 0 ? "+" : "") + p.toFixed(1).replace(".", ",");
+  const posLabel = (p) => p == null ? "Indéterminé" : p <= -6 ? "Gauche" : p <= -2 ? "Centre gauche" : p < 2 ? "Centre" : p < 6 ? "Centre droit" : "Droite";
+  const fmtPos = (p) => p == null ? "—" : (p > 0 ? "+" : "") + p.toFixed(1).replace(".", ",");
+  const spLabel = (sp) => !sp || sp.pos == null ? "Indéterminé" : posLabel(sp.pos);
 
   /* ---------- Calculs ---------- */
-  function compute(themeIds) {
-    const keep = themeIds ? new Set(themeIds) : null;
+  function compute(themeIds, minComp) {
+    const keep = themeIds ? new Set(themeIds) : null, mc = minComp || MIN_COMP;
     const all = judgedIds().filter(id => !keep || keep.has(ITEMS[id].sub.theme.id));
     const ids = all.filter(id => weight(id) > 0), nos = all.filter(id => weight(id) < 0), nul = all.filter(id => weight(id) === 0);
     const pos = {}, neg = {}, count = {}, seen = {};
@@ -587,35 +602,52 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       it.cands.forEach(c => { if (w > 0) pos[c] = (pos[c] || 0) + w; else if (w < 0) neg[c] = (neg[c] || 0) - w; });
       (it.members || [id]).forEach(m => { const c = IDEAS[m].c; seen[c] = (seen[c] || 0) + 1; if (w > 0) count[c] = (count[c] || 0) + 1; });
     });
-    const cands = [...new Set([...Object.keys(pos), ...Object.keys(neg)])];
-    const nets = cands.map(c => (pos[c] || 0) - (neg[c] || 0));
-    const totalPos = nets.filter(x => x > 0).reduce((a, b) => a + b, 0);
-    const ranking = cands.map((c, i) => ({
-      cand: CAND[c], net: nets[i], share: nets[i] > 0 && totalPos ? nets[i] / totalPos : 0,
-      accord: (pos[c] || 0) / ((pos[c] || 0) + (neg[c] || 0)), seen: seen[c] || 0,
-      n: count[c] || 0, of: TOTAL_BY_CAND[c], adhesion: (count[c] || 0) / TOTAL_BY_CAND[c],
-    })).sort((a, b) => b.net - a.net || b.accord - a.accord || b.adhesion - a.adhesion);
+    // Proximité (M02) : taux d'accord pondéré sur les idées comparables (réponse tranchée, poids ≠ 0),
+    // jamais une somme de points : le volume du programme n'est pas un bonus. Minimum MIN_COMP comparaisons.
+    const comp = {};
+    all.forEach(id => { const it = ITEMS[id]; if (weight(id) === 0) return; (it.members || [id]).forEach(m => { const c = IDEAS[m].c; comp[c] = (comp[c] || 0) + 1; }); });
+    const cands = [...new Set([...Object.keys(pos), ...Object.keys(neg), ...Object.keys(seen)])];
+    const rows = cands.map(c => ({
+      cand: CAND[c], net: (pos[c] || 0) - (neg[c] || 0), comp: comp[c] || 0,
+      accord: (pos[c] || 0) + (neg[c] || 0) ? (pos[c] || 0) / ((pos[c] || 0) + (neg[c] || 0)) : null, seen: seen[c] || 0,
+      n: count[c] || 0, of: TOTAL_BY_CAND[c], coverage: (seen[c] || 0) / TOTAL_BY_CAND[c],
+    }));
+    const ranking = rows.filter(r => r.comp >= mc).sort((a, b) => b.accord - a.accord || b.comp - a.comp || b.net - a.net);
+    const tooFew = rows.filter(r => r.comp < mc).sort((a, b) => b.comp - a.comp);
+    // Position (M03) : indéterminée sous MIN_DECIDED réponses tranchées ; « pas sûr » sans tendance ne compte pas.
     const spectrum = (subset) => {
       const weighted = subset.filter(id => weight(id) !== 0);
-      if (!weighted.length) return subset.length ? { pos: 0, min: 0, max: 0, n: subset.length, flat: true } : null;
-      let sw = 0, sp = 0, min = Infinity, max = -Infinity;
-      weighted.forEach(id => { const it = ITEMS[id], w = weight(id) / it.cands.length;
-        it.cands.forEach(c => { const p = CAND[c].pos; sw += Math.abs(w); sp += w * p; if (w > 0) { min = Math.min(min, p); max = Math.max(max, p); } }); });
+      const decided = subset.filter(id => S.sel[id] || S.no[id]).length;
+      if (decided < MIN_DECIDED || !weighted.length) return { pos: null, min: 0, max: 0, n: subset.length, decided, undetermined: true };
+      let sw = 0, sp = 0, min = Infinity, max = -Infinity, used = 0;
+      weighted.forEach(id => { const it = ITEMS[id], w = weight(id);
+        if (CODED) { const p = contentPos(id); if (p == null) return; used++; sw += Math.abs(w); sp += w * p; if (w > 0) { min = Math.min(min, p); max = Math.max(max, p); } return; }
+        const ws = w / it.cands.length; it.cands.forEach(c => { const p = CAND[c].pos; used++; sw += Math.abs(ws); sp += ws * p; if (ws > 0) { min = Math.min(min, p); max = Math.max(max, p); } }); });
+      if (!sw || (CODED && used < MIN_DECIDED)) return { pos: null, min: 0, max: 0, n: subset.length, decided, used, undetermined: true };
       const pos_ = Math.max(-10, Math.min(10, sp / sw));
       if (min === Infinity) { min = max = pos_; }
-      return { pos: pos_, min, max, n: subset.length };
+      return { pos: pos_, min, max, n: subset.length, decided, used };
     };
+    // Axes de contenu : Σ w·code / Σ |w|·|code| sur les cartes codées sur l'axe ; indéterminé sous MIN_DECIDED cartes.
+    const axisOf = (subset, k) => { let num = 0, den = 0, n = 0; subset.forEach(id => { const c = codeOf(id), w = weight(id); if (!c || !c[k] || !w) return; n++; num += w * c[k]; den += Math.abs(w) * Math.abs(c[k]); });
+      return n < MIN_DECIDED || !den ? { pos: null, n, undetermined: true } : { pos: 5 * num / den * 2 / 2, n }; };
+    const axesOf = (subset) => Object.fromEntries(AXIS_KEYS.map(k => [k, axisOf(subset, k)]));
     const themes = D.themes.filter(t => !keep || keep.has(t.id)).map(t => {
       const subs = t.subs.map(s => ({ sub: s,
         ids: s.items.filter(i => weight(i.id) > 0).map(i => i.id), nos: s.items.filter(i => weight(i.id) < 0).map(i => i.id),
         nul: s.items.filter(i => S.unsure[i.id] && weight(i.id) === 0).map(i => i.id) })).filter(s => s.ids.length || s.nos.length || s.nul.length);
       const tids = subs.flatMap(s => s.ids), tnos = subs.flatMap(s => s.nos), tnul = subs.flatMap(s => s.nul);
-      const judged = tids.length + tnos.length + tnul.length;
-      return { theme: t, subs, ids: tids, nos: tnos, nul: tnul, judged, total: themeItems(t), sp: spectrum([...tids, ...tnos, ...tnul]),
-        reliability: isDone(t) ? "terminé" : judged < 5 ? "très peu d'idées" : judged < 15 ? "en cours" : "consolidé" };
+      const judged = tids.length + tnos.length + tnul.length, total = themeItems(t);
+      const allT = [...tids, ...tnos, ...tnul], decided = allT.filter(id => S.sel[id] || S.no[id]).length;
+      const target = reliableTarget(total);
+      return { theme: t, subs, ids: tids, nos: tnos, nul: tnul, judged, decided, total, sp: spectrum(allT), explored: judged >= total,
+        reliability: decided < MIN_DECIDED ? "indéterminé" : decided < target ? "en cours" : judged >= total ? "exploré" : "consolidé" };
     }).filter(t => t.judged);
-    return { ids, nos, nul, judged: all.length, ranking, themes, overall: spectrum(all) };
+    const decided = all.filter(id => S.sel[id] || S.no[id]).length;
+    return { ids, nos, nul, judged: all.length, decided, ranking, tooFew, themes, overall: spectrum(all), axes: CODED ? axesOf(all) : null, minComp: mc };
   }
+  const MIN_COMP = 5, MIN_COMP_PRE = 3, MIN_DECIDED = 5, RELIABLE = 15;
+  const reliableTarget = (total) => Math.min(RELIABLE, Math.max(MIN_DECIDED, Math.ceil(total * 0.6)));
 
   /* ---------- Navigation ---------- */
   const app = document.getElementById("app");
@@ -711,7 +743,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       h("ul.tsubs", t.subs.map(s => h("li", h("span", s.name), h("span.num.muted", (selInSub(s).length ? selInSub(s).length + " / " : "") + s.items.length)))),
       h("div.tcard-foot",
         h("span.small.muted", plural(t.subs.length, "sujet") + " · " + plural(themeItems(t), "idée") + (n ? " · " + plural(n, "retenue") : "")),
-        R && R.overall ? h("span.chip.accent", posLabel(R.overall.pos)) : null),
+        R && R.overall ? h("span.chip.accent", spLabel(R.overall)) : null),
       h("div.tcard-acts",
         h("button.btn", { class: done ? "" : "primary", onclick: () => goTheme(t) }, done ? "Revoir les idées" : started ? "Continuer →" : "Commencer →"),
         done ? h("button.btn", { onclick: () => goTheme(t, "result") }, "Orientation") : null));
@@ -846,7 +878,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       return h("div.recap-idea", { class: rejected ? "rejected" : "" }, h("div.txt", i.t, e ? h("details.expl-inline", h("summary", "Expliquer"), h("div", e)) : null),
         h("div.by", miniStars(id), authors(i).map(c => h("span.chip", candName(c) + (c.party ? " · " + c.party : ""))))); };
     return h("section.recap-theme",
-      withHead ? h("div.head", h("h3", t.theme.name), h("span.chip.accent", posLabel(t.sp.pos) + " · " + plural(t.ids.length, "aimée") + ", " + plural(t.nos.length, "rejetée"))) : null,
+      withHead ? h("div.head", h("h3", t.theme.name), h("span.chip.accent", spLabel(t.sp) + " · " + plural(t.ids.length, "aimée") + ", " + plural(t.nos.length, "rejetée"))) : null,
       t.subs.filter(s => s.ids.length).map(s => h("div.recap-sub", h("h4", s.sub.name), s.ids.map(id => line(id, false)))),
       t.nos.length ? h("details.others", h("summary", plural(t.nos.length, "idée rejetée", "idées rejetées") + " dans ce thème"),
         t.subs.filter(s => s.nos.length).map(s => h("div.recap-sub", h("h4", s.sub.name), s.nos.map(id => line(id, true))))) : null,
@@ -870,17 +902,17 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       const top = R.ranking.slice(0, 3);
       body = h("div.theme-result",
         h("div.stat-row",
-          h("div.stat", h("div.v", posLabel(t.sp.pos)), h("div.k", "orientation sur ce thème (" + fmtPos(t.sp.pos) + ")")),
+          h("div.stat", h("div.v", spLabel(t.sp)), h("div.k", "orientation sur ce thème (" + fmtPos(t.sp.pos) + ")")),
           h("div.stat", h("div.v.num", t.ids.length), h("div.k", "idées retenues dans " + plural(t.subs.length, "sujet"))),
-          h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités représentées"))),
+          h("div.stat", h("div.v.num", R.ranking.length), h("div.k", "personnalités comparables (" + MIN_COMP + " idées vues au moins)"))),
         h("div.spectrum",
           h("div.sp-axis", h("div", "Thème"), h("div.ticks", h("span.l", "Gauche"), h("span", "Centre"), h("span.r", "Droite"))),
           spectrumRow(theme.name, plural(t.ids.length, "idée"), t.sp, false)),
         h("div", h("h3", { style: "margin-bottom:10px" }, "Les plus proches de vos choix sur ce thème"),
           h("div.top3", top.map(r => h("div.row", avatar(r.cand),
             h("div", { style: "min-width:0" }, h("b", candName(r.cand)), r.cand.party ? h("span.muted.small", " · " + r.cand.party) : null,
-              h("div.small.muted", r.n + "/" + r.of + " de ses propositions retenues")),
-            h("span.num", { style: "font-weight:700" }, pct(r.share)))))),
+              h("div.small.muted", plural(r.comp, "idée comparée", "idées comparées") + " · " + r.n + "/" + r.of + " retenues")),
+            h("span.num", { style: "font-weight:700" }, pct(r.accord) + " d'accord"))))),
         h("div", h("h3", { style: "margin-bottom:10px" }, "Vos idées sur ce thème, avec leur auteur"), recapTheme(t, false)));
     }
     const panel = h("section.panel", head, body,
@@ -947,8 +979,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const q = S.quota || 10;
     const remAll = unjudged(null).length;
     const f = scopeFilter(); const remScope = f ? unjudged(f).length : remAll;
-    const perTheme = {}; judgedIds().forEach(id => { const t = ITEMS[id].sub.theme.id; perTheme[t] = (perTheme[t] || 0) + 1; });
-    const needReliable = D.themes.reduce((a, t) => a + Math.max(0, 15 - (perTheme[t.id] || 0)), 0);
+    const perTheme = {}; judgedIds().forEach(id => { if (!S.sel[id] && !S.no[id]) return; const t = ITEMS[id].sub.theme.id; perTheme[t] = (perTheme[t] || 0) + 1; });
+    const needReliable = D.themes.reduce((a, t) => a + Math.max(0, reliableTarget(themeItems(t)) - (perTheme[t.id] || 0)), 0);
     return { q, remAll, remScope, daysAll: Math.ceil(remAll / q), daysScope: Math.ceil(remScope / q), daysReliable: Math.ceil(needReliable / q), needReliable };
   }
   function setSwipeView(v) { if (v !== "card") detachSwipeKeys(); S.sview = v; save(); applyLayout(); renderSwipe(); toTop(); }
@@ -1250,9 +1282,12 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
   function spectrumRow(label, sub, sp, isTotal) {
     const x = (p) => (50 + p * 5) + "%";
+    if (!sp || sp.pos == null) return h("div.sp-row", { class: isTotal ? "total" : "" },
+      h("div.lab", label, sub ? h("span.small", sub) : null),
+      h("div.track", h("span.val.num", { style: "left:50%;transform:translate(-50%,-50%)" }, "Indéterminé · " + plural(sp ? sp.decided : 0, "réponse tranchée", "réponses tranchées") + " sur " + MIN_DECIDED + " nécessaires")));
     const dot = h("span.dot", { class: sp.pos <= -2 ? "l" : sp.pos >= 2 ? "r" : "", style: "left:" + x(sp.pos), tabindex: 0,
       "aria-label": label + " : " + posLabel(sp.pos) + " (" + fmtPos(sp.pos) + ")" });
-    const html = "<b>" + label + "</b><br>" + posLabel(sp.pos) + " · " + fmtPos(sp.pos) + " sur une échelle de −10 à +10<br>" + plural(sp.n, "idée retenue", "idées retenues") + " · auteurs situés entre " + fmtPos(sp.min) + " et " + fmtPos(sp.max);
+    const html = "<b>" + label + "</b><br>" + posLabel(sp.pos) + " · " + fmtPos(sp.pos) + " sur une échelle de −10 à +10<br>" + plural(sp.n, "idée jugée", "idées jugées") + ", " + plural(sp.decided, "tranchée") + (CODED ? "<br>idées approuvées situées entre " + fmtPos(sp.min) + " et " + fmtPos(sp.max) + " (contenu)" : "<br>auteurs situés entre " + fmtPos(sp.min) + " et " + fmtPos(sp.max));
     dot.addEventListener("mousemove", (e) => showTip(e, html)); dot.addEventListener("mouseleave", hideTip);
     dot.addEventListener("focus", (e) => { const r = dot.getBoundingClientRect(); showTip({ clientX: r.left, clientY: r.bottom }, html); }); dot.addEventListener("blur", hideTip);
     const valLeft = sp.pos > 2;
@@ -1266,13 +1301,13 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
   function renderResults(partial) {
     const done = doneThemes(), remaining = D.themes.filter(t => !isDone(t)), swipe = modeIs() === "swipe";
-    const R = compute(partial && !swipe && done.length ? done.map(t => t.id) : null);
+    const R = compute(partial && !swipe && done.length ? done.map(t => t.id) : null, partial ? MIN_COMP_PRE : MIN_COMP);
     if (!R.judged) { app.replaceChildren(h("p.empty", "Aucune idée jugée pour l'instant."), h("p", h("button.btn.primary", { onclick: () => setPhase(1) }, "Commencer"))); return; }
-    const top = R.ranking.filter(r => r.net > 0).slice(0, 5), rest = R.ranking.filter(r => !top.includes(r));
-    const weak = R.themes.filter(t => t.reliability !== "consolidé" && t.reliability !== "terminé");
+    const top = R.ranking.slice(0, 5), rest = R.ranking.filter(r => !top.includes(r));
+    const weak = R.themes.filter(t => t.reliability === "indéterminé" || t.reliability === "en cours");
     const allJ = [...R.ids, ...R.nos, ...R.nul], prof = profileOf(R), bl = blocShares(allJ);
-    const orientName = bl.split ? "Partagé gauche et droite" : posLabel(R.overall.pos);
-    const rankInfo = infoBubble("Chaque idée a un poids de −100 à +100 selon votre geste et votre pondération (+ oui mais 60, ++ d'accord 80, +++ essentiel 100 ; en miroir pour les désaccords ; « pas sûr » pèse ±30 selon la tendance, 0 sans avis). Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues. L'orientation affichée à côté du parti est la position indicative de la personnalité sur l'axe gauche-droite.");
+    const orientName = R.overall.pos == null ? "Indéterminé" : bl.split && Math.abs(R.overall.pos) < 2 ? "Partagé gauche et droite" : posLabel(R.overall.pos);
+    const rankInfo = infoBubble("Proximité = taux d'accord pondéré sur les idées de la personnalité que vous avez vues et tranchées (+ oui mais 60, ++ d'accord 80, +++ essentiel 100 ; en miroir pour les désaccords ; « pas sûr » pèse ±30 selon la tendance, 0 sans avis). Il faut au moins " + R.minComp + " idées comparées pour qu'une personnalité soit classée : le nombre de propositions publiées n'est pas un bonus. L'orientation à côté du parti est la position indicative de la personnalité sur l'axe gauche-droite.");
 
     const preText = swipe
       ? "Pré-orientation fondée sur " + plural(R.judged, "idée jugée", "idées jugées") + " sur " + TOTAL_ITEMS + ". " + (weak.length ? "Encore fragile sur : " + weak.map(t => t.theme.name + " (" + t.reliability + ")").join(", ") + ". " : "") + "Les thèmes sans aucune idée jugée n'apparaissent pas encore ; seuls les thèmes abordés comptent."
@@ -1298,29 +1333,32 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
         h("div.pos.num", far ? "−" : i + 1), avatar(r.cand),
         h("div", { style: "min-width:0" },
           h("div.who", h("span.name", candName(r.cand)), h("span.party", party(r.cand)), orientChip(r.cand)),
-          far ? null : h("div.bar", h("i", { style: "width:" + (r.share / top[0].share * 100) + "%" })),
-          h("div.meta", far ? h("span", h("b.num", r.net), " points nets") : h("span", h("b.num", pct(r.share)), " de vos points"),
-            h("span", h("b.num", pct(r.accord)), " d'accord sur " + plural(r.seen, "idée vue", "idées vues")),
-            h("span", h("b.num", r.n + "/" + r.of), " de son programme retenu")),
+          h("div.bar", { class: far ? "far" : "" }, h("i", { style: "width:" + Math.round(r.accord * 100) + "%" })),
+          h("div.meta", h("span", h("b.num", Math.round(r.accord * 100) + " %"), " d'accord"),
+            h("span", h("b.num", r.comp), " idées comparées"),
+            h("span", h("b.num", r.seen + "/" + r.of), " de son programme vu")),
           h("div", { style: "margin-top:6px" }, btn), detail));
     };
     const rank = h("div.rank", top.map((r, i) => candRow(r, i, false)));
     const farthest = R.ranking.filter(r => !top.includes(r)).slice(-5).reverse();
-    const farInfo = infoBubble("Les personnalités dont les idées que vous avez vues ont recueilli le plus de désaccords (points nets les plus bas). Les comparer aux plus proches aide à voir ce qui vous sépare vraiment.");
-    const far = farthest.length ? h("div", h("h3", { style: "margin:22px 0 10px" }, "Les cinq personnalités les plus éloignées de vos choix", farInfo.btn), farInfo.box, h("div.rank", farthest.map((r, i) => candRow(r, i, true)))) : null;
+    const nTop = top.length, nFar = farthest.length;
+    const farInfo = infoBubble("Les personnalités dont les idées que vous avez vues ont recueilli le plus faible taux d'accord, parmi celles comparables (" + R.minComp + " idées vues au moins). Les comparer aux plus proches aide à voir ce qui vous sépare vraiment.");
+    const far = farthest.length ? h("div", h("h3", { style: "margin:22px 0 10px" }, (nFar >= 5 ? "Les cinq personnalités" : nFar > 1 ? "Les " + nFar + " personnalités" : "La personnalité") + " les plus éloignées de vos choix", farInfo.btn), farInfo.box, h("div.rank", farthest.map((r, i) => candRow(r, i, true)))) : null;
 
     const others = rest.length ? h("details.others", h("summary", "Les " + rest.length + " autres personnalités jugées"),
       h("ul", rest.map(r => h("li", h("span", candName(r.cand), h("span.muted.small", " · " + party(r.cand) + " · " + posLabel(r.cand.pos))),
-        h("span.num.small", (r.net > 0 ? pct(r.share) + " · " : "") + pct(r.accord) + " d'accord · " + r.n + "/" + r.of))))) : null;
+        h("span.num.small", Math.round(r.accord * 100) + " % d'accord · " + plural(r.comp, "idée comparée", "idées comparées")))))) : null;
+    const tooFew = R.tooFew.length ? h("details.others", h("summary", "Pas encore comparables : " + plural(R.tooFew.length, "personnalité") + " (moins de " + R.minComp + " idées vues)"),
+      h("ul", R.tooFew.map(r => h("li", h("span", candName(r.cand), h("span.muted.small", " · " + party(r.cand))), h("span.num.small", plural(r.comp, "idée comparée", "idées comparées") + " · " + r.seen + "/" + r.of + " vues"))))) : null;
 
     const spectrum = h("div.spectrum",
       h("div.sp-axis", h("div", "Thème"), h("div.ticks", h("span.l", "Gauche"), h("span", "Centre"), h("span.r", "Droite"))),
-      R.themes.map(t => spectrumRow(t.theme.name, plural(t.judged, "idée jugée", "idées jugées") + " · " + t.reliability, t.sp, false)),
-      spectrumRow(partial ? "Pré-orientation" : "Ensemble de vos choix", plural(R.judged, "idée jugée", "idées jugées"), R.overall, true));
+      R.themes.map(t => spectrumRow(t.theme.name, plural(t.decided, "réponse tranchée", "réponses tranchées") + " sur " + t.total + " · " + t.reliability, t.sp, false)),
+      spectrumRow(partial ? "Pré-orientation" : "Ensemble de vos choix", plural(R.decided, "réponse tranchée", "réponses tranchées"), R.overall, true));
     const table = h("details", h("summary.small", { style: "cursor:pointer;color:var(--ink-2);font-weight:600;margin-top:10px" }, "Voir en tableau"),
       h("table.sp-table", h("thead", h("tr", h("th", "Thème"), h("th", "Position"), h("th", "Lecture"), h("th", "Idées"))),
-        h("tbody", R.themes.map(t => h("tr", h("td", t.theme.name), h("td.num", fmtPos(t.sp.pos)), h("td", posLabel(t.sp.pos)), h("td.num", t.judged))),
-          h("tr", h("td", h("b", "Ensemble")), h("td.num", fmtPos(R.overall.pos)), h("td", posLabel(R.overall.pos)), h("td.num", R.judged)))));
+        h("tbody", R.themes.map(t => h("tr", h("td", t.theme.name), h("td.num", fmtPos(t.sp.pos)), h("td", spLabel(t.sp)), h("td.num", t.decided + " / " + t.judged))),
+          h("tr", h("td", h("b", "Ensemble")), h("td.num", fmtPos(R.overall.pos)), h("td", spLabel(R.overall)), h("td.num", R.decided + " / " + R.judged)))));
 
     app.replaceChildren(h("div.results",
       banner,
@@ -1330,15 +1368,15 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           h("div.unsure", h("div.v.num", allJ.filter(id => S.unsure[id]).length), h("div.k", "pas sûr")),
           h("div.no", h("div.v.num", allJ.filter(id => S.no[id]).length), h("div.k", "rejetées"))),
         h("div.stat.orient-tile",
-          h("div.k", (partial ? "Pré-orientation" : "Orientation") + " calculée · " + fmtPos(R.overall.pos) + " sur une échelle de −10 à +10"),
+          h("div.k", (partial ? "Pré-orientation" : "Orientation") + (R.overall.pos == null ? " · " + plural(R.decided, "réponse tranchée", "réponses tranchées") + " sur " + MIN_DECIDED + " nécessaires" : " calculée · " + fmtPos(R.overall.pos) + " sur une échelle de −10 à +10")),
           h("div.v", orientName),
-          h("div.track", h("span.dot", { class: R.overall.pos <= -2 ? "l" : R.overall.pos >= 2 ? "r" : "", style: "left:" + (50 + R.overall.pos * 5) + "%" })),
+          R.overall.pos == null ? null : h("div.track", h("span.dot", { class: R.overall.pos <= -2 ? "l" : R.overall.pos >= 2 ? "r" : "", style: "left:" + (50 + R.overall.pos * 5) + "%" })),
           bl.total ? h("div.small", h("span", { style: "color:var(--left);font-weight:700" }, Math.round(bl.l * 100) + " % gauche"), " · ", h("span", { style: "font-weight:700" }, Math.round(bl.c * 100) + " % centre"), " · ", h("span", { style: "color:var(--right);font-weight:700" }, Math.round(bl.r * 100) + " % droite"), h("span.muted", " de vos accords")) : null,
-          bl.split ? h("div.small.muted", "La moyenne tombe au centre parce que vos accords se partagent entre les deux bords, pas parce que vous choisissez des idées centristes.") : null,
+          bl.split && R.overall.pos != null && Math.abs(R.overall.pos) < 2 ? h("div.small.muted", "La moyenne tombe au centre parce que vos accords se partagent entre les deux bords, pas parce que vous choisissez des idées centristes.") : null,
           h("div.profile", prof.name),
           h("div.k", plural(R.themes.length, "thème abordé", "thèmes abordés") + " sur " + D.themes.length + " · " + plural(R.ranking.length, "personnalité représentée", "personnalités représentées")))),
-      h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix", rankInfo.btn), rankInfo.box),
-        rank, far, others),
+      h("section", h("div.sec-head", h("h2", (nTop >= 5 ? "Les cinq personnalités" : nTop > 1 ? "Les " + nTop + " personnalités" : nTop ? "La personnalité" : "Aucune personnalité") + (partial ? " les plus proches, pour l'instant" : " les plus proches de vos choix"), rankInfo.btn), rankInfo.box),
+        nTop ? rank : h("p.empty", "Aucune personnalité n'a encore " + R.minComp + " idées comparées : continuez à juger des idées."), far, others, tooFew),
       h("section", h("div.sec-head", h("h2", "Où vous situez-vous, thème par thème ?"),
         h("p", "Position de −10 (gauche) à +10 (droite) : les idées aimées vous rapprochent de leurs auteurs, les idées rejetées vous en éloignent. La barre claire montre l'écart entre l'auteur le plus à gauche et le plus à droite parmi vos idées aimées ; la mention sous chaque thème indique la solidité de la mesure.")),
         spectrum, table,
@@ -1429,16 +1467,19 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const families = FAMILIES.map(([k, label, side]) => ({ key: k, label, side, rate: acc[k].t ? acc[k].p / acc[k].t : null, n: acc[k].n }));
     const bloc = (ks) => { const p = ks.reduce((a, k) => a + acc[k].p, 0), t = ks.reduce((a, k) => a + acc[k].t, 0), n = ks.reduce((a, k) => a + acc[k].n, 0); return { rate: t ? p / t : null, n }; };
     const left = bloc(["gr", "g"]), right = bloc(["d", "dn"]);
-    const axisPos = (ids) => { const ts = R.themes.filter(t => ids.includes(String(t.theme.id)) && t.sp && !t.sp.flat); if (!ts.length) return null;
+    // Axes : d'après le contenu des mesures (codage.js) ; économie = rôle de l'État, société = ordre, société, Europe et écologie.
+    const axisPos = (ids) => { const ts = R.themes.filter(t => ids.includes(String(t.theme.id)) && t.sp && t.sp.pos != null); if (!ts.length) return null;
       const n = ts.reduce((a, t) => a + t.judged, 0); return { pos: ts.reduce((a, t) => a + t.sp.pos * t.judged, 0) / n, n, themes: ts.map(t => t.theme.name) }; };
-    const axes = { eco: axisPos(AXES.eco), reg: axisPos(AXES.reg), soc: axisPos(AXES.soc) };
+    const mean = (keys) => { const ks = keys.map(k => R.axes[k]).filter(a => a.pos != null); if (!ks.length) return null; const n = ks.reduce((a, x) => a + x.n, 0); return { pos: ks.reduce((a, x) => a + x.pos * x.n, 0) / n, n }; };
+    const axes = R.axes ? { eco: mean(["etat"]), reg: mean(["ordre", "europe"]), soc: mean(["societe", "ecologie"]) } : { eco: axisPos(AXES.eco), reg: axisPos(AXES.reg), soc: axisPos(AXES.soc) };
     const sn = (axes.reg ? axes.reg.n : 0) + (axes.soc ? axes.soc.n : 0);
     const socAll = sn ? ((axes.reg ? axes.reg.pos * axes.reg.n : 0) + (axes.soc ? axes.soc.pos * axes.soc.n : 0)) / sn : null;
     const side = (p) => p <= -1.5 ? "L" : p >= 1.5 ? "R" : "C";
+    const decided = all.filter(id => S.sel[id] || S.no[id]).length;
     const ecoP = axes.eco ? axes.eco.pos : R.overall.pos, socP = socAll == null ? R.overall.pos : socAll;
     const yes = all.filter(id => weight(id) > 0).length, no = all.filter(id => weight(id) < 0).length, unsure = all.filter(id => S.unsure[id]).length;
     let key;
-    if (all.length < 10) key = "NN";
+    if (decided < 10 || R.overall.pos == null || (ecoP == null && socP == null)) key = "NN";
     else if (unsure / all.length > 0.5) key = "UU";
     else if (left.n >= 4 && right.n >= 4 && left.rate >= 0.5 && right.rate >= 0.5) key = "TT";
     else if (ecoP <= -4 && socP <= -4) key = "GG";
@@ -1447,29 +1488,30 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const [name, desc] = PROFILES[key];
     const accord = yes + no ? yes / (yes + no) : 0;
     const nuance = key === "NN" || key === "UU" ? "" : accord < 0.35 ? "Vous rejetez plus d'idées que vous n'en approuvez : un profil exigeant, difficile à convaincre." : accord > 0.7 ? "Vous approuvez la plupart des idées rencontrées : un profil consensuel, qui gagne à pondérer finement." : "";
-    const ov = side(R.overall.pos);
-    const solid = R.themes.filter(t => t.judged >= 5 && t.sp && !t.sp.flat);
+    const ov = R.overall.pos == null ? "C" : side(R.overall.pos);
+    const solid = R.overall.pos == null ? [] : R.themes.filter(t => t.sp && t.sp.pos != null);
     const moreLeft = solid.filter(t => side(t.sp.pos) === "L" && ov !== "L").map(t => t.theme.name);
     const moreRight = solid.filter(t => side(t.sp.pos) === "R" && ov !== "R").map(t => t.theme.name);
     const ambig = [];
     if (moreLeft.length) ambig.push("plus à gauche que votre ensemble sur " + moreLeft.join(", "));
     if (moreRight.length) ambig.push("plus à droite que votre ensemble sur " + moreRight.join(", "));
-    return { key, name, desc, nuance, ambig, axes, families, left, right, accord, yes, no, unsure, n: all.length };
+    return { key, name, desc, nuance, ambig, axes, families, left, right, accord, yes, no, unsure, n: all.length, decided };
   }
   function identitySection(R, prof, partial) {
     const top = R.ranking.filter(r => r.net > 0).slice(0, 5), far = R.ranking.filter(r => !top.includes(r)).slice(-5).reverse();
     const x = (p) => (50 + p * 5) + "%";
-    const axisRow = (k) => { const a = prof.axes[k], [lab, sub] = AXIS_LABEL[k];
-      return h("div.id-axis", h("div.lab", lab, h("span.small", a ? a.themes.join(", ") : sub)),
-        a ? h("div.track", h("span.dot", { class: a.pos <= -2 ? "l" : a.pos >= 2 ? "r" : "", style: "left:" + x(a.pos) }), h("span.val.num", { style: a.pos > 2 ? "right:" + (50 - a.pos * 5 + 2.5) + "%" : "left:" + (50 + a.pos * 5 + 2.5) + "%" }, posLabel(a.pos) + " · " + plural(a.n, "idée")))
-          : h("span.small.muted", "Non abordé pour l'instant")); };
+    const axisRow = (k) => { const a = R.axes ? R.axes[k] : prof.axes[k]; const [lab, left, right] = R.axes ? AXIS_INFO[k] : [AXIS_LABEL[k][0], "gauche", "droite"];
+      return h("div.id-axis", h("div.lab", lab, h("span.small", left + " ◂ ▸ " + right)),
+        a && a.pos != null ? h("div.track", h("span.dot", { class: a.pos <= -2 ? "l" : a.pos >= 2 ? "r" : "", style: "left:" + x(a.pos) }), h("span.val.num", { style: a.pos > 2 ? "right:" + (50 - a.pos * 5 + 2.5) + "%" : "left:" + (50 + a.pos * 5 + 2.5) + "%" }, fmtPos(a.pos) + " · " + plural(a.n, "idée")))
+          : h("span.small.muted", a && a.n ? "Indéterminé : " + plural(a.n, "idée tranchée", "idées tranchées") + " sur " + MIN_DECIDED + " nécessaires" : "Non abordé pour l'instant")); };
+    const axisKeys = R.axes ? AXIS_KEYS : ["eco", "reg", "soc"];
     const famRow = (f) => h("div.fam", { class: f.side }, h("span", f.label, h("span.muted.small", f.n ? " · " + plural(f.n, "idée vue", "idées vues") : "")),
       h("div.bar", h("i", { style: "width:" + (f.rate == null ? 0 : Math.round(f.rate * 100)) + "%" })), h("span.num.small", f.rate == null ? "—" : Math.round(f.rate * 100) + " %"));
     const card = h("div.card-ai.idcard",
-      h("div", h("span.t", prof.name), h("div.small.muted", (partial ? "Pré-orientation" : "Orientation") + " : " + (blocShares([...R.ids, ...R.nos, ...R.nul]).split ? "partagé gauche et droite" : posLabel(R.overall.pos)) + " (" + fmtPos(R.overall.pos) + ") · " + plural(prof.n, "idée jugée", "idées jugées") + " dans " + plural(R.themes.length, "thème") + " sur " + D.themes.length)),
+      h("div", h("span.t", prof.name), h("div.small.muted", (partial ? "Pré-orientation" : "Orientation") + " : " + (R.overall.pos == null ? "indéterminée" : blocShares([...R.ids, ...R.nos, ...R.nul]).split ? "partagé gauche et droite" : posLabel(R.overall.pos)) + " (" + fmtPos(R.overall.pos) + ") · " + plural(prof.decided, "réponse tranchée", "réponses tranchées") + " sur " + plural(prof.n, "idée jugée", "idées jugées") + ", " + plural(R.themes.length, "thème") + " sur " + D.themes.length)),
       h("p", prof.desc), prof.nuance ? h("p", prof.nuance) : null,
       prof.ambig.length ? h("p", h("b", "Vos ambiguïtés : "), prof.ambig.join(" ; ") + ".") : null,
-      h("div", h("h3", { style: "margin-bottom:8px" }, "Vos trois axes"), h("div.id-axes", axisRow("eco"), axisRow("reg"), axisRow("soc"))),
+      h("div", h("h3", { style: "margin-bottom:8px" }, R.axes ? "Vos positions par axe, d'après le contenu des mesures" : "Vos trois axes"), h("div.id-axes", axisKeys.map(axisRow))),
       h("div", h("h3", { style: "margin-bottom:6px" }, "Votre taux d'accord par famille politique"), prof.families.map(famRow)),
       h("div.id-list", top.length ? h("div", h("b", "Plus proches : "), top.map(r => candName(r.cand) + " (" + party(r.cand) + ")").join(", ")) : null,
         far.length ? h("div", h("b", "Plus éloignés : "), far.map(r => candName(r.cand) + " (" + party(r.cand) + ")").join(", ")) : null),
@@ -1486,11 +1528,12 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const prof = profileOf(R);
     lines.push("Nombre d'idées retenues : " + R.ids.length + " sur " + ALL_IDEAS + " propositions (comparateur iFRAP, présidentielle 2027).");
     lines.push("Profil calculé par l'outil (indicatif) : " + prof.name + (prof.ambig.length ? " ; ambiguïtés : " + prof.ambig.join(" ; ") : "") + ".");
-    lines.push("", "Personnalités les plus représentées (part des points pondérés ; part de leur programme retenue) :");
-    R.ranking.slice(0, 8).forEach((r, i) => lines.push((i + 1) + ". " + candName(r.cand) + (r.cand.party ? " (" + r.cand.party + ")" : "") + " : " + pct(r.share) + " ; " + r.n + "/" + r.of + " propositions"));
-    lines.push("", "Position sur l'axe gauche (−10) / droite (+10), moyenne pondérée des auteurs des idées retenues :");
-    R.themes.forEach(t => lines.push("- " + t.theme.name + " : " + fmtPos(t.sp.pos) + " (" + posLabel(t.sp.pos) + "), " + t.ids.length + " idées"));
-    lines.push("- Ensemble : " + fmtPos(R.overall.pos) + " (" + posLabel(R.overall.pos) + ")");
+    lines.push("", "Personnalités les plus proches (taux d'accord sur leurs idées vues ; au moins " + MIN_COMP + " comparées) :");
+    R.ranking.slice(0, 8).forEach((r, i) => lines.push((i + 1) + ". " + candName(r.cand) + " (" + party(r.cand) + ") : " + Math.round(r.accord * 100) + " % d'accord sur " + r.comp + " idées"));
+    lines.push("", "Position sur l'axe gauche (−10) / droite (+10), d'après le contenu des idées jugées (indéterminé sous " + MIN_DECIDED + " réponses tranchées) :");
+    R.themes.forEach(t => lines.push("- " + t.theme.name + " : " + fmtPos(t.sp.pos) + " (" + spLabel(t.sp) + "), " + t.decided + " réponses tranchées"));
+    lines.push("- Ensemble : " + fmtPos(R.overall.pos) + " (" + spLabel(R.overall) + ")");
+    if (R.axes) { lines.push("", "Axes de contenu (−10 à +10) :"); AXIS_KEYS.forEach(k => { const a = R.axes[k]; lines.push("- " + AXIS_INFO[k][0] + " (" + AXIS_INFO[k][1] + " ◂ ▸ " + AXIS_INFO[k][2] + ") : " + (a.pos == null ? "indéterminé" : fmtPos(a.pos)) + ", " + a.n + " idées"); }); }
     lines.push("", "Idées approuvées (+ oui mais, ++ d'accord, +++ essentiel ; « plutôt oui » pour un pas sûr), avec leur auteur :");
     R.themes.forEach(t => { lines.push("", "## " + t.theme.name); t.subs.forEach(s => { if (!s.ids.length) return; lines.push("### " + s.sub.name);
       s.ids.forEach(id => { const i = ITEMS[id], l = levelOf(id); lines.push("- [" + l[1] + " " + l[2] + "] " + i.t.replace(/\n/g, " ") + " (" + authors(i).map(candName).join(", ") + ")"); }); }); });
