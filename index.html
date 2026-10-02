@@ -537,7 +537,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const PARTY_FALLBACK = { "Bertrand": "Divers droite", "Cazeneuve": "La Convention", "Hollande": "PS", "Maurel": "GRS", "Mélenchon": "LFI", "Roussel": "PCF", "Ruffin": "Debout !" };
   const party = (c) => c.party || PARTY_FALLBACK[c.last] || "Sans étiquette";
   const orientChip = (c) => h("span.cand-orient", { class: c.pos <= -2 ? "l" : c.pos >= 2 ? "r" : "", title: "Position indicative " + fmtPos(c.pos) }, posLabel(c.pos));
-  const APP_VERSION = "1.3";
+  const APP_VERSION = "1.4";
   const stateOf = (id) => S.sel[id] ? "yes" : S.no[id] ? "no" : S.unsure[id] ? "unsure" : null;
   const weight = (id) => { const st = stateOf(id); if (!st) return 0; const w = S.w[id]; return typeof w === "number" ? w : DEFAULT_W[st]; };
   const levelOf = (id) => { const st = stateOf(id); if (!st) return null; const w = weight(id); return LEVELS[st].find(l => l[0] === w) || LEVELS[st][1]; };
@@ -1240,7 +1240,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     if (!R.judged) { app.replaceChildren(h("p.empty", "Aucune idée jugée pour l'instant."), h("p", h("button.btn.primary", { onclick: () => setPhase(1) }, "Commencer"))); return; }
     const top = R.ranking.filter(r => r.net > 0).slice(0, 5), rest = R.ranking.filter(r => !top.includes(r));
     const weak = R.themes.filter(t => t.reliability !== "consolidé" && t.reliability !== "terminé");
-    const allJ = [...R.ids, ...R.nos, ...R.nul], prof = profileOf(R);
+    const allJ = [...R.ids, ...R.nos, ...R.nul], prof = profileOf(R), bl = blocShares(allJ);
+    const orientName = bl.split ? "Partagé gauche et droite" : posLabel(R.overall.pos);
     const rankInfo = infoBubble("Chaque idée a un poids de −100 à +100 selon votre geste et votre pondération (+ oui mais 60, ++ d'accord 80, +++ essentiel 100 ; en miroir pour les désaccords ; « pas sûr » pèse ±30 selon la tendance, 0 sans avis). Le premier pourcentage est la part de l'auteur dans vos points nets ; le second, votre taux d'accord sur ses idées que vous avez vues. L'orientation affichée à côté du parti est la position indicative de la personnalité sur l'axe gauche-droite.");
 
     const preText = swipe
@@ -1300,8 +1301,10 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           h("div.no", h("div.v.num", allJ.filter(id => S.no[id]).length), h("div.k", "rejetées"))),
         h("div.stat.orient-tile",
           h("div.k", (partial ? "Pré-orientation" : "Orientation") + " calculée · " + fmtPos(R.overall.pos) + " sur une échelle de −10 à +10"),
-          h("div.v", posLabel(R.overall.pos)),
+          h("div.v", orientName),
           h("div.track", h("span.dot", { class: R.overall.pos <= -2 ? "l" : R.overall.pos >= 2 ? "r" : "", style: "left:" + (50 + R.overall.pos * 5) + "%" })),
+          bl.total ? h("div.small", h("span", { style: "color:var(--left);font-weight:700" }, Math.round(bl.l * 100) + " % gauche"), " · ", h("span", { style: "font-weight:700" }, Math.round(bl.c * 100) + " % centre"), " · ", h("span", { style: "color:var(--right);font-weight:700" }, Math.round(bl.r * 100) + " % droite"), h("span.muted", " de vos accords")) : null,
+          bl.split ? h("div.small.muted", "La moyenne tombe au centre parce que vos accords se partagent entre les deux bords, pas parce que vous choisissez des idées centristes.") : null,
           h("div.profile", prof.name),
           h("div.k", plural(R.themes.length, "thème abordé", "thèmes abordés") + " sur " + D.themes.length + " · " + plural(R.ranking.length, "personnalité représentée", "personnalités représentées")))),
       h("section", h("div.sec-head", h("h2", partial ? "Les cinq personnalités les plus proches, pour l'instant" : "Les cinq personnalités les plus proches de vos choix", rankInfo.btn), rankInfo.box),
@@ -1381,6 +1384,13 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     NN: ["Profil en construction", "Il faut encore quelques idées jugées pour dégager une tendance solide. Les premiers chiffres ci-dessous sont indicatifs."],
     UU: ["En exploration", "Vous avez souvent répondu « pas sûr » : votre position se construit encore. Les idées déjà tranchées donnent la tendance ci-dessous, à confirmer en revenant sur les idées sans avis."],
   };
+  function blocShares(ids) {
+    const sh = { l: 0, c: 0, r: 0 };
+    ids.forEach(id => { const w = weight(id); if (w <= 0) return; ITEMS[id].cands.forEach(c => { const p = CAND[c].pos; sh[p <= -2 ? "l" : p >= 2 ? "r" : "c"] += w / ITEMS[id].cands.length; }); });
+    const total = sh.l + sh.c + sh.r; if (!total) return { l: 0, c: 0, r: 0, total: 0, split: false };
+    const r = { l: sh.l / total, c: sh.c / total, r: sh.r / total, total };
+    r.split = r.l >= 0.35 && r.r >= 0.35; return r;
+  }
   function profileOf(R) {
     const all = [...R.ids, ...R.nos, ...R.nul];
     const acc = {}; FAMILIES.forEach(f => { acc[f[0]] = { p: 0, t: 0, n: 0 }; });
@@ -1426,7 +1436,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const famRow = (f) => h("div.fam", { class: f.side }, h("span", f.label, h("span.muted.small", f.n ? " · " + plural(f.n, "idée vue", "idées vues") : "")),
       h("div.bar", h("i", { style: "width:" + (f.rate == null ? 0 : Math.round(f.rate * 100)) + "%" })), h("span.num.small", f.rate == null ? "—" : Math.round(f.rate * 100) + " %"));
     const card = h("div.card-ai.idcard",
-      h("div", h("span.t", prof.name), h("div.small.muted", (partial ? "Pré-orientation" : "Orientation") + " : " + posLabel(R.overall.pos) + " (" + fmtPos(R.overall.pos) + ") · " + plural(prof.n, "idée jugée", "idées jugées") + " dans " + plural(R.themes.length, "thème") + " sur " + D.themes.length)),
+      h("div", h("span.t", prof.name), h("div.small.muted", (partial ? "Pré-orientation" : "Orientation") + " : " + (blocShares([...R.ids, ...R.nos, ...R.nul]).split ? "partagé gauche et droite" : posLabel(R.overall.pos)) + " (" + fmtPos(R.overall.pos) + ") · " + plural(prof.n, "idée jugée", "idées jugées") + " dans " + plural(R.themes.length, "thème") + " sur " + D.themes.length)),
       h("p", prof.desc), prof.nuance ? h("p", prof.nuance) : null,
       prof.ambig.length ? h("p", h("b", "Vos ambiguïtés : "), prof.ambig.join(" ; ") + ".") : null,
       h("div", h("h3", { style: "margin-bottom:8px" }, "Vos trois axes"), h("div.id-axes", axisRow("eco"), axisRow("reg"), axisRow("soc"))),
