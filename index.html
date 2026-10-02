@@ -297,6 +297,8 @@ select, input[type="text"], input[type="password"] {
 .ai-busy { color: var(--muted); font-size: 0.9rem; }
 
 .confirm { display: inline-flex; gap: 8px; align-items: center; }
+.save-warn { position: sticky; top: 0; z-index: 30; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 16px; background: var(--warn); color: #fff; font-size: .9rem; }
+.save-warn .btn { background: #fff; color: var(--warn); border-color: #fff; }
 [hidden] { display: none !important; }
 /* Accueil (swipe) */
 .home-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: env(safe-area-inset-top, 0px); min-height: 48px; }
@@ -510,7 +512,14 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   S.unsure = S.unsure || {}; S.batch = S.batch || 10; S.rateHist = S.rateHist || [];
   if (S.setup === undefined) S.setup = Object.keys(S.sel).length + Object.keys(S.no).length > 0;
   if (!S.w) { S.w = {}; Object.entries(S.rate || {}).forEach(([id, r]) => { if (S.sel[id]) S.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; }); }
-  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, S, { key: S.keepKey ? S.key : "" }))); } catch (e) { /* ignoré */ } };
+  var saveWarned = false;
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(Object.assign({}, S, { key: S.keepKey ? S.key : "" }))); } catch (e) { warnSave(); } };
+  function warnSave() {
+    if (saveWarned) return; saveWarned = true;
+    const box = h("div.save-warn", { role: "alert" }, h("b", "Vos réponses ne sont plus enregistrées dans ce navigateur"), " (stockage plein ou bloqué). Exportez-les maintenant pour ne rien perdre. ",
+      h("button.btn.small", { onclick: () => { S.phase = 1; S.sview = "home"; render(); openSave(); } }, "Exporter"), h("button.btn.ghost.small", { onclick: () => box.remove(), "aria-label": "Fermer" }, "✕"));
+    document.body.prepend(box);
+  }
 
   /* ---------- Utilitaires ---------- */
   function h(tag, attrs, ...kids) {
@@ -537,11 +546,11 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const PARTY_FALLBACK = { "Bertrand": "Divers droite", "Cazeneuve": "La Convention", "Hollande": "PS", "Maurel": "GRS", "Mélenchon": "LFI", "Roussel": "PCF", "Ruffin": "Debout !" };
   const party = (c) => c.party || PARTY_FALLBACK[c.last] || "Sans étiquette";
   const orientChip = (c) => h("span.cand-orient", { class: c.pos <= -2 ? "l" : c.pos >= 2 ? "r" : "", title: "Position indicative " + fmtPos(c.pos) }, posLabel(c.pos));
-  const APP_VERSION = "1.4";
+  const APP_VERSION = "1.5";
   const stateOf = (id) => S.sel[id] ? "yes" : S.no[id] ? "no" : S.unsure[id] ? "unsure" : null;
   const weight = (id) => { const st = stateOf(id); if (!st) return 0; const w = S.w[id]; return typeof w === "number" ? w : DEFAULT_W[st]; };
   const levelOf = (id) => { const st = stateOf(id); if (!st) return null; const w = weight(id); return LEVELS[st].find(l => l[0] === w) || LEVELS[st][1]; };
-  const setLevel = (id, w) => { S.w[id] = w; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); };
+  const setLevel = (id, w) => { S.w[id] = w; S.toRate = S.toRate.filter(x => x !== id); if (!S.toRate.length) S.rateAt = 0; delete S.card; save(); };
   const requeue = (id) => { delete S.sel[id]; delete S.no[id]; delete S.unsure[id]; delete S.w[id]; S.skip[id] = true; S.toRate = S.toRate.filter(x => x !== id); delete S.card; save(); };
   const plural = (n, s, p) => n + " " + (n > 1 ? (p || s + "s") : s);
   const selectedIds = () => Object.keys(S.sel).filter(id => S.sel[id] && ITEMS[id]);
@@ -598,7 +607,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   const allDone = () => doneThemes().length === D.themes.length;
   const nextTheme = () => D.themes.find(t => !isDone(t));
   const toTop = () => window.scrollTo({ top: 0 });
-  function setPhase(p) { S.phase = p; save(); render(); toTop(); }
+  function setPhase(p) { detachSwipeKeys(); S.phase = p; save(); render(); toTop(); }
   function progress() {
     if (modeIs() === "swipe") return Math.round(100 * judgedCount() / TOTAL_ITEMS);
     const per = D.themes.map(t => isDone(t) ? 1 : themeSel(t) ? 0.6 : t.subs.some(s => S.seen[s.id]) ? 0.3 : 0);
@@ -871,7 +880,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   /* ---------- Mode swipe ---------- */
   const ITEM_LIST = SUBS.flatMap(s => s.items);
   const TOTAL_ITEMS = ITEM_LIST.length;
-  const today = () => new Date().toISOString().slice(0, 10);
+  const today = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
   const judgedIds = () => ITEM_LIST.filter(it => S.sel[it.id] || S.no[it.id] || S.unsure[it.id]).map(it => it.id);
   const judgedCount = () => judgedIds().length;
   const unjudged = (filter) => ITEM_LIST.filter(it => !S.sel[it.id] && !S.no[it.id] && !S.unsure[it.id] && (!filter || filter(it)));
@@ -925,7 +934,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const needReliable = D.themes.reduce((a, t) => a + Math.max(0, 15 - (perTheme[t.id] || 0)), 0);
     return { q, remAll, remScope, daysAll: Math.ceil(remAll / q), daysScope: Math.ceil(remScope / q), daysReliable: Math.ceil(needReliable / q), needReliable };
   }
-  function setSwipeView(v) { S.sview = v; save(); applyLayout(); renderSwipe(); toTop(); }
+  function setSwipeView(v) { if (v !== "card") detachSwipeKeys(); S.sview = v; save(); applyLayout(); renderSwipe(); toTop(); }
 
   function renderSwipe() {
     if (S.sview === "card") return renderSwipeCard();
@@ -1039,6 +1048,8 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     };
     return card;
   }
+  var swipeKeyHandler = null;
+  const detachSwipeKeys = () => { if (swipeKeyHandler) { document.removeEventListener("keydown", swipeKeyHandler); swipeKeyHandler = null; } };
   function renderSwipeCard() {
     const q = S.quota || 10;
     let it = pickNext();
@@ -1059,7 +1070,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       judge(it, action);
       refreshCounter(); renderSteps();
       if (dailyN() === q) say("Objectif du jour atteint. Continuez si vous voulez.");
-      if (S.toRate.length >= (S.batch || 10)) { setSwipeView("rate-intro"); return; }
+      if (S.toRate.length >= Math.max(S.batch || 10, S.rateAt || 0)) { setSwipeView("rate-intro"); return; }
       mount(pickNext());
     }
     function flyOut(action) {
@@ -1067,7 +1078,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       card.style.transition = "transform .25s ease, opacity .25s ease";
       card.style.transform = action === "yes" ? "translate(120%, -10%) rotate(18deg)" : action === "no" ? "translate(-120%, -10%) rotate(-18deg)" : "translate(0, -120%)";
       card.style.opacity = "0";
-      setTimeout(() => { busy = false; after(action); }, 230);
+      setTimeout(() => { busy = false; if (stage.isConnected && S.sview === "card") after(action); }, 230);
     }
     function attachGesture(el) {
       let sx = 0, sy = 0, dx = 0, dy = 0, dragging = false, pid = null;
@@ -1085,9 +1096,10 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
       };
       el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
     }
-    const onKey = (ev) => { if (S.phase !== 1 || S.sview !== "card") { document.removeEventListener("keydown", onKey); return; }
+    const onKey = (ev) => { if (S.phase !== 1 || S.sview !== "card" || !stage.isConnected) { detachSwipeKeys(); return; }
+      if (ev.target && /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
       if (ev.key === "ArrowRight") flyOut("yes"); else if (ev.key === "ArrowLeft") flyOut("no"); else if (ev.key === "ArrowUp") { ev.preventDefault(); flyOut("unsure"); } };
-    document.addEventListener("keydown", onKey);
+    detachSwipeKeys(); swipeKeyHandler = onKey; document.addEventListener("keydown", onKey);
     app.replaceChildren(h("div.swipe-wrap",
       h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Terminer et revenir à l'accueil" }, "←"), h("div.abtitle", counter), h("div.abacts")),
       stage,
@@ -1107,7 +1119,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     const by = { yes: 0, no: 0, unsure: 0 }; S.toRate.forEach(id => { by[stateOf(id)]++; });
     if (!S.toRate.length) { setSwipeView("card"); return; }
     app.replaceChildren(h("div.swipe-wrap",
-      h("div.appbar", h("button.abtn", { onclick: () => setSwipeView("home"), "aria-label": "Plus tard" }, "←"), h("div.abtitle", "Pondération"), h("div.abacts")),
+      h("div.appbar", h("button.abtn", { onclick: () => { S.rateAt = S.toRate.length + (S.batch || 10); save(); setSwipeView("home"); }, "aria-label": "Plus tard" }, "←"), h("div.abtitle", "Pondération"), h("div.abacts")),
       h("div.intro",
         h("div.intro-ic", "⚖"),
         h("h2", "Pause pondération"),
@@ -1117,7 +1129,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
           by.no ? h("div.intro-row.no", h("span.ic", "✕"), h("b", by.no), " pas d'accord → − / −− / −−−") : null,
           by.unsure ? h("div.intro-row.unsure", h("span.ic", "?"), h("b", by.unsure), " pas sûr → plutôt non / sans avis / plutôt oui") : null),
         h("button.btn.primary.big", { onclick: () => setSwipeView("rate") }, "Commencer la pondération →"),
-        h("button.btn", { style: "width:100%;justify-content:center", onclick: () => setSwipeView(unjudged(scopeFilter()).length ? "card" : "home") }, "Plus tard, continuer à swiper"))));
+        h("button.btn", { style: "width:100%;justify-content:center", onclick: () => { S.rateAt = S.toRate.length + (S.batch || 10); save(); setSwipeView(unjudged(scopeFilter()).length ? "card" : "home"); } }, "Plus tard, continuer à swiper"))));
     renderSteps();
   }
   function renderSwipeRate() {
@@ -1559,11 +1571,15 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
     next.card = o.card || "";
     (o.no || []).forEach(id => { if (ITEMS[id] && !next.sel[id]) next.no[id] = true; });
     (o.unsure || []).forEach(id => { if (ITEMS[id] && !next.sel[id] && !next.no[id]) next.unsure[id] = true; });
-    next.w = {}; Object.entries(o.w || {}).forEach(([id, w]) => { if (ITEMS[id] && typeof w === "number") next.w[id] = w; });
+    const ALLOWED_W = new Set(Object.values(LEVELS).flat().map(l => l[0]));
+    next.w = {}; Object.entries(o.w || {}).forEach(([id, w]) => { if (ITEMS[id] && typeof w === "number" && ALLOWED_W.has(w)) next.w[id] = w; });
     if (!o.w) Object.entries(o.rate || {}).forEach(([id, r]) => { if (next.sel[id]) next.w[id] = r <= 2 ? 60 : r <= 4 ? 80 : 100; });
     if (o.batch) next.batch = o.batch; next.setup = o.setup !== undefined ? !!o.setup : o.sel.length > 0;
     next.toRate = (o.toRate || []).filter(id => ITEMS[id] && (next.sel[id] || next.no[id] || next.unsure[id]));
-    if (o.quota) next.quota = o.quota; if (o.daily) next.daily = o.daily; if (o.scope) next.scope = o.scope; next.finished = !!o.finished; if (o.mode) next.mode = o.mode;
+    if ([10, 20, 30, 50].includes(o.quota)) next.quota = o.quota; if (o.daily && typeof o.daily.n === "number") next.daily = o.daily;
+    if (o.scope && ["mix", "theme"].includes(o.scope.type)) next.scope = { type: o.scope.type, theme: o.scope.theme || null, subs: Array.isArray(o.scope.subs) ? o.scope.subs : [] };
+    next.finished = !!o.finished; if (["auto", "swipe", "pages"].includes(o.mode)) next.mode = o.mode;
+    try { localStorage.setItem(KEY + ".avant-restauration", JSON.stringify(S)); } catch (e) { /* point de restauration impossible */ }
     S = next; save();
     return { n: o.sel.length - unknown, unknown, date: o.d };
   }
@@ -1637,10 +1653,10 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
   }
 
   /* ---------- Pied de page ---------- */
-  document.getElementById("foot").replaceChildren(
+  document.getElementById("foot").replaceChildren(...[
     "Propositions compilées par la Fondation iFRAP (", h("a", { href: D.source, target: "_blank", rel: "noopener" }, "comparateur Présidentielles 2027"),
     "), extraites le " + D.extractedAt + " : " + ALL_IDEAS.toLocaleString("fr-FR") + " propositions, " + SUBS.length + " sujets, " + D.candidates.length + " personnalités. Vos choix restent dans ce navigateur ; utilisez « Sauvegarder / restaurer » pour les emporter ailleurs.",
-    (() => { const days = Math.floor((Date.now() - new Date(D.extractedAt)) / 864e5); return days > 45 ? h("span", { style: "display:block;margin-top:6px;color:var(--warn)" }, "Ces données ont " + days + " jours : les programmes ont pu évoluer, relancez extraire-donnees.mjs pour les actualiser.") : null; })());
+    (() => { const days = Math.floor((Date.now() - new Date(D.extractedAt)) / 864e5); return days > 45 ? h("span", { style: "display:block;margin-top:6px;color:var(--warn)" }, "Ces données ont " + days + " jours : les programmes ont pu évoluer, relancez extraire-donnees.mjs pour les actualiser.") : null; })()].filter(Boolean));
 
   render();
 })();
